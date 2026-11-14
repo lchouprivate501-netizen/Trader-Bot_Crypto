@@ -1,0 +1,7 @@
+# pionex-macd gatekeeper schedule (UTC). Parsed by scripts/gate_scheduler.py.
+# The bot has no systemd/cron; this file is the source of truth.
+# External gates stay OFF in config until Anna approves turning them on.
+*/5 * * * * circuit_breaker
+0 */6 * * * event_risk
+30 0 * * * crypto_regime
+0 2 * * 1 postmortem
