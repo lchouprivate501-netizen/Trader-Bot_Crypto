@@ -1,0 +1,7 @@
+本倉庫自行撰寫的策略、MCP 包裝與安裝腳本以 MIT 授權。
+第三方元件請遵守其原授權，並且只應從官方來源取得：
+
+- freqtrade（GPL-3.0），透過 Docker 映像 freqtradeorg/freqtrade:stable_freqai 使用
+- tradermonty/claude-trading-skills（MIT）
+- agiprolabs/claude-trading-skills（見該倉庫 LICENSE）
+- graphifyy（PyPI）
