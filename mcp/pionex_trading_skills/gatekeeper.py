@@ -1,4 +1,4 @@
-"""Write user_data/gates/*.json. Callable as MCP tools and as a CLI for cron."""
+"""Write user_data/gates/*.json. Callable as MCP tools and as a CLI for the in-repo UTC scheduler."""
 
 from __future__ import annotations
 
@@ -12,8 +12,7 @@ from typing import Any
 
 import yaml
 
-from pionex_trading_skills import paths
-from pionex_trading_skills import wrappers
+from pionex_trading_skills import journal, paths, wrappers
 
 
 def _now() -> datetime:
@@ -196,10 +195,41 @@ def _wallet_size() -> float:
         return 1000.0
 
 
+
+def job_postmortem() -> dict[str, Any]:
+    """Official signal-postmortem if records exist, plus journal gate-block accuracy.
+
+    Writes a report only; this is not an entry gate. External gates stay off
+    in config until Anna approves turning them on.
+    """
+    official = None
+    pm_dir = paths.userdata() / "reports" / "postmortems"
+    out_dir = paths.userdata() / "reports" / "signal_postmortem"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    if pm_dir.exists() and any(pm_dir.iterdir()):
+        official = wrappers.signal_postmortem_analyze(pm_dir, out_dir)
+    accuracy = journal.gate_block_accuracy()
+    payload: dict[str, Any] = {
+        "status": "ok",
+        "ok": True,
+        "official": official,
+        "gate_block_accuracy": accuracy,
+        "note": "報告檔，不是進場閘門。",
+    }
+    dest = out_dir / "latest.json"
+    to_write = dict(payload)
+    to_write.setdefault("updated_at", _now().isoformat())
+    dest.write_text(json.dumps(to_write, indent=2, default=str, ensure_ascii=False) + "\n", encoding="utf-8")
+    payload["path"] = str(dest)
+    payload["updated_at"] = to_write["updated_at"]
+    return payload
+
+
 JOBS = {
     "event_risk": job_event_risk,
     "crypto_regime": job_crypto_regime,
     "circuit_breaker": job_circuit_breaker,
+    "postmortem": job_postmortem,
 }
 
 

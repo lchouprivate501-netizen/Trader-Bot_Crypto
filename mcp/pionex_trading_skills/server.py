@@ -151,6 +151,19 @@ def job_circuit_breaker(account_size: float | None = None) -> str:
     return circuit_breaker(account_size=account_size)
 
 
+@mcp.tool()
+def job_postmortem() -> str:
+    """Write the weekly postmortem report (not an entry gate)."""
+    return json.dumps(gatekeeper.job_postmortem(), default=str, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+def gates_status() -> str:
+    """Age, status, and freshness of external gate files, plus whether the UTC scheduler is alive."""
+    from pionex_trading_skills.status import collect
+    return json.dumps(collect(), default=str, ensure_ascii=False, indent=2)
+
+
 def main() -> None:
     mcp.run(transport="stdio")
 

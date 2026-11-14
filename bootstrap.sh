@@ -172,6 +172,12 @@ log "已寫入 $VER"
 # Pin requirements from the live venv (no machine-local editable paths)
 "$VENV/bin/pip" freeze | grep -vE '^-e ' > "$ROOT/mcp/requirements.lock" || true
 
+# In-repo UTC gate scheduler (this box has no systemd/cron). Idempotent restart.
+# External gates stay OFF in config until Anna approves turning them on.
+if [[ -x "$ROOT/scripts/gate_scheduler.sh" ]]; then
+  "$ROOT/scripts/gate_scheduler.sh" restart || log "gate scheduler 啟動失敗，請查看 user_data/logs/gate-scheduler.log"
+fi
+
 # Code-only knowledge graph (no LLM). Safe to re-run.
 if [[ -x "$VENV/bin/graphify" ]]; then
   (cd "$ROOT" && GRAPHIFY_BACKEND=none "$VENV/bin/graphify" update . --force) || log "graphify update 失敗，可稍後再跑"
