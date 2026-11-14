@@ -1,0 +1,26 @@
+# Use this file when the official docker-compose.yml bridge network cannot
+# reach the exchange (for example a host-only egress proxy). Linux only.
+#   docker compose -f docker-compose.hostnet.yml up -d
+# API stays on 127.0.0.1:8080. dry_run must remain true.
+services:
+  freqtrade:
+    image: freqtradeorg/freqtrade:stable_freqai
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./user_data:/freqtrade/user_data
+    env_file:
+      - .env
+    environment:
+      FREQTRADE__EXCHANGE__KEY: ${EXCHANGE_KEY:-}
+      FREQTRADE__EXCHANGE__SECRET: ${EXCHANGE_SECRET:-}
+      FREQTRADE__EXCHANGE__PASSWORD: ${EXCHANGE_PASSWORD:-}
+      FREQTRADE__API_SERVER__USERNAME: ${FREQTRADE_API_USERNAME:-}
+      FREQTRADE__API_SERVER__PASSWORD: ${FREQTRADE_API_PASSWORD:-}
+      FREQTRADE__API_SERVER__JWT_SECRET_KEY: ${FREQTRADE_JWT_SECRET:-}
+      FREQTRADE__API_SERVER__LISTEN_IP_ADDRESS: "127.0.0.1"
+    command: >
+      trade
+      --logfile /freqtrade/user_data/logs/freqtrade.log
+      --config /freqtrade/user_data/config.macd.futures.json
+      --strategy MacdGatedFutures
