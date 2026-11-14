@@ -54,6 +54,10 @@ async def main() -> int:
         }),
         # crypto_regime hits the network and may be slow; still required.
         ("crypto_regime", {"top_n": 5}),
+        ("job_crypto_regime", {"top_n": 5}),
+        ("job_circuit_breaker", {}),
+        ("job_postmortem", {}),
+        ("gates_status", {}),
     ]
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
@@ -64,6 +68,9 @@ async def main() -> int:
             missing = {c[0] for c in calls} - set(names)
             if missing:
                 print("MISSING TOOLS:", missing)
+            uncalled = set(names) - {c[0] for c in calls}
+            if uncalled:
+                print("UNCALLED TOOLS:", ", ".join(sorted(uncalled)))
             for name, args in calls:
                 print("\n========", name, "========")
                 try:

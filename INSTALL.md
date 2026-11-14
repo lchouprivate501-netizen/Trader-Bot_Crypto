@@ -96,12 +96,17 @@ GRAPHIFY_BACKEND=none "$HOME/crypto-trading/venvs/pionex-trading-skills/bin/grap
 
 圖檔預設為 `graphify-out/graph.json`。Markdown 筆記若要進圖，才需要另外的 LLM 金鑰；本範本預設不安裝付費服務。
 
-外部閘門排程示例（本機時區或 UTC 請自行決定）：
+外部閘門由倉庫內的 UTC 排程器跑（很多環境沒有 systemd / cron；`bootstrap.sh` 會安裝並重啟它）：
 
-```cron
-*/5 * * * * cd "$HOME/crypto-trading/pionex-macd" && ../venvs/pionex-trading-skills/bin/pionex-gatekeeper circuit_breaker
-0 */6 * * * cd "$HOME/crypto-trading/pionex-macd" && ../venvs/pionex-trading-skills/bin/pionex-gatekeeper event_risk
-30 0 * * * cd "$HOME/crypto-trading/pionex-macd" && ../venvs/pionex-trading-skills/bin/pionex-gatekeeper crypto_regime
+```bash
+# 時區一律 UTC
+# */5 * * * *  circuit_breaker
+# 0 */6 * * *  event_risk
+# 30 0 * * *   crypto_regime
+# 0 2 * * 1    postmortem（每週一 02:00 UTC）
+"$HOME/crypto-trading/pionex-macd/scripts/gate_scheduler.sh" status
+"$HOME/crypto-trading/venvs/pionex-trading-skills/bin/python" \
+  "$HOME/crypto-trading/pionex-macd/scripts/gates_status.py"
 ```
 
-在 `macd_gates` 把 `event_risk`／`circuit_breaker`／`crypto_regime` 改成 `true` 之前，請先確認對應 JSON 已連續更新且格式正確（狀態檔有問題會 fail-closed，不開新倉）。
+排程定義在 `scripts/gate_schedule.cron`。行程與紀錄：`user_data/logs/gate-scheduler.pid`、`user_data/logs/gate-scheduler.log`。在 `macd_gates` 把 `event_risk`／`circuit_breaker`／`crypto_regime` 改成 `true` 之前，請先確認對應 JSON 已連續更新且格式正確（狀態檔有問題會 fail-closed，不開新倉）。這些外部閘門預設維持關閉。
