@@ -1,8 +1,11 @@
-本倉庫自行撰寫的策略、研發流水線、執行部工具、MCP 與安裝腳本以 MIT 授權。
+Trader Bot。本倉庫自行撰寫的策略、研發流水線、執行部工具、MCP 與安裝腳本以 MIT 授權。
 第三方元件請遵守其原授權，並且只從官方來源取得（bootstrap.sh 會自動安裝）：
 
-- nautechsystems/nautilus_trader（LGPL-3.0），PyPI `nautilus_trader`
-- optuna（MIT），PyPI
-- mcp Python SDK（MIT），PyPI
-- uv（Apache-2.0/MIT），astral-sh/uv 官方 GitHub release
+- nautechsystems/nautilus_trader（LGPL-3.0-or-later），PyPI `nautilus_trader` 1.231.0
+- optuna（MIT），PyPI 5.0.0
+- mcp Python SDK（MIT），PyPI 2.3.0
+- uv（Apache-2.0/MIT），astral-sh/uv 官方 GitHub release 0.13.8
+- Graphify-Labs/graphify（Apache-2.0），PyPI `graphifyy` 0.9.108
+- pandas（BSD-3-Clause）、pyarrow（Apache-2.0）、requests（Apache-2.0）
+
 市場資料：OKX 公開 REST API（不需金鑰）；經濟日曆：ForexFactory 公開週曆 JSON。
