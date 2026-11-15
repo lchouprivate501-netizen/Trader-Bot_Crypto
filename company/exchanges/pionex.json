@@ -1,0 +1,13 @@
+{
+  "name": "pionex",
+  "display_name": "Pionex",
+  "web_login_url": "https://www.pionex.com",
+  "contract_naming": "{base}USDT perp",
+  "whitelist": ["BTC","ETH","SOL","XRP","DOGE","BNB","ADA","LINK","AVAX","SUI","LTC","TRX","DOT","BCH","NEAR","UNI","PEPE","WLD","HYPE","ZEC","TON","APT","ARB","OP","FIL","ETC","AAVE","ENA","SHIB","XLM"],
+  "maker_fee": 0.0002,
+  "taker_fee": 0.0005,
+  "supports_isolated": true,
+  "supports_usdt_margined_perps": true,
+  "max_leverage": 100,
+  "notes": "預設交易所。下單只在瀏覽器登入的 Pionex 進行，永不使用 API、永不提幣或轉帳。手續費依 USDT 永續 VIP0 公告：maker 0.02%、taker 0.05%；回測與風控一律用 taker（保守）。max_leverage 為合約可見上限（依標的而異），本公司固定 2 倍逐倉。部分合約名稱可能有倍數前綴（例如 PEPE 可能是 1000PEPE），下單前在瀏覽器確認。"
+}
