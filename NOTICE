@@ -1,7 +1,8 @@
-本倉庫自行撰寫的策略、MCP 包裝與安裝腳本以 MIT 授權。
-第三方元件請遵守其原授權，並且只應從官方來源取得：
+本倉庫自行撰寫的策略、研發流水線、執行部工具、MCP 與安裝腳本以 MIT 授權。
+第三方元件請遵守其原授權，並且只從官方來源取得（bootstrap.sh 會自動安裝）：
 
-- freqtrade（GPL-3.0），透過 Docker 映像 freqtradeorg/freqtrade:stable_freqai 使用
-- tradermonty/claude-trading-skills（MIT）
-- agiprolabs/claude-trading-skills（見該倉庫 LICENSE）
-- graphifyy（PyPI）
+- nautechsystems/nautilus_trader（LGPL-3.0），PyPI `nautilus_trader`
+- optuna（MIT），PyPI
+- mcp Python SDK（MIT），PyPI
+- uv（Apache-2.0/MIT），astral-sh/uv 官方 GitHub release
+市場資料：OKX 公開 REST API（不需金鑰）；經濟日曆：ForexFactory 公開週曆 JSON。
