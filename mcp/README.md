@@ -1,5 +1,6 @@
-# pionex-trading-skills MCP
+# pionex-trading-skills MCP（v2）
 
-單一 stdio MCP，包裝已克隆的開源交易技能、MACD 閘門狀態，以及 graphify 查詢。不持有交易所金鑰，不下單。
+Trader 私人交易公司的單一 stdio MCP。工具清單與用法見上層 `docs/TRADER_PLAYBOOK.md`。
+不持有交易所金鑰、不下單；長時間工作（回測/優化）以背景程序執行並用 `job_status` 輪詢。
 
-啟動方式見上層 INSTALL.md。
+啟動：`$CRYPTO_TRADING_HOME/venvs/pionex-trading-skills/bin/python -m pionex_trading_skills`（環境變數 `PIONEX_MACD_HOME` 指向本 repo）。
