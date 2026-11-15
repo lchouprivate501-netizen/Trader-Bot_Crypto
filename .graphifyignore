@@ -1,7 +1,9 @@
-user_data/data
-user_data/logs
-user_data/backtest_results
-user_data/freqaimodels
+rnd/data
+logs
+state
+journal
+exec/state
+exec/signals
 graphify-out
 .env
 mcp/*.egg-info

@@ -1,26 +1,30 @@
+# secrets
 .env
+*.key
+# python
 __pycache__/
 *.pyc
-*.pyo
 .venv/
 venv/
-user_data/data/
-user_data/logs/
-user_data/backtest_results/
-user_data/freqaimodels/
-user_data/models/
-user_data/notebooks/
-user_data/plot/
-user_data/gates/*.json
-!user_data/gates/.gitkeep
-graphify-out/
-*.sqlite
-*.sqlite-journal
-.DS_Store
 mcp/*.egg-info/
-user_data/.crypto_regime_cache/
-user_data/reports/
-# machine-local
-VERSIONS.md
+# data & runtime (never commit)
+rnd/data/
+rnd/reports/*/*.csv
+exec/state/
+exec/signals/*
+!exec/signals/.gitkeep
+logs/
 state/*
 !state/.gitkeep
+/journal/
+/reports/
+*.parquet
+*.sqlite*
+# model weights / caches
+*.gguf
+*.safetensors
+*.bin
+graphify-out/
+VERSIONS.md
+.DS_Store
+rnd/strategies/registry.lock
