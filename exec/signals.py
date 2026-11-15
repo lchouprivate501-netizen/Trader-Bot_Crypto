@@ -9,7 +9,7 @@ import pandas as pd
 from company import okx
 from company.paths import EXEC, SIGNALS, load_json, write_json
 from rnd import registry
-from rnd.strategies import ALL, get
+from rnd.strategies import get, names
 from rnd.strategies.base import attach_htf
 from exec import risk
 
@@ -49,7 +49,7 @@ def run(symbols: list[str] | None = None) -> dict:
         except Exception as e:
             short.append({"symbol": sym, "error": str(e)}); continue
         bar_close = df.ts.iloc[-1] + pd.Timedelta(minutes=5)
-        for name in ALL:
+        for name in names():
             mod = get(name)
             p, status = _params(name)
             tradable = status in ("PASSED", "LIVE")
