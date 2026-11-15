@@ -1,5 +1,6 @@
 """stdio JSON-RPC 煙霧測試：用與連接器相同的指令啟動 MCP，tools/list 後逐一 tools/call。
-用法: python scripts/mcp_smoke.py [--with-backtest STRATEGY]"""
+用法: python scripts/mcp_smoke.py
+（rnd_run_backtest 以不存在的策略名測試，不會覆寫任何報告；--with-backtest NAME 會真的重跑並覆寫該策略報告與登記簿）"""
 import json, os, subprocess, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -10,7 +11,7 @@ CALLS = [
     ("job_status", {"job_id": "none"}), ("news_danger_windows", {}), ("market_scan", {}), ("shortlist", {}),
     ("analyze_symbol", {"symbol": "BTC", "side": "short"}), ("live_signals", {}),
     ("risk_check", {"trade_json": json.dumps({"symbol": "ETH", "side": "long", "entry": 3000, "sl": 2970, "leverage": 2})}),
-    ("risk_state", {}), ("journal_write", {"kind": "note", "data_json": json.dumps({"text": "MCP smoke test"})}),
+    ("risk_state", {}), ("rnd_run_backtest", {"strategy": "__smoke_noop__"}), ("journal_write", {"kind": "note", "data_json": json.dumps({"text": "MCP smoke test"})}),
 ]
 
 
