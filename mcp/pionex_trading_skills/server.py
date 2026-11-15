@@ -1,9 +1,9 @@
-"""stdio MCP server「pionex-trading-skills」：Trader 私人交易公司的工具箱。
+"""stdio MCP server「pionex-trading-skills」：Trader Bot 私人交易公司的工具箱。
 
 研發部：rnd_registry / rnd_run_backtest / rnd_report / job_status
 執行部：news_danger_windows / market_scan / shortlist / analyze_symbol / live_signals / risk_check / risk_state / journal_write
-公司：company_status / mode_get / mode_set
-本伺服器不持有交易所金鑰、不下單；下單只由 Trader 在瀏覽器的 Pionex 進行。"""
+公司：company_status / mode_get / mode_set / exchange_get / exchange_set / setup_check
+本伺服器不持有交易所金鑰、不下單；下單只由 Trader 在瀏覽器依啟用中交易所登入頁進行（預設 Pionex）。"""
 from __future__ import annotations
 
 import json
@@ -35,7 +35,7 @@ def _safe(fn):
 # ---------------- 公司 ----------------
 @mcp.tool()
 def company_status() -> str:
-    """公司總覽：模式、登記簿（PASSED 策略）、是否符合自動轉實盤、風控狀態、消息面、排程器心跳、最新訊號數。每輪先呼叫這個。"""
+    """公司總覽：模式、交易所、setup 是否就緒、登記簿（PASSED 策略）、是否符合自動轉實盤、風控狀態、消息面、排程器心跳、最新訊號數。每輪先呼叫這個。首次執行若 setup.ready=false，先跑 setup_check。"""
     def f():
         from company.paths import EXEC, LOGS, load_json
         from exec import mode, news, risk
@@ -51,9 +51,13 @@ def company_status() -> str:
         m = mode.get()
         cyc = load_json(EXEC / "state" / "cycle.json", {})
         sig = load_json(EXEC / "signals" / "latest.json", {})
+        from company.exchange import snapshot
+        from company.setup import check as setup_check
+        setup = setup_check(via_mcp=True)
         return {"mode": m, "strategies": {k: v.get("status") for k, v in reg.items()}, "passed": passed,
                 "auto_live_eligible": m == "PAPER" and bool(passed),
                 "auto_live_rule": "登記簿有 PASSED 策略且模式為 PAPER → Trader 呼叫 mode_set('LIVE') 並通知 Anna",
+                "exchange": snapshot(), "setup": {"ready": setup["ok"], "missing": setup["missing"]},
                 "risk": risk.state(), "news": news.status(), "scheduler": {"alive": pid_ok, "heartbeat": hb},
                 "last_cycle": cyc, "signals": {"at": sig.get("at"), "total": len(sig.get("signals", [])), "tradable": sig.get("tradable_count", 0)}}
     return _safe(f)
@@ -74,6 +78,35 @@ def mode_set(mode: str, reason: str) -> str:
     def f():
         from exec import mode as m
         return m.set_mode(mode, reason)
+    return _safe(f)
+
+
+
+# ---------------- 交易所 / 首次安裝 ----------------
+@mcp.tool()
+def exchange_get() -> str:
+    """目前啟用的交易所設定檔，以及可用設定檔清單。不含任何金鑰。首次執行請先看這個，並詢問使用者是否沿用預設 Pionex，或要用 exchange_set 新增/更換交易所（瀏覽器登入，不要 API 金鑰）。"""
+    def f():
+        from company.exchange import snapshot
+        return snapshot()
+    return _safe(f)
+
+
+@mcp.tool()
+def exchange_set(profile: str) -> str:
+    """設定或更換交易所。傳入既有設定檔名稱（例如 pionex），或一份完整的設定檔 JSON。必須支援 USDT 永續、逐倉、至少 2x。若欄位含 API 金鑰/密鑰會被拒絕。LIVE 且仍有未平倉時拒絕（fail-closed）。更換後會依新白名單重掃市場。"""
+    def f():
+        from company.exchange import set_profile
+        return set_profile(profile)
+    return _safe(f)
+
+
+@mcp.tool()
+def setup_check() -> str:
+    """首次執行與健康檢查：列出各元件是否已安裝，以及未安裝時的確切安裝指令（uv、venv+nautilus_trader/optuna/mcp、OKX 5m 資料、排程器、graphify、MCP 連接器、交易所設定檔、權益紀錄）。缺什麼就照 install 欄位安裝，不要自己發明指令。"""
+    def f():
+        from company.setup import check
+        return check(via_mcp=True)
     return _safe(f)
 
 
@@ -139,7 +172,7 @@ def news_danger_windows(refresh: bool = False, symbol: str = "") -> str:
 
 @mcp.tool()
 def market_scan(refresh: bool = False) -> str:
-    """市場掃描：Pionex 白名單內依 OKX 24h 成交額排序前 10–15 名，附 24h 振幅與 5m ATR%。預設讀排程器最新結果。"""
+    """市場掃描：啟用中交易所白名單內依 OKX 24h 成交額排序前 10–15 名，附 24h 振幅與 5m ATR%。預設讀排程器最新結果。"""
     def f():
         from company.paths import EXEC, load_json
         from exec import scanner
@@ -195,7 +228,7 @@ def risk_state() -> str:
 @mcp.tool()
 def journal_write(kind: str, data_json: str) -> str:
     """交易紀錄。kind=fill（成交，欄位 position_id,pair,side,action=OPEN_LONG|OPEN_SHORT|CLOSE_LONG|CLOSE_SHORT,qty,price,leverage,fee_usdt,stop_price,realized_pnl_usdt,signal_id,reason）
-    | equity（{"equity_usdt":...} 來自 Pionex 頁面）| note（決策）| skip（放棄訊號原因）。"""
+    | equity（{"equity_usdt":...} 來自交易所頁面）| note（決策）| skip（放棄訊號原因）。"""
     def f():
         from exec import journal
         return journal.write(kind, json.loads(data_json))
