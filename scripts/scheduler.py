@@ -14,8 +14,12 @@ OFFSET = 20
 CYCLE_DEADLINE = 240  # 一輪最多 4 分鐘，卡住的網路呼叫會被中斷，不會拖到下一輪
 
 
+class CycleTimeout(BaseException):
+    """BaseException on purpose: per-symbol `except Exception` blocks inside the cycle must not swallow it."""
+
+
 def _deadline(signum, frame):
-    raise TimeoutError(f"cycle exceeded {CYCLE_DEADLINE}s")
+    raise CycleTimeout(f"cycle exceeded {CYCLE_DEADLINE}s")
 
 
 def next_run(now: float) -> float:
@@ -35,7 +39,7 @@ def main():
         try:
             res = cycle.run()
             status = "ok" if not any("error" in v for v in res["steps"].values()) else "partial"
-        except Exception:
+        except (Exception, CycleTimeout):
             res, status = {"trace": traceback.format_exc()[-1500:]}, "error"
         finally:
             signal.alarm(0)
