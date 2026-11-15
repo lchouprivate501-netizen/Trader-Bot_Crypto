@@ -44,7 +44,7 @@ def state() -> dict:
     m = mode.get()
     blocks = []
     if m == "HALT": blocks.append("模式為 HALT")
-    if equity is None: blocks.append("權益未知：請先 journal_write(kind='equity') 記錄 Pionex 餘額（fail-closed）")
+    if equity is None: blocks.append("權益未知：請先 journal_write(kind='equity') 記錄交易所帳戶權益（fail-closed）")
     if dd >= caps["max_drawdown_halt_pct"]: blocks.append(f"回撤 {dd:.2f}% ≥ {caps['max_drawdown_halt_pct']}% → HALT")
     if day_loss_pct >= caps["daily_realized_loss_stop_pct"]: blocks.append(f"今日已實現虧損 {day_loss_pct:.2f}% ≥ {caps['daily_realized_loss_stop_pct']}% → 今日停新單")
     if pause_until and pause_until > now: blocks.append(f"連虧 {caps['max_consecutive_losses']} 筆，暫停到 {pause_until.isoformat()}")
@@ -61,14 +61,19 @@ def state() -> dict:
 
 
 def size(equity: float, entry: float, sl: float) -> dict:
+    from company.exchange import taker_fee
     caps = risk_caps()
+    fee = taker_fee()
     risk_usdt = equity * caps["max_risk_per_trade_pct"] / 100
     dist = abs(entry - sl)
-    qty_risk = risk_usdt / dist if dist > 0 else 0.0
+    fee_per_unit = entry * 2 * fee  # conservative round-trip taker
+    denom = dist + fee_per_unit
+    qty_risk = risk_usdt / denom if denom > 0 else 0.0
     qty_margin = equity * caps["max_single_coin_margin_pct"] / 100 * caps["leverage"] / entry
     qty = min(qty_risk, qty_margin)
     return {"qty": qty, "notional_usdt": round(qty * entry, 4), "margin_usdt": round(qty * entry / caps["leverage"], 4),
-            "risk_usdt": round(qty * dist, 4), "limited_by": "risk" if qty_risk <= qty_margin else "margin_cap", "leverage": caps["leverage"]}
+            "risk_usdt": round(qty * dist, 4), "roundtrip_fee_usdt": round(qty * fee_per_unit, 4),
+            "taker_fee": fee, "limited_by": "risk" if qty_risk <= qty_margin else "margin_cap", "leverage": caps["leverage"]}
 
 
 def check(trade: dict) -> dict:

@@ -1,8 +1,8 @@
-"""執行部「掃描市場」角色：Pionex 白名單內，依 OKX 24h 成交額排前 N，並附波動率（24h 振幅、5m ATR%）。"""
+"""執行部「掃描市場」角色：啟用中交易所白名單內，依 OKX 24h 成交額排前 N，並附波動率（24h 振幅、5m ATR%）。"""
 from __future__ import annotations
 from datetime import datetime, timezone
 from company import okx
-from company.paths import EXEC, pionex_perps, universe, write_json
+from company.paths import EXEC, universe, whitelist, write_json
 from rnd.strategies.base import atr
 
 OUT = EXEC / "state" / "scan.json"
@@ -10,7 +10,7 @@ OUT = EXEC / "state" / "scan.json"
 
 def scan(top_n: int | None = None) -> dict:
     top_n = top_n or universe()["scan_top_n"]
-    allow = set(pionex_perps())
+    allow = set(whitelist())
     rows = []
     for t in okx.tickers():
         iid = t["instId"]

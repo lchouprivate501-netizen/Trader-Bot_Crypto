@@ -7,7 +7,7 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta, timezone
 import requests
-from company.paths import EXEC, load_json, pionex_perps, write_json
+from company.paths import EXEC, load_json, whitelist, write_json
 
 CACHE = EXEC / "state" / "news.json"
 FF = ["https://nfs.faireconomy.media/ff_calendar_thisweek.json", "https://nfs.faireconomy.media/ff_calendar_nextweek.json"]
@@ -60,7 +60,7 @@ def refresh() -> dict:
             continue
         windows.append({"start": (t - BEFORE).isoformat(), "end": (t + AFTER).isoformat(), "scope": "ALL", "reason": f"USD 高影響：{ev.get('title')}", "source": "forexfactory"})
     ok_ann = False
-    syms = set(pionex_perps())
+    syms = set(whitelist())
     try:
         r = requests.get(OKX_ANN, params={"page": 1}, timeout=15)
         r.raise_for_status()
