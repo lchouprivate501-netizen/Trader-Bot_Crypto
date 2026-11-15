@@ -4,24 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pionex-trading-skills"
-version = "1.0.0"
-description = "One MCP server wrapping tradermonty/agiprolabs trading skills, MACD gates, and graphify queries."
-requires-python = ">=3.11"
+version = "2.0.0"
+description = "MCP tools for Trader's private trading company (R&D on nautilus_trader + rule-based execution desk). No exchange keys, no orders."
+requires-python = ">=3.12,<3.15"
 readme = "README.md"
-authors = [{ name = "Pionex MACD stack" }]
 dependencies = [
   "mcp==2.3.0",
-  "graphifyy==0.9.108",
-  "requests==2.32.5",
-  "PyYAML==6.0.3",
+  "nautilus_trader==1.231.0",
+  "optuna==5.0.0",
   "pandas==2.3.3",
-  "pandas-market-calendars==5.2.2",
-  "python-dateutil==2.9.0.post0",
+  "pyarrow==26.0.1",
+  "requests==2.32.5",
 ]
 
 [project.scripts]
 pionex-trading-skills = "pionex_trading_skills.server:main"
-pionex-gatekeeper = "pionex_trading_skills.gatekeeper:main"
 
 [tool.setuptools.packages.find]
 include = ["pionex_trading_skills*"]

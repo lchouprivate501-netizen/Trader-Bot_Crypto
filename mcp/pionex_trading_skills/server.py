@@ -1,167 +1,205 @@
-"""stdio MCP server: pionex-trading-skills."""
+"""stdio MCP server「pionex-trading-skills」：Trader 私人交易公司的工具箱。
 
+研發部：rnd_registry / rnd_run_backtest / rnd_report / job_status
+執行部：news_danger_windows / market_scan / shortlist / analyze_symbol / live_signals / risk_check / risk_state / journal_write
+公司：company_status / mode_get / mode_set
+本伺服器不持有交易所金鑰、不下單；下單只由 Trader 在瀏覽器的 Pionex 進行。"""
 from __future__ import annotations
 
 import json
+import os
+import sys
 from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
 
-from pionex_trading_skills import gatekeeper, graphify_bridge, journal, paths, wrappers
+ROOT = Path(os.environ.get("PIONEX_MACD_HOME") or Path(__file__).resolve().parents[2])
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+os.environ.setdefault("PIONEX_MACD_HOME", str(ROOT))
 
 mcp = MCPServer("pionex-trading-skills")
 
 
+def _j(obj) -> str:
+    return json.dumps(obj, ensure_ascii=False, indent=2, default=str)
+
+
+def _safe(fn):
+    try:
+        return _j(fn())
+    except Exception as e:  # never crash the server on a tool error
+        return _j({"ok": False, "error": f"{e.__class__.__name__}: {e}"})
+
+
+# ---------------- 公司 ----------------
 @mcp.tool()
-def crypto_regime(top_n: int = 20) -> str:
-    """Run tradermonty crypto-regime-analyzer (CoinGecko + Binance funding; funding skipped if blocked). Also writes user_data/gates/crypto_regime.json."""
-    return json.dumps(gatekeeper.job_crypto_regime(top_n=top_n), default=str, ensure_ascii=False, indent=2)
-
-
-@mcp.tool()
-def event_calendar(limit: int = 50) -> str:
-    """Fetch FXMacroData USD Tier-1 calendar without an API key. On failure status is unconfirmed."""
-    return json.dumps(wrappers.fetch_usd_tier1_calendar(limit=limit), default=str, ensure_ascii=False, indent=2)
-
-
-@mcp.tool()
-def job_event_risk(limit: int = 50, minutes_before: int = 30, minutes_after: int = 60) -> str:
-    """Write user_data/gates/event_risk.json (fail-closed if the calendar cannot be fetched)."""
-    return json.dumps(
-        gatekeeper.job_event_risk(limit=limit, minutes_before=minutes_before, minutes_after=minutes_after),
-        default=str,
-        ensure_ascii=False,
-        indent=2,
-    )
-
-
-@mcp.tool()
-def circuit_breaker(account_size: float | None = None) -> str:
-    """Run tradermonty drawdown-circuit-breaker on freqtrade closed trades and write gates/circuit_breaker.json."""
-    return json.dumps(gatekeeper.job_circuit_breaker(account_size=account_size), default=str, ensure_ascii=False, indent=2)
-
-
-@mcp.tool()
-def discipline_check(answers_json: str, output_dir: str | None = None) -> str:
-    """Run pre-trade-discipline-gate. answers_json is the official answers file content or a path."""
-    dest_dir = Path(output_dir) if output_dir else paths.userdata() / "reports" / "discipline"
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    raw = answers_json.strip()
-    answers_path = Path(raw)
-    if not answers_path.exists():
-        answers_path = dest_dir / "answers.json"
-        # Allow either a path or inline JSON.
+def company_status() -> str:
+    """公司總覽：模式、登記簿（PASSED 策略）、是否符合自動轉實盤、風控狀態、消息面、排程器心跳、最新訊號數。每輪先呼叫這個。"""
+    def f():
+        from company.paths import EXEC, LOGS, load_json
+        from exec import mode, news, risk
+        from rnd import registry
+        reg = registry.load()["strategies"]
+        passed = registry.passed()
+        hb = load_json(LOGS / "scheduler_heartbeat.json", {})
+        pid_ok = False
         try:
-            parsed = json.loads(answers_json)
-            answers_path.write_text(json.dumps(parsed, indent=2), encoding="utf-8")
-        except json.JSONDecodeError:
-            answers_path.write_text(answers_json, encoding="utf-8")
-    result = wrappers.check_pre_trade_discipline(answers_path, dest_dir)
-    return json.dumps(result, default=str, ensure_ascii=False, indent=2)
+            pid = int((LOGS / "scheduler.pid").read_text().strip()); pid_ok = Path(f"/proc/{pid}").exists()
+        except Exception:
+            pass
+        m = mode.get()
+        cyc = load_json(EXEC / "state" / "cycle.json", {})
+        sig = load_json(EXEC / "signals" / "latest.json", {})
+        return {"mode": m, "strategies": {k: v.get("status") for k, v in reg.items()}, "passed": passed,
+                "auto_live_eligible": m == "PAPER" and bool(passed),
+                "auto_live_rule": "登記簿有 PASSED 策略且模式為 PAPER → Trader 呼叫 mode_set('LIVE') 並通知 Anna",
+                "risk": risk.state(), "news": news.status(), "scheduler": {"alive": pid_ok, "heartbeat": hb},
+                "last_cycle": cyc, "signals": {"at": sig.get("at"), "total": len(sig.get("signals", [])), "tradable": sig.get("tradable_count", 0)}}
+    return _safe(f)
 
 
 @mcp.tool()
-def signal_postmortem() -> str:
-    """Official signal-postmortem summary if records exist, plus per-gate block-accuracy from the MACD journal."""
-    official = None
-    pm_dir = paths.userdata() / "reports" / "postmortems"
-    if pm_dir.exists() and any(pm_dir.iterdir()):
-        official = wrappers.signal_postmortem_analyze(pm_dir, paths.userdata() / "reports")
-    accuracy = journal.gate_block_accuracy()
-    return json.dumps({"official": official, "gate_block_accuracy": accuracy}, default=str, ensure_ascii=False, indent=2)
+def mode_get() -> str:
+    """讀取目前模式 PAPER / LIVE / HALT。"""
+    def f():
+        from exec import mode
+        return {"mode": mode.get()}
+    return _safe(f)
 
 
 @mcp.tool()
-def macd_signal(limit_per_pair: int = 3) -> str:
-    """Latest MACD raw signals and gate verdicts per pair, from the strategy journal."""
-    return json.dumps(journal.latest_signals(limit_per_pair=limit_per_pair), default=str, ensure_ascii=False, indent=2)
+def mode_set(mode: str, reason: str) -> str:
+    """切換模式。LIVE 只有在登記簿有 PASSED 策略時才允許；HALT 與 PAPER 隨時允許。切 LIVE 後務必通知 Anna。"""
+    def f():
+        from exec import mode as m
+        return m.set_mode(mode, reason)
+    return _safe(f)
+
+
+# ---------------- 研發部 ----------------
+@mcp.tool()
+def rnd_registry() -> str:
+    """策略登記簿：每個策略的狀態（idea/coded/backtested/optimized/PASSED/REJECTED/LIVE）、參數與證據路徑。"""
+    def f():
+        from rnd import registry
+        from rnd.strategies import ALL
+        return {"known_modules": ALL, **registry.load()}
+    return _safe(f)
 
 
 @mcp.tool()
-def walk_forward_plan() -> str:
-    """Rolling walk-forward plan for 15m MACD on ~180 days of OKX USDT perps, from walk-forward-validation skill tables."""
-    plan = {
-        "timeframe": "15m",
-        "bars_per_day": 96,
-        "window_type": "rolling",
-        "train_days": 30,
-        "train_bars": 2880,
-        "test_days": 7,
-        "test_bars": 672,
-        "step_days": 7,
-        "embargo_hours": 24,
-        "embargo_bars": 96,
-        "source": "agiprolabs walk-forward-validation: Intraday (15min-1h) train 14-30d, test 3-7d, embargo 12-24h; crypto prefers rolling windows.",
-        "fallback_if_oos_trades_under_50": {"train_days": 14, "test_days": 3, "step_days": 3},
-        "note": "180 天約可得到 ~20 個測試摺。實際區間以已下載的 OKX 歷史為準。",
-    }
-    return json.dumps(plan, ensure_ascii=False, indent=2)
+def rnd_run_backtest(strategy: str, trials: int = 60, optimize: bool = True) -> str:
+    """背景啟動研發流水線：前 70% 優化（trials ≤ 300）→ nautilus 回測樣本內/樣本外 → 報表 → 更新登記簿。立即回傳 job_id，用 job_status 輪詢。"""
+    def f():
+        from pionex_trading_skills import jobs
+        from rnd.strategies import ALL
+        if strategy not in ALL:
+            return {"ok": False, "error": f"unknown strategy; known {ALL}"}
+        args = ["-m", "rnd.pipeline", strategy, "--trials", str(min(int(trials), 300))]
+        if not optimize:
+            args.append("--no-opt")
+        return jobs.start(f"rnd-{strategy}", args)
+    return _safe(f)
 
 
 @mcp.tool()
-def query_graph(question: str, mode: str = "bfs", depth: int = 3, token_budget: int = 2000) -> str:
-    """Passthrough to graphify query_graph on GRAPHIFY_GRAPH."""
-    return graphify_bridge.query_graph(question, mode=mode, depth=depth, token_budget=token_budget)
+def job_status(job_id: str) -> str:
+    """查詢背景工作（回測/資料下載）狀態與日誌尾端。"""
+    def f():
+        from pionex_trading_skills import jobs
+        return jobs.status(job_id)
+    return _safe(f)
 
 
 @mcp.tool()
-def get_node(label: str) -> str:
-    """Passthrough to graphify get_node."""
-    return graphify_bridge.get_node(label)
+def rnd_report(strategy: str) -> str:
+    """讀取策略最新報告（樣本外上線門檻表 PASS/FAIL、各幣種/各月份）。"""
+    def f():
+        from company.paths import REPORTS, load_json
+        md = REPORTS / strategy / "report.md"
+        if not md.exists():
+            return {"ok": False, "error": "尚無報告，先跑 rnd_run_backtest"}
+        js = load_json(REPORTS / strategy / "report.json", {})
+        return {"markdown": md.read_text(encoding="utf-8"), "passed": js.get("out_of_sample", {}).get("passed")}
+    return _safe(f)
+
+
+# ---------------- 執行部 ----------------
+@mcp.tool()
+def news_danger_windows(refresh: bool = False, symbol: str = "") -> str:
+    """消息面：目前是否處於危險時段（USD 高影響數據、OKX 公告），以及未來 24h 的危險窗口。來源失敗即封鎖（fail-closed）。"""
+    def f():
+        from exec import news
+        if refresh:
+            news.refresh()
+        return news.status(symbol or None)
+    return _safe(f)
 
 
 @mcp.tool()
-def get_neighbors(label: str, relation_filter: str = "", token_budget: int = 2000) -> str:
-    """Passthrough to graphify get_neighbors."""
-    return graphify_bridge.get_neighbors(label, relation_filter=relation_filter, token_budget=token_budget)
+def market_scan(refresh: bool = False) -> str:
+    """市場掃描：Pionex 白名單內依 OKX 24h 成交額排序前 10–15 名，附 24h 振幅與 5m ATR%。預設讀排程器最新結果。"""
+    def f():
+        from company.paths import EXEC, load_json
+        from exec import scanner
+        return scanner.scan() if refresh else load_json(EXEC / "state" / "scan.json", {"note": "尚未產生"})
+    return _safe(f)
 
 
 @mcp.tool()
-def graph_stats() -> str:
-    """Passthrough to graphify graph_stats."""
-    return graphify_bridge.graph_stats()
+def shortlist() -> str:
+    """篩選：快要觸發策略的標的（near_score ≥ 0.6）。tradable=false 代表該策略未 PASSED，只能觀察。"""
+    def f():
+        from exec import signals
+        return signals.shortlist()
+    return _safe(f)
 
 
 @mcp.tool()
-def skill_docs(name: str) -> str:
-    """Return the SKILL.md text of one of the 11 installed skills. Pass the skill directory name."""
-    key = name.strip()
-    if key not in paths.SKILL_DOCS:
-        return json.dumps(
-            {"error": "unknown skill", "available": sorted(paths.SKILL_DOCS)},
-            ensure_ascii=False,
-            indent=2,
-        )
-    kind, rel = paths.SKILL_DOCS[key]
-    path = paths.skill_root(kind) / rel
-    if not path.exists():
-        return f"SKILL.md not found: {path}"
-    return f"# {key}\n# source: {path}\n\n" + path.read_text(encoding="utf-8")
+def analyze_symbol(symbol: str, side: str = "") -> str:
+    """分析：純規則多時間框架分析（5m/15m/1h/4h 趨勢、RSI、ATR%、資金費率）。給 side 會回 verdict agree/neutral/disagree。"""
+    def f():
+        from exec import analysis
+        return analysis.analyze(symbol.upper().replace("USDT", "").strip("/-"), side or None)
+    return _safe(f)
 
 
 @mcp.tool()
-def job_crypto_regime(top_n: int = 20) -> str:
-    """Alias for writing the crypto_regime gate file (cron-friendly)."""
-    return crypto_regime(top_n=top_n)
+def live_signals(refresh: bool = False) -> str:
+    """即時訊號（最新已收盤 5m K）：entry/sl/tp/size/valid_until。只有 tradable=true（策略 PASSED/LIVE）才可交易。"""
+    def f():
+        from exec import signals
+        return signals.run() if refresh else signals.latest()
+    return _safe(f)
 
 
 @mcp.tool()
-def job_circuit_breaker(account_size: float | None = None) -> str:
-    """Alias for circuit_breaker job."""
-    return circuit_breaker(account_size=account_size)
+def risk_check(trade_json: str) -> str:
+    """風控：檢查提議交易 {"symbol","side":"long|short","entry","sl","tp","qty"?,"leverage":2,"margin_mode":"isolated"}。回傳 approved、最大數量與原因。下單前必呼叫。"""
+    def f():
+        from exec import risk
+        return risk.check(json.loads(trade_json))
+    return _safe(f)
 
 
 @mcp.tool()
-def job_postmortem() -> str:
-    """Write the weekly postmortem report (not an entry gate)."""
-    return json.dumps(gatekeeper.job_postmortem(), default=str, ensure_ascii=False, indent=2)
+def risk_state() -> str:
+    """風控狀態：權益、回撤、今日虧損、連虧、持倉數、是否禁止新單與硬性上限。"""
+    def f():
+        from exec import risk
+        return risk.state()
+    return _safe(f)
 
 
 @mcp.tool()
-def gates_status() -> str:
-    """Age, status, and freshness of external gate files, plus whether the UTC scheduler is alive."""
-    from pionex_trading_skills.status import collect
-    return json.dumps(collect(), default=str, ensure_ascii=False, indent=2)
+def journal_write(kind: str, data_json: str) -> str:
+    """交易紀錄。kind=fill（成交，欄位 position_id,pair,side,action=OPEN_LONG|OPEN_SHORT|CLOSE_LONG|CLOSE_SHORT,qty,price,leverage,fee_usdt,stop_price,realized_pnl_usdt,signal_id,reason）
+    | equity（{"equity_usdt":...} 來自 Pionex 頁面）| note（決策）| skip（放棄訊號原因）。"""
+    def f():
+        from exec import journal
+        return journal.write(kind, json.loads(data_json))
+    return _safe(f)
 
 
 def main() -> None:
