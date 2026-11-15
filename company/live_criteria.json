@@ -1,11 +1,10 @@
 {
-  "_note": "自動轉實盤門檻（樣本外 = 最後 30%，從未用於調參）。全部通過才算 PASSED。",
-  "oos_fraction": 0.30,
+  "_note": "自動轉實盤門檻（樣本外 = 最後 30%，從未用於調參）。全部通過才算 PASSED。回測手續費用啟用中交易所設定檔的 taker_fee（保守，不另在此檔寫死）。",
+  "oos_fraction": 0.3,
   "min_trades": 300,
   "min_profit_factor": 1.3,
   "max_drawdown_pct": 15.0,
   "min_avg_net_to_roundtrip_fee": 2.0,
   "concentration": "扣掉最好的單一幣種、最好的單一月份、最好的兩筆交易後，淨利仍須 > 0",
-  "optimizer_max_trials": 300,
-  "taker_fee": 0.0005
+  "optimizer_max_trials": 300
 }

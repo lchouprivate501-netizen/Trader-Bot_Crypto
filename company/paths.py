@@ -39,12 +39,17 @@ def risk_caps() -> dict:
 
 
 def criteria() -> dict:
-    return load_json(COMPANY / "live_criteria.json")
+    c = load_json(COMPANY / "live_criteria.json") or {}
+    # Backtest / live-criteria fee is always the active profile's taker (conservative).
+    from company.exchange import taker_fee
+    c["taker_fee"] = taker_fee()
+    return c
 
 
 def universe() -> dict:
     return load_json(COMPANY / "universe.json")
 
 
-def pionex_perps() -> list[str]:
-    return load_json(COMPANY / "pionex_perps.json")["symbols"]
+def whitelist() -> list[str]:
+    from company.exchange import whitelist as _wl
+    return _wl()
