@@ -1,4 +1,0 @@
-{
-  "_note": "Pionex 有上架的 USDT 永續合約白名單（不呼叫 Pionex API；人工/瀏覽器確認後維護）。市場掃描只會在這份清單內，依 OKX 24h 成交額挑前 10–15 名。Trader 下單前會在瀏覽器再確認一次合約存在。",
-  "symbols": ["BTC","ETH","SOL","XRP","DOGE","BNB","ADA","LINK","AVAX","SUI","LTC","TRX","DOT","BCH","NEAR","UNI","PEPE","WLD","HYPE","ZEC","TON","APT","ARB","OP","FIL","ETC","AAVE","ENA","SHIB","XLM"]
-}
