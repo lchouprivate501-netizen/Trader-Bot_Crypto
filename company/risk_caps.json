@@ -1,0 +1,14 @@
+{
+  "_note": "硬性風控上限。任何角色都不能放寬，只能更嚴格。程式在 exec/risk.py 讀取並強制執行。",
+  "max_risk_per_trade_pct": 0.5,
+  "daily_realized_loss_stop_pct": 3.0,
+  "max_drawdown_halt_pct": 15.0,
+  "max_consecutive_losses": 7,
+  "consecutive_loss_pause_hours": 24,
+  "max_single_coin_margin_pct": 10.0,
+  "max_open_positions": 3,
+  "leverage": 2,
+  "margin_mode": "isolated",
+  "allow_withdrawals": false,
+  "allow_transfers": false
+}
