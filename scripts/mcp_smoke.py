@@ -12,6 +12,7 @@ CALLS = [
     ("analyze_symbol", {"symbol": "BTC", "side": "short"}), ("live_signals", {}),
     ("risk_check", {"trade_json": json.dumps({"symbol": "ETH", "side": "long", "entry": 3000, "sl": 2970, "leverage": 2})}),
     ("risk_state", {}), ("rnd_run_backtest", {"strategy": "__smoke_noop__"}), ("journal_write", {"kind": "note", "data_json": json.dumps({"text": "MCP smoke test"})}),
+    ("exchange_get", {}), ("setup_check", {}),
 ]
 
 
