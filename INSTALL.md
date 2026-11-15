@@ -4,7 +4,7 @@
 
 ```bash
 mkdir -p ~/crypto-trading
-git clone https://github.com/lchouprivate501-netizen/pionex-macd ~/crypto-trading/pionex-macd
+git clone https://github.com/lchouprivate501-netizen/Trader-Bot_Crypto ~/crypto-trading/pionex-macd
 cd ~/crypto-trading/pionex-macd
 bash bootstrap.sh          # 可重複執行；DAYS=180 bash bootstrap.sh 可縮短資料天數
 ```

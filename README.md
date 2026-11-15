@@ -7,7 +7,7 @@ Grok Bot「Trader」的私人交易公司：**研發部**在 nautilus_trader 上
 - 起始模式 **PAPER**。策略在樣本外通過全部門檻後，Trader 自行切 **LIVE** 並通知使用者。
 - 安裝：見 [INSTALL.md](INSTALL.md)（`bash bootstrap.sh`）。每輪怎麼做：見 [docs/TRADER_PLAYBOOK.md](docs/TRADER_PLAYBOOK.md)。
 
-倉庫：https://github.com/lchouprivate501-netizen/pionex-macd  
+倉庫：https://github.com/lchouprivate501-netizen/Trader-Bot_Crypto  
 本機目錄 `~/crypto-trading/pionex-macd`、venv `~/crypto-trading/venvs/pionex-trading-skills`、模組 `pionex_trading_skills` 是現有連接器的相容入口，請不要改掉這三個路徑／名稱。
 
 ## 組織圖（13 個角色）

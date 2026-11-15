@@ -103,6 +103,41 @@
         "net_pnl": -893.38,
         "avg_net_per_trade": -1.3536
       }
+    },
+    "h1_trend_rsi_pullback": {
+      "history": [
+        {
+          "status": "coded",
+          "at": "2026-11-15T02:29:48+00:00"
+        },
+        {
+          "status": "REJECTED",
+          "at": "2026-11-15T02:31:38+00:00"
+        }
+      ],
+      "description": "1h 趨勢（EMA50/200）中 RSI 回檔收回進場，1h ATR 寬停損，長持有",
+      "module": "rnd/strategies/h1_trend_rsi_pullback.py",
+      "status": "REJECTED",
+      "updated": "2026-11-15T02:31:38+00:00",
+      "params": {
+        "rsi_lo": 36.050656843704736,
+        "rr": 2.7009318397749253,
+        "sl_atr": 1.7527586973784821,
+        "max_hold": 118
+      },
+      "timeframe": "1h",
+      "evidence": {
+        "report_md": "/home/box/crypto-trading/pionex-macd/rnd/reports/h1_trend_rsi_pullback/report.md",
+        "report_json": "/home/box/crypto-trading/pionex-macd/rnd/reports/h1_trend_rsi_pullback/report.json",
+        "oos_trades": "/home/box/crypto-trading/pionex-macd/rnd/reports/h1_trend_rsi_pullback/oos_trades.csv"
+      },
+      "oos_summary": {
+        "trades": 182,
+        "profit_factor": 1.221,
+        "max_drawdown_pct": 5.04,
+        "net_pnl": 485.1,
+        "avg_net_per_trade": 2.6654
+      }
     }
   }
 }
