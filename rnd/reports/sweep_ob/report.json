@@ -1,0 +1,291 @@
+{
+  "strategy": "sweep_ob",
+  "meta": {
+    "generated": "2026-11-15T00:01:08+00:00",
+    "data": "OKX 5m（1h 由 5m 重採樣）12 幣 2025-11-14→2026-11-14",
+    "is_range": "2025-11-14 23:10 → 2026-07-28 11:31 UTC",
+    "oos_range": "2026-07-28 11:31 → 2026-11-14 23:40 UTC",
+    "params": {
+      "lookback": 48,
+      "rr": 1.3678105498531372,
+      "vol_mult": 2.494081863168826,
+      "max_hold": 36
+    },
+    "trials": 100,
+    "optimizer": {
+      "params": {
+        "lookback": 48,
+        "rr": 1.3678105498531372,
+        "vol_mult": 2.494081863168826,
+        "max_hold": 36
+      },
+      "trials": 100,
+      "is_score_R": -1034.38,
+      "is_trades_fastsim": 3364,
+      "is_pf_R_fastsim": 0.577
+    },
+    "fee": 0.0005,
+    "nautilus": "1.231.0",
+    "oos_blocked": {
+      "daily": 0,
+      "streak": 196,
+      "max_pos": 113,
+      "halt": 161
+    }
+  },
+  "in_sample": {
+    "trades": 676,
+    "net_pnl": -1499.35,
+    "return_pct": -14.99,
+    "profit_factor": 0.639,
+    "max_drawdown_pct": 14.99,
+    "win_rate": 41.57,
+    "avg_net_per_trade": -2.218,
+    "avg_roundtrip_fee": 1.8217,
+    "fees_total": 1231.49,
+    "criteria": [
+      {
+        "criterion": "交易筆數 ≥ 300",
+        "value": 676,
+        "pass": true
+      },
+      {
+        "criterion": "扣費後獲利因子 ≥ 1.3",
+        "value": 0.639,
+        "pass": false
+      },
+      {
+        "criterion": "最大回撤 ≤ 15%",
+        "value": 14.99,
+        "pass": true
+      },
+      {
+        "criterion": "平均每筆淨利 ≥ 2× 來回手續費",
+        "value": "-2.218 vs 2.0×1.822",
+        "pass": false
+      },
+      {
+        "criterion": "不靠單一幣種/月份/前兩筆撐起",
+        "value": "net -1499.35; best pair 20.43; best month -237.32; top2 101.61",
+        "pass": false
+      }
+    ],
+    "passed": false,
+    "by_pair": [
+      {
+        "pair": "BTC",
+        "count": 77,
+        "sum": -214.41
+      },
+      {
+        "pair": "DOGE",
+        "count": 52,
+        "sum": -69.4
+      },
+      {
+        "pair": "ETH",
+        "count": 85,
+        "sum": -153.49
+      },
+      {
+        "pair": "HYPE",
+        "count": 60,
+        "sum": -103.18
+      },
+      {
+        "pair": "NEAR",
+        "count": 38,
+        "sum": -132.63
+      },
+      {
+        "pair": "PEPE",
+        "count": 51,
+        "sum": -12.65
+      },
+      {
+        "pair": "SOL",
+        "count": 73,
+        "sum": -258.21
+      },
+      {
+        "pair": "SUI",
+        "count": 45,
+        "sum": -107.94
+      },
+      {
+        "pair": "UNI",
+        "count": 36,
+        "sum": -25.85
+      },
+      {
+        "pair": "WLD",
+        "count": 40,
+        "sum": 20.43
+      },
+      {
+        "pair": "XRP",
+        "count": 61,
+        "sum": -222.61
+      },
+      {
+        "pair": "ZEC",
+        "count": 58,
+        "sum": -219.42
+      }
+    ],
+    "by_month": [
+      {
+        "month": "2025-11",
+        "count": 141,
+        "sum": -533.93
+      },
+      {
+        "month": "2025-12",
+        "count": 357,
+        "sum": -728.09
+      },
+      {
+        "month": "2026-01",
+        "count": 178,
+        "sum": -237.32
+      }
+    ],
+    "blocked": {
+      "daily": 0,
+      "streak": 198,
+      "max_pos": 83,
+      "halt": 2592
+    },
+    "halted": true
+  },
+  "out_of_sample": {
+    "trades": 1059,
+    "net_pnl": -1488.39,
+    "return_pct": -14.88,
+    "profit_factor": 0.744,
+    "max_drawdown_pct": 15.16,
+    "win_rate": 44.57,
+    "avg_net_per_trade": -1.4055,
+    "avg_roundtrip_fee": 1.8493,
+    "fees_total": 1958.44,
+    "criteria": [
+      {
+        "criterion": "交易筆數 ≥ 300",
+        "value": 1059,
+        "pass": true
+      },
+      {
+        "criterion": "扣費後獲利因子 ≥ 1.3",
+        "value": 0.744,
+        "pass": false
+      },
+      {
+        "criterion": "最大回撤 ≤ 15%",
+        "value": 15.16,
+        "pass": false
+      },
+      {
+        "criterion": "平均每筆淨利 ≥ 2× 來回手續費",
+        "value": "-1.405 vs 2.0×1.849",
+        "pass": false
+      },
+      {
+        "criterion": "不靠單一幣種/月份/前兩筆撐起",
+        "value": "net -1488.39; best pair 120.74; best month -27.09; top2 114.62",
+        "pass": false
+      }
+    ],
+    "passed": false,
+    "by_pair": [
+      {
+        "pair": "BTC",
+        "count": 114,
+        "sum": -287.69
+      },
+      {
+        "pair": "DOGE",
+        "count": 71,
+        "sum": -225.55
+      },
+      {
+        "pair": "ETH",
+        "count": 126,
+        "sum": -150.06
+      },
+      {
+        "pair": "HYPE",
+        "count": 79,
+        "sum": -39.73
+      },
+      {
+        "pair": "NEAR",
+        "count": 64,
+        "sum": 61.72
+      },
+      {
+        "pair": "PEPE",
+        "count": 94,
+        "sum": -412.79
+      },
+      {
+        "pair": "SOL",
+        "count": 96,
+        "sum": -0.51
+      },
+      {
+        "pair": "SUI",
+        "count": 67,
+        "sum": -211.35
+      },
+      {
+        "pair": "UNI",
+        "count": 67,
+        "sum": -70.98
+      },
+      {
+        "pair": "WLD",
+        "count": 84,
+        "sum": -206.12
+      },
+      {
+        "pair": "XRP",
+        "count": 69,
+        "sum": -66.06
+      },
+      {
+        "pair": "ZEC",
+        "count": 128,
+        "sum": 120.74
+      }
+    ],
+    "by_month": [
+      {
+        "month": "2026-07",
+        "count": 40,
+        "sum": -27.09
+      },
+      {
+        "month": "2026-08",
+        "count": 362,
+        "sum": -522.08
+      },
+      {
+        "month": "2026-09",
+        "count": 345,
+        "sum": -586.41
+      },
+      {
+        "month": "2026-10",
+        "count": 312,
+        "sum": -352.81
+      }
+    ],
+    "blocked": {
+      "daily": 0,
+      "streak": 196,
+      "max_pos": 113,
+      "halt": 161
+    },
+    "halted": true
+  }
+}
