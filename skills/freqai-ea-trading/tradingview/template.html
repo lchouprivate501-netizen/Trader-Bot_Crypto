@@ -117,7 +117,7 @@ const $ = (id) => document.getElementById(id);
 const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const fmtPct = (v, d = 1) => (v == null ? "–" : (v > 0 ? "+" : "") + Number(v).toFixed(d) + "%");
 const cls = (v) => (v == null ? "" : v >= 0 ? "pos" : "neg");
-const EXIT = { force_exit: "期末", exit_signal: "訊號出",
+const EXIT = { force_exit: "期末", exit_signal: "訊號出", risk_on: "BTC轉強", liquidation: "強平",
   trend_off: "趨勢出", risk_off: "BTC轉弱", trailing_stop_loss: "移動停損", stop_loss: "停損", stoploss_on_exchange: "交易所停損" };
 let BAR = 4 * 3600;
 let state = { coin: 0, range: "all", visible: null };
@@ -204,6 +204,8 @@ function keys(c) {
   if (c.z) k.push(["sw", css("--accent"), "FreqAI 漂移 z"]);
   if (c.risk_on) k.splice(1, 0, ["sw", css("--up"), `BTC risk-on（EMA ${c.params.ref_trend_ema}h）`]);
   if (c.donchian) k.splice(1, 0, ["sw", css("--muted"), `突破線（前 ${c.params.breakout_h}h 高點）`]);
+  if (c.donchian_low) k.splice(2, 0, ["sw", css("--amber"), `跌破線（前 ${c.params.s_breakout_h}h 低點）`]);
+  if (c.ema_short) k.splice(1, 0, ["sw", css("--violet"), `空單趨勢 EMA(${c.params.s_trend_ema}h)`]);
   $("keys").innerHTML = `<span>面板：價格 / 權益 vs 持有（對數）/ 回撤 / FreqAI 波動${c.z ? " / FreqAI 漂移" : ""}</span>` +
     k.map(([t, col, lab]) => `<span class="key"><i class="${t}" style="background:${col}"></i>${esc(lab)}</span>`).join("");
 }
@@ -250,11 +252,20 @@ function buildChart(c) {
     const dc = chart.addSeries(LC.LineSeries, { color: css("--muted"), lineWidth: 1, lineStyle: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat }, P.price);
     dc.setData(toLine(c.donchian));
   }
+  if (c.donchian_low) {
+    const dl = chart.addSeries(LC.LineSeries, { color: css("--amber"), lineWidth: 1, lineStyle: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat }, P.price);
+    dl.setData(toLine(c.donchian_low));
+  }
+  if (c.ema_short) {
+    const es = chart.addSeries(LC.LineSeries, { color: css("--violet"), lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat }, P.price);
+    es.setData(toLine(c.ema_short));
+  }
 
   const marks = [];
   c.sessions.forEach((s) => {
-    marks.push({ time: snap(s.o), position: "belowBar", shape: "arrowUp", color: css("--accent"), text: "開" });
-    marks.push({ time: snap(s.c), position: "aboveBar", shape: "arrowDown", color: s.pnl >= 0 ? css("--up") : css("--down"),
+    marks.push(s.short ? { time: snap(s.o), position: "aboveBar", shape: "arrowDown", color: css("--amber"), text: "空" }
+      : { time: snap(s.o), position: "belowBar", shape: "arrowUp", color: css("--accent"), text: "多" });
+    marks.push({ time: snap(s.c), position: s.short ? "belowBar" : "aboveBar", shape: s.short ? "arrowUp" : "arrowDown", color: s.pnl >= 0 ? css("--up") : css("--down"),
       text: `${EXIT[s.exit] || s.exit} ${s.pct > 0 ? "+" : ""}${s.pct.toFixed(1)}%` });
   });
   marks.sort((a, b) => a.time - b.time);
@@ -341,7 +352,7 @@ const rerender = () => renderAll();
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender); } catch (e) { /* older browsers */ }
 new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-$("foot").innerHTML = `圖表：TradingView Lightweight Charts™ v${DATA.lib}（Apache-2.0，<a href="https://github.com/tradingview/lightweight-charts" target="_blank" rel="noopener">github.com/tradingview/lightweight-charts</a>）。資料：Binance 公開資料庫；回測：Freqtrade + FreqAI，每邊手續費 0.10%，盯市回撤。歷史回測不代表未來報酬。`;
+$("foot").innerHTML = `圖表：TradingView Lightweight Charts™ v${DATA.lib}（Apache-2.0，<a href="https://github.com/tradingview/lightweight-charts" target="_blank" rel="noopener">github.com/tradingview/lightweight-charts</a>）。資料：Binance 公開資料庫；回測：Freqtrade + FreqAI（現貨每邊手續費 0.10%；永續合約 0.05% 並計入資金費），盯市回撤。歷史回測不代表未來報酬。`;
 renderNotes();
 renderAll();
 </script>

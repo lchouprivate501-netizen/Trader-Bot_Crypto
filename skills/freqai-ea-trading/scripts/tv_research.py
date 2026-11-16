@@ -122,10 +122,18 @@ def coin_payload(zip_path: Path, datadir: Path, models: Path, bar: str, split: s
         h["step"] = p["trail_k"] * (sigma * np.sqrt(24)).ewm(span=72, adjust=False).mean() * 100  # stop distance
     if int(p.get("breakout_h", 0)) > 0:
         h["donchian"] = h["high"].rolling(int(p["breakout_h"])).max().shift(1)
+    if p.get("short") and cfg.get("trading_mode") == "futures":  # perpetual EAs: the short side
+        s_ema = int(p.get("s_trend_ema") or p["trend_ema"])
+        p["s_trend_ema"] = s_ema
+        p["s_breakout_h"] = int(p.get("s_breakout_h") or p["breakout_h"])
+        h["donchian_low"] = h["low"].rolling(p["s_breakout_h"]).min().shift(1)
+        if s_ema != int(p["trend_ema"]):
+            h["ema_short"] = ema(close, s_ema)
 
     agg = {"open": "first", "high": "max", "low": "min", "close": "last", "ema": "last"}
-    if "donchian" in h:
-        agg["donchian"] = "last"
+    for line in ("donchian", "donchian_low", "ema_short"):
+        if line in h:
+            agg[line] = "last"
     for col, how in (("sigma_pred", "mean"), ("sigma_real", "mean"), ("step", "mean"), ("risk_on", "last")):
         if col in h:
             agg[col] = how
@@ -169,7 +177,7 @@ def coin_payload(zip_path: Path, datadir: Path, models: Path, bar: str, split: s
         "pair": pair,
         "mode": strat.get("trading_mode"),
         "params": {k: p.get(k) for k in ("trend_ema", "ema_band", "slope_h", "ref_trend_ema", "breakout_h", "trail_k",
-                                          "risk_per_trade")},
+                                          "risk_per_trade", "s_trend_ema", "s_breakout_h", "s_trail_k", "s_slope_h")},
         "t": t,
         "o": sig(b["open"]), "h": sig(b["high"]), "l": sig(b["low"]), "c": sig(b["close"]),
         "ema": sig(b["ema"]),
@@ -181,8 +189,9 @@ def coin_payload(zip_path: Path, datadir: Path, models: Path, bar: str, split: s
         "report": {k: rep[k] for k in ("full", "in_sample", "out_of_sample", "yearly") if k in rep},
         "split": int(pd.Timestamp(split, tz="UTC").timestamp()) if split else None,
     }
-    if "donchian" in b:
-        out["donchian"] = sig(b["donchian"])
+    for line in ("donchian", "donchian_low", "ema_short"):
+        if line in b:
+            out[line] = sig(b[line])
     for name_, nd in (("sigma_pred", 2), ("sigma_real", 2), ("step", 2)):
         if name_ in b:
             out[name_] = col(b[name_], nd)
