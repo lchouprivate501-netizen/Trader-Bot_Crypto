@@ -6,9 +6,11 @@ description: >-
   SOLMomentumEA. Breakout entries above a slow trend, chandelier stops held on the exchange,
   fixed-risk position sizing from FreqAI's volatility forecast. Includes a pre-registered
   validation protocol (untouched 2018-2021 pre-sample, post-sample, SOL transfer test on six
-  alts, robustness), TradingView Lightweight Charts research pages, and Docker deployment
-  for unattended dry-run/live trading. Use when asked to build, validate, run, monitor or
-  adapt an automated crypto trading EA/bot with Freqtrade or FreqAI.
+  alts, robustness), TradingView Lightweight Charts research pages, Docker deployment, and an
+  EA trading desk (stdlib MCP server + CLI) through which an AI agent executes the EAs' signals
+  on the user's exchange from key-less dry-run engines. Use when asked to build, validate, run,
+  monitor or adapt an automated crypto trading EA/bot with Freqtrade or FreqAI, or to trade /
+  run a round of the BTC, ETH or SOL EAs for the user.
 ---
 
 # FreqAI 自動交易 EA：BTC / ETH / SOL
@@ -48,11 +50,27 @@ description: >-
 
 依賴同倉庫的 `skills/freqai-grid-trading/scripts/`（回測包裝 `ft_offline.py`、盯市報告 `grid_report.py`、資料下載、TradingView 圖表 `tv_research.py`）。
 
+## 讓 AI 依 EA 下單（EA 交易台）
+
+三個**無金鑰**的 Freqtrade dry-run 引擎跑 EA 與 FreqAI，只算出該做什麼；交易台比對引擎與 AI 的帳本，每個幣給一條指令，AI 在使用者的交易所現貨執行。**要替使用者交易時，先讀 [`AGENTS.md`](AGENTS.md) 並照做。**
+
+| 路徑 | 內容 |
+|---|---|
+| `AGENTS.md` | AI 作業手冊：每輪流程、各 action 的做法、絕對不可以、上線檢查表 |
+| `desk/ea_desk.py` | 交易台（指令、下單前風控、帳本、停損紀錄、HALT、實盤開關）；也是 CLI：`signals` / `check` / `record` / `status` / `halt` |
+| `desk/mcp_server.py` | stdio MCP 伺服器 `freqai-ea-desk`（`ea_guide`、`ea_status`、`ea_signals`、`ea_risk_check`、`ea_record`、`ea_halt`），只用標準函式庫 |
+| `desk/ea_engine.py` | 背景啟動 / 停止三個無金鑰引擎與 EA 守衛（REST 只聽 127.0.0.1，帳密隨機產生） |
+| `desk/config.json` | 預設值：追價上限 2%、停損上移門檻 0.5%、單筆風險 ≤ 資金 10%、累計虧損 35% 停新單；使用者在 `~/.freqai-ea/config.json` 覆寫 |
+| `desk/test_desk.py` | 整合測試：模擬 Freqtrade API，51 項（指令、風控、帳本、MCP） |
+| `references/ai-agents.md` | Claude Code / Claude Desktop / claude.ai / Grok / 其他 AI 的安裝方式 |
+
+指令：`OPEN`（買入並掛停損）、`HOLD`、`MOVE_STOP`（停損只往上）、`CLOSE`（引擎出場）、`CLOSE_NOW`（跌破停損）、`MISSED`（不追價）、`WAIT`、`SHADOW`（ETH 未通過驗證，只看不做）、`BLOCKED`、`ENGINE_DOWN`、`ERROR`。預設 PAPER；實盤與解除 HALT 只有使用者能在終端機互動確認，AI 不能做。
+
 ## 維護 Agent（確保 EA 持續有效）
 
 | 元件 | 作用 |
 |---|---|
-| `.claude/agents/ea-maintainer.md` | Claude Code 子代理：例行檢查、診斷、寫維護紀錄、開 issue、只能透過候選版本流程改版 |
+| `agents/ea-maintainer.md`（`.claude/agents/` 有連結） | Claude Code 子代理：例行檢查、診斷、寫維護紀錄、開 issue、只能透過候選版本流程改版 |
 | `maintenance/ea_guard.py` | 健康檢查引擎：`forward`（凍結參數跑 2026-11-01 之後的新資料）、`live`（實盤 API 守衛，HALT 時自動 `/stopentry`）、`replay`、`baseline` |
 | `maintenance/maintenance-protocol.md` | 事前登記的檢查項目 C1–C7、門檻、各狀態動作、Agent 能做與不能做的事、改版與 ETH 升級條件 |
 | `maintenance/baselines.json` | 每個 EA 由驗證過的歷史算出的「正常範圍」（區塊自助法回撤、連敗、10 筆獲利因子、上漲捕捉率） |
@@ -84,7 +102,9 @@ $PY $SK/scripts/ea_lab.py validate --coin btc --userdir $FT_HOME                
 $PY $G/scripts/tv_research.py --strategy-path $SK/user_data/strategies \
     --run "runs/btc/<result>.zip::BTC EA" --datadir $FT_HOME/data/binance --models $FT_HOME/models --out ea.html
 
-docker compose -f $SK/deploy/docker-compose.yml up -d --build                          # 24/7 自動交易（預設 dry-run）+ 實盤守衛
+python3 $SK/desk/ea_engine.py start                                                      # AI 交易台用的無金鑰引擎 + 守衛
+python3 $SK/desk/ea_desk.py signals                                                     # 每個幣的指令（AI 每輪呼叫）
+docker compose -f $SK/deploy/docker-compose.yml up -d --build                          # 或：Freqtrade 用金鑰直接交易（預設 dry-run）+ 實盤守衛
 $PY $SK/maintenance/ea_guard.py forward --all --userdir $FT_HOME                        # 前向健康檢查（新資料）
 ```
 

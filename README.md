@@ -36,7 +36,23 @@ Purged walk-forward（66 個 FreqAI 視窗）、5 分鐘掛單成交模擬、每
 
 詳見 [`validation-results.md`](skills/freqai-ea-trading/references/validation-results.md)。**不保證獲利**；牛市會跑輸買入持有；上線前至少 30 天 dry-run。
 
-**維護 Agent**：`.claude/agents/ea-maintainer.md`（Claude Code 子代理）＋ `skills/freqai-ea-trading/maintenance/ea_guard.py`（健康檢查引擎）＋ 每週 GitHub Actions（`.github/workflows/ea-health.yml`）＋ 實盤守衛容器。每週用凍結參數把 EA 跑在 2026-11-01 之後的新資料上，和各 EA 驗證過的歷史「正常範圍」比較，依事前登記的[維護協議](skills/freqai-ea-trading/maintenance/maintenance-protocol.md)判定 HEALTHY / WATCH / DEGRADED / HALT；HALT 時自動停止新進場，改版只能走候選版本流程並由人核准。
+### 讓 AI（Claude、Grok…）依 EA 替你交易
+
+`skills/freqai-ea-trading/desk/`：三個**無金鑰**的 Freqtrade dry-run 引擎只負責算出 EA 該做什麼，**EA 交易台**把它轉成每個幣一條指令（OPEN / MOVE_STOP / CLOSE…），附下單前風控與帳本；AI 透過 MCP 工具（或指令列）照指令在你的交易所現貨下單、掛停損、記錄。預設 PAPER，實盤只有你能在終端機打開。只用 Python 標準函式庫，任何支援 MCP 或能執行指令的 AI 都能用。
+
+```bash
+python3 skills/freqai-ea-trading/desk/ea_engine.py start   # 先裝 Freqtrade：bash skills/freqai-grid-trading/scripts/setup_env.sh
+```
+
+Claude Code 一行安裝（skill ＋ 維護 Agent ＋ MCP 伺服器）：
+
+```
+/plugin install freqai-crypto-trading --marketplace lchouprivate501-netizen/Trader-Bot_Crypto
+```
+
+舊版 Claude Code：`/plugin marketplace add lchouprivate501-netizen/Trader-Bot_Crypto` 後 `/plugin install freqai-crypto-trading@trader-bot-crypto`。Claude Desktop、claude.ai、Grok 與其他 AI 的設定見 [`ai-agents.md`](skills/freqai-ea-trading/references/ai-agents.md)；AI 的作業手冊是 [`AGENTS.md`](skills/freqai-ea-trading/AGENTS.md)。
+
+**維護 Agent**：`agents/ea-maintainer.md`（Claude Code 子代理）＋ `skills/freqai-ea-trading/maintenance/ea_guard.py`（健康檢查引擎）＋ 每週 GitHub Actions（`.github/workflows/ea-health.yml`）＋ 實盤守衛容器。每週用凍結參數把 EA 跑在 2026-11-01 之後的新資料上，和各 EA 驗證過的歷史「正常範圍」比較，依事前登記的[維護協議](skills/freqai-ea-trading/maintenance/maintenance-protocol.md)判定 HEALTHY / WATCH / DEGRADED / HALT；HALT 時自動停止新進場，改版只能走候選版本流程並由人核准。
 
 ## 組織圖（13 個角色）
 
@@ -127,7 +143,10 @@ flowchart LR
 | `mcp/` | MCP 套件 `pionex_trading_skills`（相容模組名） |
 | `scripts/` | 5 分鐘排程器、MCP 煙霧測試、交易所設定檔測試 |
 | `skills/freqai-grid-trading/` | Freqtrade + FreqAI 網格交易 Skill（策略、設定、回測/調參/報表腳本、文件） |
-| `skills/freqai-ea-trading/` | Freqtrade + FreqAI 自動交易 EA Skill（BTC/ETH/SOL 趨勢 EA、事前登記驗證、Docker 部署） |
+| `skills/freqai-ea-trading/` | Freqtrade + FreqAI 自動交易 EA Skill（BTC/ETH/SOL 趨勢 EA、事前登記驗證、Docker 部署、給 AI 用的 EA 交易台 `desk/`） |
+| `agents/` | EA 維護 Agent（Claude Code 外掛與 `.claude/agents/` 共用） |
+| `.claude-plugin/` | Claude Code 外掛與外掛市集清單（`freqai-crypto-trading`） |
+| `AGENTS.md` | 給所有 AI 的倉庫說明與規則 |
 | `state/`、`journal/` | 模式、帳本、權益與日誌（本機，不進 git） |
 
 手續費來自啟用中交易所設定檔；Pionex 預設 maker 0.02%、taker 0.05%。回測與風控一律以 taker/邊計算（保守）。資金費率未計入回測。

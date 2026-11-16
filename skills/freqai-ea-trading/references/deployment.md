@@ -2,6 +2,18 @@
 
 > 驗證結果：BTCTrendEA、SOLMomentumEA 通過；**ETHRiskOnEA 未通過（交易筆數不足）**，只建議 dry-run 累積紀錄，不要直接實盤。
 
+## 兩種執行方式
+
+| | A. AI 交易台（`desk/`） | B. Freqtrade 直接交易（`deploy/`） |
+|---|---|---|
+| 誰下單 | 你的 AI（Claude、Grok…）照指令在交易所下單 | Freqtrade 用 API 金鑰自動下單 |
+| 交易所 | 任何有現貨與停損單的交易所（包括 Freqtrade 不支援的，例如 Pionex） | Freqtrade 支援的交易所 |
+| 金鑰 | 不需要 | 需要（只開交易、關提幣） |
+| 反應速度 | 取決於 AI 多久跑一輪（建議 5–15 分鐘；停損單一直在交易所上） | 即時 |
+| 說明 | [`AGENTS.md`](../AGENTS.md)、[`ai-agents.md`](ai-agents.md) | 本文以下各節 |
+
+兩種方式用同一份凍結參數的 EA；A 的引擎就是 B 的 dry-run 加上本機 REST API。不要同時用 A 和 B 交易同一個帳戶。
+
 ## 1. 準備
 
 - 一台 24 小時開機、能連到交易所 API 的機器（VPS 或家用主機），Docker + Docker Compose。

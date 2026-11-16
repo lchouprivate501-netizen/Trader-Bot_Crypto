@@ -1,0 +1,31 @@
+{
+  "name": "freqai-crypto-trading",
+  "version": "1.0.0",
+  "description": "BTC / ETH / SOL trading for AI agents: validated trend-following EAs on Freqtrade + FreqAI, a key-less signal engine, an MCP trading desk the AI executes from (risk check, ledger, trailing stops), an EA maintenance agent, and FreqAI grid strategies.",
+  "author": {
+    "name": "lchouprivate501-netizen",
+    "url": "https://github.com/lchouprivate501-netizen"
+  },
+  "homepage": "https://github.com/lchouprivate501-netizen/Trader-Bot_Crypto",
+  "repository": "https://github.com/lchouprivate501-netizen/Trader-Bot_Crypto",
+  "license": "MIT",
+  "keywords": [
+    "trading",
+    "crypto",
+    "freqtrade",
+    "freqai",
+    "expert-advisor",
+    "trend-following",
+    "grid-trading",
+    "mcp",
+    "bitcoin"
+  ],
+  "mcpServers": {
+    "freqai-ea-desk": {
+      "command": "python3",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/skills/freqai-ea-trading/desk/mcp_server.py"
+      ]
+    }
+  }
+}
