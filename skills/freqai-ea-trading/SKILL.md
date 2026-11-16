@@ -48,6 +48,20 @@ description: >-
 
 依賴同倉庫的 `skills/freqai-grid-trading/scripts/`（回測包裝 `ft_offline.py`、盯市報告 `grid_report.py`、資料下載、TradingView 圖表 `tv_research.py`）。
 
+## 維護 Agent（確保 EA 持續有效）
+
+| 元件 | 作用 |
+|---|---|
+| `.claude/agents/ea-maintainer.md` | Claude Code 子代理：例行檢查、診斷、寫維護紀錄、開 issue、只能透過候選版本流程改版 |
+| `maintenance/ea_guard.py` | 健康檢查引擎：`forward`（凍結參數跑 2026-11-01 之後的新資料）、`live`（實盤 API 守衛，HALT 時自動 `/stopentry`）、`replay`、`baseline` |
+| `maintenance/maintenance-protocol.md` | 事前登記的檢查項目 C1–C7、門檻、各狀態動作、Agent 能做與不能做的事、改版與 ETH 升級條件 |
+| `maintenance/baselines.json` | 每個 EA 由驗證過的歷史算出的「正常範圍」（區塊自助法回撤、連敗、10 筆獲利因子、上漲捕捉率） |
+| `maintenance/log.md` | 維護紀錄（第一次前向檢查、回放自我測試、研究線索） |
+| `.github/workflows/ea-health.yml` | 每週一自動前向檢查；DEGRADED/HALT 時開或更新 `ea-health` issue |
+| `deploy/docker-compose.yml` 的 `ea-guard` | 每 15 分鐘檢查三個機器人；HALT 時送 `/stopentry`（只停新進場，不平倉、不恢復） |
+
+自我測試：守衛在 2025–26 熊市逐月回放，真的 EA 22 個月全部 HEALTHY；故意弄壞的版本第 2 個月就 DEGRADED、後來 HALT。實盤守衛對模擬 API 的整合測試 7/7 通過（`maintenance/test_guard_live.py`）。
+
 ## 規則（給執行這個 skill 的 agent）
 
 1. 調參只能在研發期 `20210601-20241212`；V1/V2/V3 每個 EA 版本只跑一次。改規則就是新版本：改 `freqai.identifier` 與策略名稱，重新登記、重新驗證。
@@ -70,7 +84,8 @@ $PY $SK/scripts/ea_lab.py validate --coin btc --userdir $FT_HOME                
 $PY $G/scripts/tv_research.py --strategy-path $SK/user_data/strategies \
     --run "runs/btc/<result>.zip::BTC EA" --datadir $FT_HOME/data/binance --models $FT_HOME/models --out ea.html
 
-docker compose -f $SK/deploy/docker-compose.yml up -d --build                          # 24/7 自動交易（預設 dry-run）
+docker compose -f $SK/deploy/docker-compose.yml up -d --build                          # 24/7 自動交易（預設 dry-run）+ 實盤守衛
+$PY $SK/maintenance/ea_guard.py forward --all --userdir $FT_HOME                        # 前向健康檢查（新資料）
 ```
 
 交易所 API 被擋的環境（例如雲端沙盒）回測時加 `FT_OFFLINE=1`。

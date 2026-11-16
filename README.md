@@ -36,6 +36,8 @@ Purged walk-forward（66 個 FreqAI 視窗）、5 分鐘掛單成交模擬、每
 
 詳見 [`validation-results.md`](skills/freqai-ea-trading/references/validation-results.md)。**不保證獲利**；牛市會跑輸買入持有；上線前至少 30 天 dry-run。
 
+**維護 Agent**：`.claude/agents/ea-maintainer.md`（Claude Code 子代理）＋ `skills/freqai-ea-trading/maintenance/ea_guard.py`（健康檢查引擎）＋ 每週 GitHub Actions（`.github/workflows/ea-health.yml`）＋ 實盤守衛容器。每週用凍結參數把 EA 跑在 2026-11-01 之後的新資料上，和各 EA 驗證過的歷史「正常範圍」比較，依事前登記的[維護協議](skills/freqai-ea-trading/maintenance/maintenance-protocol.md)判定 HEALTHY / WATCH / DEGRADED / HALT；HALT 時自動停止新進場，改版只能走候選版本流程並由人核准。
+
 ## 組織圖（13 個角色）
 
 ### 研發部（6 人）— `rnd/`

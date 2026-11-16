@@ -29,10 +29,10 @@ from grid_report import load  # noqa: E402
 
 
 def anchor_share(p: dict) -> float:
-    cf = float(p["core_frac"])
+    cf = float(p.get("core_frac", 0.0))
     if cf <= 0:
         return 1.0
-    lot = (1 - cf) / int(p["max_lots"])
+    lot = (1 - cf) / int(p.get("max_lots", 1))
     return cf / (cf + lot)
 
 
@@ -102,6 +102,7 @@ def main() -> None:
     ap.add_argument("--datadir", default="user_data/data/binance")
     ap.add_argument("--split", default="2024-12-12")
     ap.add_argument("--json")
+    ap.add_argument("--strategy-path", action="append", default=[], help="extra strategy folder (e.g. the EA skill)")
     args = ap.parse_args()
 
     strat, _w, market = load(Path(args.result))
@@ -109,9 +110,11 @@ def main() -> None:
 
     with zipfile.ZipFile(args.result) as zf:
         cfg = json.loads(zf.read(next(n for n in zf.namelist() if n.endswith("_config.json"))))
-    sys.path.insert(0, str(SKILL / "user_data/strategies"))
+    for path in [*args.strategy_path, str(SKILL / "user_data/strategies")]:
+        sys.path.insert(0, str(path))
     cls = getattr(importlib.import_module(strat["_name"]), strat["_name"])
-    p = {**cls.GRID, **cfg.get("grid_params", {})}
+    base = getattr(cls, "GRID", None) or getattr(cls, "EA", {})  # EAs have no grid lots: grid = 0
+    p = {**base, **cfg.get("grid_params", {}), **cfg.get("ea_params", {})}
     m = market.copy()
     m["date"] = pd.to_datetime(m["date"], utc=True)
     close = m.set_index("date")["mean"]

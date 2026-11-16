@@ -1,0 +1,73 @@
+# Weekly forward health check of the BTC / ETH / SOL EAs (skills/freqai-ea-trading).
+# Runs the frozen EAs on market data after 2026-11-01, grades them against their validated
+# baselines (maintenance/maintenance-protocol.md) and opens / updates an `ea-health` issue
+# when any EA is DEGRADED or HALT. The report is kept as a workflow artifact.
+name: EA health check
+
+on:
+  schedule:
+    - cron: "23 2 * * 1"   # Mondays 02:23 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ea-health
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      FT_OFFLINE: "1"                         # exchange APIs are geo-blocked on hosted runners
+      FT_HOME: ${{ github.workspace }}/ft_user_data
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Freqtrade + FreqAI (pinned)
+        run: pip install "freqtrade[freqai]==2026.10"
+
+      - name: Prepare user data
+        run: freqtrade create-userdir --userdir "$FT_HOME"
+
+      - name: Download market data up to yesterday
+        run: |
+          python skills/freqai-grid-trading/scripts/download_binance_vision.py \
+            --pairs BTC/USDT ETH/USDT SOL/USDT --timeframes 1h 15m --start 2025-01 \
+            --trading-mode spot --datadir "$FT_HOME/data/binance" --daily-tail
+
+      - name: Forward health check
+        id: guard
+        run: |
+          set +e
+          python skills/freqai-ea-trading/maintenance/ea_guard.py forward --all \
+            --userdir "$FT_HOME" --keep out/runs --json out/health.json --md out/health.md
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          cat out/health.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ea-health
+          path: out/
+          retention-days: 90
+
+      - name: Open or update the ea-health issue
+        if: steps.guard.outputs.code != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create ea-health --color B60205 --description "EA 健康檢查" --force
+          n=$(gh issue list --label ea-health --state open --json number -q '.[0].number')
+          if [ -n "$n" ]; then
+            gh issue comment "$n" --body-file out/health.md
+          else
+            gh issue create --title "EA 健康檢查需要處理" --label ea-health --body-file out/health.md
+          fi

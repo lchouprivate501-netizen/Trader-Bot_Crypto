@@ -1,0 +1,204 @@
+{
+  "result": "backtest-result-2026-11-16_03-53-39.zip",
+  "baseline": "eth@pre2024-12-12",
+  "months": [
+    {
+      "month": "2025-01",
+      "status": "HEALTHY",
+      "return_pct": 0.0,
+      "buy_hold_pct": -14.96,
+      "max_dd_pct": 0.0,
+      "trades": 0,
+      "why": []
+    },
+    {
+      "month": "2025-02",
+      "status": "HEALTHY",
+      "return_pct": 0.0,
+      "buy_hold_pct": -42.35,
+      "max_dd_pct": 0.0,
+      "trades": 0,
+      "why": []
+    },
+    {
+      "month": "2025-03",
+      "status": "HEALTHY",
+      "return_pct": 0.0,
+      "buy_hold_pct": -53.05,
+      "max_dd_pct": 0.0,
+      "trades": 0,
+      "why": []
+    },
+    {
+      "month": "2025-04",
+      "status": "HEALTHY",
+      "return_pct": 0.0,
+      "buy_hold_pct": -53.79,
+      "max_dd_pct": 0.0,
+      "trades": 0,
+      "why": []
+    },
+    {
+      "month": "2025-05",
+      "status": "HEALTHY",
+      "return_pct": 10.09,
+      "buy_hold_pct": -34.87,
+      "max_dd_pct": 2.94,
+      "trades": 0,
+      "why": []
+    },
+    {
+      "month": "2025-06",
+      "status": "HEALTHY",
+      "return_pct": 7.78,
+      "buy_hold_pct": -35.97,
+      "max_dd_pct": 6.07,
+      "trades": 1,
+      "why": []
+    },
+    {
+      "month": "2025-07",
+      "status": "HEALTHY",
+      "return_pct": 22.22,
+      "buy_hold_pct": -4.72,
+      "max_dd_pct": 6.07,
+      "trades": 1,
+      "why": []
+    },
+    {
+      "month": "2025-08",
+      "status": "HEALTHY",
+      "return_pct": 30.3,
+      "buy_hold_pct": 13.14,
+      "max_dd_pct": 6.86,
+      "trades": 2,
+      "why": []
+    },
+    {
+      "month": "2025-09",
+      "status": "HEALTHY",
+      "return_pct": 30.3,
+      "buy_hold_pct": 6.79,
+      "max_dd_pct": 6.86,
+      "trades": 2,
+      "why": []
+    },
+    {
+      "month": "2025-10",
+      "status": "HEALTHY",
+      "return_pct": 22.36,
+      "buy_hold_pct": -0.87,
+      "max_dd_pct": 11.34,
+      "trades": 3,
+      "why": []
+    },
+    {
+      "month": "2025-11",
+      "status": "HEALTHY",
+      "return_pct": 22.36,
+      "buy_hold_pct": -22.94,
+      "max_dd_pct": 11.34,
+      "trades": 3,
+      "why": []
+    },
+    {
+      "month": "2025-12",
+      "status": "HEALTHY",
+      "return_pct": 22.36,
+      "buy_hold_pct": -23.44,
+      "max_dd_pct": 11.34,
+      "trades": 3,
+      "why": []
+    },
+    {
+      "month": "2026-01",
+      "status": "HEALTHY",
+      "return_pct": 22.36,
+      "buy_hold_pct": -36.83,
+      "max_dd_pct": 11.34,
+      "trades": 3,
+      "why": []
+    },
+    {
+      "month": "2026-02",
+      "status": "HEALTHY",
+      "return_pct": 22.36,
+      "buy_hold_pct": -49.39,
+      "max_dd_pct": 11.34,
+      "trades": 3,
+      "why": []
+    },
+    {
+      "month": "2026-03",
+      "status": "HEALTHY",
+      "return_pct": 22.36,
+      "buy_hold_pct": -45.76,
+      "max_dd_pct": 11.34,
+      "trades": 3,
+      "why": []
+    },
+    {
+      "month": "2026-04",
+      "status": "HEALTHY",
+      "return_pct": 18.74,
+      "buy_hold_pct": -41.84,
+      "max_dd_pct": 14.03,
+      "trades": 3,
+      "why": []
+    },
+    {
+      "month": "2026-05",
+      "status": "HEALTHY",
+      "return_pct": 17.83,
+      "buy_hold_pct": -48.29,
+      "max_dd_pct": 14.63,
+      "trades": 4,
+      "why": []
+    },
+    {
+      "month": "2026-06",
+      "status": "HEALTHY",
+      "return_pct": 17.83,
+      "buy_hold_pct": -59.5,
+      "max_dd_pct": 14.63,
+      "trades": 4,
+      "why": []
+    },
+    {
+      "month": "2026-07",
+      "status": "HEALTHY",
+      "return_pct": 17.83,
+      "buy_hold_pct": -52.01,
+      "max_dd_pct": 14.63,
+      "trades": 4,
+      "why": []
+    },
+    {
+      "month": "2026-08",
+      "status": "HEALTHY",
+      "return_pct": 28.12,
+      "buy_hold_pct": -36.43,
+      "max_dd_pct": 14.63,
+      "trades": 4,
+      "why": []
+    },
+    {
+      "month": "2026-09",
+      "status": "HEALTHY",
+      "return_pct": 34.04,
+      "buy_hold_pct": -30.8,
+      "max_dd_pct": 14.63,
+      "trades": 4,
+      "why": []
+    },
+    {
+      "month": "2026-10",
+      "status": "HEALTHY",
+      "return_pct": 27.19,
+      "buy_hold_pct": -41.91,
+      "max_dd_pct": 14.63,
+      "trades": 5,
+      "why": []
+    }
+  ]
+}

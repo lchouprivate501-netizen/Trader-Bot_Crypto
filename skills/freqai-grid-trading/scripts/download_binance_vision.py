@@ -90,6 +90,24 @@ def klines(symbol: str, tf: str, months_: list[str], market: str, kind: str = "k
     return df.dropna().drop_duplicates("date").sort_values("date").reset_index(drop=True)
 
 
+def daily_klines(symbol: str, tf: str, after: pd.Timestamp, market: str) -> pd.DataFrame:
+    """Daily archive files from the day after `after` up to yesterday (UTC)."""
+    root = f"{BASE}/spot/daily/klines" if market == "spot" else f"{BASE}/futures/um/daily/klines"
+    first = (after + pd.Timedelta(hours=1)).normalize()
+    last = pd.Timestamp.now(tz="UTC").normalize() - pd.Timedelta(days=1)
+    days = pd.date_range(first, last, freq="D")
+    urls = [f"{root}/{symbol}/{tf}/{symbol}-{tf}-{d:%Y-%m-%d}.zip" for d in days]
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        frames = [f for f in pool.map(fetch_zip_csv, urls) if f is not None and len(f)]
+    if not frames:
+        return pd.DataFrame(columns=OHLCV)
+    df = pd.concat([f.iloc[:, :6].set_axis(OHLCV, axis=1) for f in frames], ignore_index=True)
+    df["date"] = to_ts(df["date"])
+    for c in OHLCV[1:]:
+        df[c] = pd.to_numeric(df[c], errors="coerce").astype("float64")
+    return df.dropna().drop_duplicates("date").sort_values("date").reset_index(drop=True)
+
+
 def funding(symbol: str, months_: list[str]) -> pd.DataFrame:
     urls = [f"{BASE}/futures/um/monthly/fundingRate/{symbol}/{symbol}-fundingRate-{mo}.zip" for mo in months_]
     with ThreadPoolExecutor(max_workers=8) as pool:
@@ -118,6 +136,8 @@ def main() -> None:
     ap.add_argument("--end", default=f"{date.today():%Y-%m}", help="last month YYYY-MM (missing months are skipped)")
     ap.add_argument("--trading-mode", choices=["spot", "futures"], default="spot")
     ap.add_argument("--datadir", default="user_data/data/binance")
+    ap.add_argument("--daily-tail", action="store_true",
+                    help="also fetch daily files after the last monthly file, up to yesterday (UTC)")
     args = ap.parse_args()
 
     from freqtrade.data.history import get_datahandler  # imported late so --help works anywhere
@@ -136,6 +156,11 @@ def main() -> None:
         ft_pair = f"{base}/{quote}:{quote}" if futures else f"{base}/{quote}"
         for tf in args.timeframes:
             df = klines(symbol, tf, mos, market)
+            if args.daily_tail:
+                after = df["date"].iloc[-1] if not df.empty else pd.Timestamp(f"{mos[0]}-01", tz="UTC")
+                tail = daily_klines(symbol, tf, after, market)
+                if not tail.empty:
+                    df = pd.concat([df, tail]).drop_duplicates("date").sort_values("date").reset_index(drop=True)
             if df.empty:
                 print(f"{pair} {tf}: no data")
                 continue

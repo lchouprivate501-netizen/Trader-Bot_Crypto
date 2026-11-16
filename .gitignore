@@ -33,3 +33,6 @@ node_modules/
 
 # EA deployment secrets
 ea.env
+
+# EA guard runtime state
+skills/freqai-ea-trading/maintenance/state/

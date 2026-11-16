@@ -33,7 +33,9 @@ docker compose -f deploy/docker-compose.yml logs -f btc-ea
 - [ ] 金鑰無提幣權限、IP 白名單、帳戶 2FA。
 - [ ] 知道怎麼停：Telegram `/stopentry`（不再開新倉，既有部位照停損管理）、`/forceexit all`（全部平倉）、`docker compose down`（停程式；交易所停損單仍在）。
 
-## 4. 監控
+## 4. 監控（維護 Agent）
+
+自動化的部分見 `maintenance/`：`ea-guard` 容器每 15 分鐘檢查機器人，HALT 時自動 `/stopentry`；GitHub Actions 每週一跑前向健康檢查並在需要時開 issue；在 Claude Code 叫 `ea-maintainer` 子代理做例行檢查與診斷。啟用 `ea-guard` 需要在 `ea.env` 設定 REST API 帳密（範例檔已列出）。下表是人工每週也該看的項目。
 
 | 每週檢查 | 動作 |
 |---|---|

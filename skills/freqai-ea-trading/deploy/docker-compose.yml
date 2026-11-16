@@ -11,15 +11,15 @@ x-ea: &ea
   image: freqai-ea:2026.10
   restart: unless-stopped
   env_file: [ea.env]
-  volumes:
-    - ../user_data:/freqtrade/ea:ro          # strategies, FreqAI model class, configs (read-only)
-    - ea-data:/freqtrade/user_data           # candles, FreqAI models, trade databases, logs
   logging: { driver: json-file, options: { max-size: "20m", max-file: "5" } }
 
 services:
   btc-ea:
     <<: *ea
     container_name: btc-ea
+    volumes:
+      - ../user_data:/freqtrade/ea:ro        # strategies, FreqAI model class, configs (read-only)
+      - btc-data:/freqtrade/user_data     # this bot's candles, FreqAI models, trade DB, logs
     command: >
       trade --config /freqtrade/ea/configs/config_btc_ea.json
       --userdir /freqtrade/user_data
@@ -29,6 +29,9 @@ services:
   eth-ea:
     <<: *ea
     container_name: eth-ea
+    volumes:
+      - ../user_data:/freqtrade/ea:ro        # strategies, FreqAI model class, configs (read-only)
+      - eth-data:/freqtrade/user_data     # this bot's candles, FreqAI models, trade DB, logs
     command: >
       trade --config /freqtrade/ea/configs/config_eth_ea.json
       --userdir /freqtrade/user_data
@@ -38,6 +41,9 @@ services:
   sol-ea:
     <<: *ea
     container_name: sol-ea
+    volumes:
+      - ../user_data:/freqtrade/ea:ro        # strategies, FreqAI model class, configs (read-only)
+      - sol-data:/freqtrade/user_data     # this bot's candles, FreqAI models, trade DB, logs
     command: >
       trade --config /freqtrade/ea/configs/config_sol_ea.json
       --userdir /freqtrade/user_data
@@ -45,5 +51,28 @@ services:
       --db-url sqlite:////freqtrade/user_data/sol-ea.sqlite
       --logfile /freqtrade/user_data/logs/sol-ea.log
 
+  # Live guard (maintenance/ea_guard.py live): every 15 minutes checks each bot's REST API -
+  # heartbeat, exchange stop orders, drawdown since high-water mark, losing streak - and sends
+  # /stopentry to a bot that reaches HALT. It never resumes a bot or changes anything else.
+  ea-guard:
+    image: freqai-ea:2026.10
+    container_name: ea-guard
+    restart: unless-stopped
+    env_file: [ea.env]
+    environment:
+      EA_GUARD_BOTS: btc=http://btc-ea:8080,eth=http://eth-ea:8080,sol=http://sol-ea:8080
+    volumes:
+      - ../maintenance:/freqtrade/maintenance:ro
+      - guard-data:/freqtrade/user_data
+    entrypoint: ["python", "/freqtrade/maintenance/ea_guard.py"]
+    command: ["live", "--act", "--loop", "900",
+              "--state", "/freqtrade/user_data/guard/live_state.json",
+              "--md", "/freqtrade/user_data/guard/latest.md",
+              "--json", "/freqtrade/user_data/guard/latest.json"]
+    depends_on: [btc-ea, eth-ea, sol-ea]
+
 volumes:
-  ea-data:
+  btc-data:
+  eth-data:
+  sol-data:
+  guard-data:

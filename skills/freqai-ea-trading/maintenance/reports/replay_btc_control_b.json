@@ -1,0 +1,218 @@
+{
+  "result": "backtest-result-2026-11-16_04-30-02.zip",
+  "baseline": "btc@pre2024-12-12",
+  "months": [
+    {
+      "month": "2025-01",
+      "status": "HEALTHY",
+      "return_pct": -1.93,
+      "buy_hold_pct": 2.43,
+      "max_dd_pct": 12.06,
+      "trades": 0,
+      "why": []
+    },
+    {
+      "month": "2025-02",
+      "status": "HEALTHY",
+      "return_pct": -11.8,
+      "buy_hold_pct": -15.65,
+      "max_dd_pct": 13.03,
+      "trades": 1,
+      "why": []
+    },
+    {
+      "month": "2025-03",
+      "status": "HEALTHY",
+      "return_pct": -11.8,
+      "buy_hold_pct": -17.45,
+      "max_dd_pct": 13.03,
+      "trades": 1,
+      "why": []
+    },
+    {
+      "month": "2025-04",
+      "status": "HEALTHY",
+      "return_pct": -8.27,
+      "buy_hold_pct": -5.83,
+      "max_dd_pct": 13.03,
+      "trades": 1,
+      "why": []
+    },
+    {
+      "month": "2025-05",
+      "status": "HEALTHY",
+      "return_pct": 1.31,
+      "buy_hold_pct": 4.59,
+      "max_dd_pct": 13.03,
+      "trades": 1,
+      "why": []
+    },
+    {
+      "month": "2025-06",
+      "status": "HEALTHY",
+      "return_pct": 3.66,
+      "buy_hold_pct": 7.14,
+      "max_dd_pct": 13.03,
+      "trades": 1,
+      "why": []
+    },
+    {
+      "month": "2025-07",
+      "status": "HEALTHY",
+      "return_pct": 11.58,
+      "buy_hold_pct": 15.76,
+      "max_dd_pct": 13.03,
+      "trades": 1,
+      "why": []
+    },
+    {
+      "month": "2025-08",
+      "status": "HEALTHY",
+      "return_pct": 4.53,
+      "buy_hold_pct": 8.24,
+      "max_dd_pct": 13.03,
+      "trades": 2,
+      "why": []
+    },
+    {
+      "month": "2025-09",
+      "status": "HEALTHY",
+      "return_pct": 0.37,
+      "buy_hold_pct": 14.04,
+      "max_dd_pct": 15.31,
+      "trades": 3,
+      "why": []
+    },
+    {
+      "month": "2025-10",
+      "status": "HEALTHY",
+      "return_pct": -9.69,
+      "buy_hold_pct": 9.6,
+      "max_dd_pct": 23.8,
+      "trades": 5,
+      "why": []
+    },
+    {
+      "month": "2025-11",
+      "status": "HEALTHY",
+      "return_pct": -9.69,
+      "buy_hold_pct": -9.64,
+      "max_dd_pct": 23.8,
+      "trades": 5,
+      "why": []
+    },
+    {
+      "month": "2025-12",
+      "status": "HEALTHY",
+      "return_pct": -9.69,
+      "buy_hold_pct": -12.36,
+      "max_dd_pct": 23.8,
+      "trades": 5,
+      "why": []
+    },
+    {
+      "month": "2026-01",
+      "status": "HEALTHY",
+      "return_pct": -9.69,
+      "buy_hold_pct": -21.26,
+      "max_dd_pct": 23.8,
+      "trades": 5,
+      "why": []
+    },
+    {
+      "month": "2026-02",
+      "status": "HEALTHY",
+      "return_pct": -9.69,
+      "buy_hold_pct": -33.03,
+      "max_dd_pct": 23.8,
+      "trades": 5,
+      "why": []
+    },
+    {
+      "month": "2026-03",
+      "status": "HEALTHY",
+      "return_pct": -9.69,
+      "buy_hold_pct": -31.72,
+      "max_dd_pct": 23.8,
+      "trades": 5,
+      "why": []
+    },
+    {
+      "month": "2026-04",
+      "status": "WATCH",
+      "return_pct": -10.87,
+      "buy_hold_pct": -23.66,
+      "max_dd_pct": 27.15,
+      "trades": 5,
+      "why": [
+        "C1=[0.2479, 0.2715]"
+      ]
+    },
+    {
+      "month": "2026-05",
+      "status": "WATCH",
+      "return_pct": -12.04,
+      "buy_hold_pct": -26.33,
+      "max_dd_pct": 27.15,
+      "trades": 6,
+      "why": [
+        "C1=[0.2578, 0.2715]"
+      ]
+    },
+    {
+      "month": "2026-06",
+      "status": "WATCH",
+      "return_pct": -12.04,
+      "buy_hold_pct": -41.38,
+      "max_dd_pct": 27.15,
+      "trades": 6,
+      "why": [
+        "C1=[0.2578, 0.2715]"
+      ]
+    },
+    {
+      "month": "2026-07",
+      "status": "WATCH",
+      "return_pct": -12.04,
+      "buy_hold_pct": -37.11,
+      "max_dd_pct": 27.15,
+      "trades": 6,
+      "why": [
+        "C1=[0.2578, 0.2715]"
+      ]
+    },
+    {
+      "month": "2026-08",
+      "status": "WATCH",
+      "return_pct": -0.02,
+      "buy_hold_pct": -21.42,
+      "max_dd_pct": 27.15,
+      "trades": 6,
+      "why": [
+        "C1=[0.1564, 0.2715]"
+      ]
+    },
+    {
+      "month": "2026-09",
+      "status": "WATCH",
+      "return_pct": 6.06,
+      "buy_hold_pct": -16.38,
+      "max_dd_pct": 27.15,
+      "trades": 6,
+      "why": [
+        "C1=[0.1051, 0.2715]"
+      ]
+    },
+    {
+      "month": "2026-10",
+      "status": "WATCH",
+      "return_pct": -1.32,
+      "buy_hold_pct": -22.42,
+      "max_dd_pct": 27.15,
+      "trades": 6,
+      "why": [
+        "C1=[0.1674, 0.2715]"
+      ]
+    }
+  ]
+}
