@@ -45,6 +45,10 @@ class SOLTrendGridAI(GridAIBase):
         "step_min": 0.015,
         "step_max": 0.08,
         "break_steps": 3.0,
+        # Tested and NOT adopted (references/tradingview-research.md): full_break_steps 6 +
+        # step_growth 0.5 lifted in-sample Calmar 0.78 -> 2.02 but out-of-sample got worse.
+        "full_break_steps": None,
+        "step_growth": 0.0,
         "trail_steps": 6.0,
         "cooldown_hours": 72,
         "trend_ema": 1200,  # ~50 days: beat ~100 days in-sample for SOL

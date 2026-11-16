@@ -8,6 +8,8 @@ Trader Bot。本倉庫自行撰寫的策略、研發流水線、執行部工具�
 - Graphify-Labs/graphify（Apache-2.0），PyPI `graphifyy` 0.9.108
 - pandas（BSD-3-Clause）、pyarrow（Apache-2.0）、requests（Apache-2.0）
 - freqtrade/freqtrade（GPL-3.0，含 FreqAI），PyPI `freqtrade[freqai]` 2026.10（僅網格 Skill，獨立 venv）
+- tradingview/lightweight-charts（Apache-2.0），npm `lightweight-charts` 5.2.1（網格 Skill 研究圖表；圖上保留 TradingView 標誌連結以符合授權要求）
+  TradingView Lightweight Charts™ Copyright (c) 2026 TradingView, Inc. https://www.tradingview.com/
 - microsoft/LightGBM（MIT）、scikit-learn（BSD-3-Clause）、TA-Lib Python（BSD-2-Clause）、ccxt（MIT）
 
 市場資料：OKX 公開 REST API（不需金鑰）；經濟日曆：ForexFactory 公開週曆 JSON；

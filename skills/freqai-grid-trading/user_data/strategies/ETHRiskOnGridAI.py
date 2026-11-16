@@ -40,6 +40,7 @@ class ETHRiskOnGridAI(GridAIBase):
         "step_min": 0.008,
         "step_max": 0.045,
         "break_steps": 2.5,
+        "full_break_steps": None,  # 6 tested: in-sample 0.62 -> 0.80, out-of-sample worse; not adopted
         "trail_steps": 0.0,
         "cooldown_hours": 48,
         "trend_ema": 1200,  # ETH's own trend, ~50 days

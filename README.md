@@ -20,7 +20,7 @@ Grok Bot「Trader」的私人交易公司：**研發部**在 nautilus_trader 上
 | `ETHRiskOnGridAI` | 只在 BTC risk-on 且 ETH 50 日趨勢之上：40% 核心倉 + 10 格 | 同上 + BTC 特徵 | +75.2% | 27.1%（81%） | +4.2%（−40.9%） |
 | `SOLTrendGridAI` | 只順上升趨勢：30% 核心倉 + 6 格寬網格 + 鎖利 | 同上 + BTC/ETH 特徵 | +80.2% | 47.6%（97%） | −27.0%（−58.0%） |
 
-Purged walk-forward（66 個 FreqAI 視窗）、5 分鐘掛單成交模擬、每邊 0.10% 手續費、樣本內調參 / 樣本外只看一次。詳見 [`backtest-results.md`](skills/freqai-grid-trading/references/backtest-results.md)；用法見 [`SKILL.md`](skills/freqai-grid-trading/SKILL.md)。**不保證獲利**：樣本外（熊市）只有 ETH 為正，SOL 不建議直接實盤；實盤前至少 30 天 dry-run。
+Purged walk-forward（66 個 FreqAI 視窗）、5 分鐘掛單成交模擬、每邊 0.10% 手續費、樣本內調參 / 樣本外只看一次。研究圖表用 TradingView 開源的 Lightweight Charts™（`skills/freqai-grid-trading/tradingview/`，`scripts/tv_research.py`），圖上再研究的發現見 [`tradingview-research.md`](skills/freqai-grid-trading/references/tradingview-research.md)。詳見 [`backtest-results.md`](skills/freqai-grid-trading/references/backtest-results.md)；用法見 [`SKILL.md`](skills/freqai-grid-trading/SKILL.md)。**不保證獲利**：樣本外（熊市）只有 ETH 為正，SOL 不建議直接實盤；實盤前至少 30 天 dry-run。
 
 ## 組織圖（13 個角色）
 
@@ -96,6 +96,7 @@ flowchart LR
 | requests | https://github.com/psf/requests | 2.32.5 | Apache-2.0 | OKX / 日曆等公開 HTTP |
 | Freqtrade（含 FreqAI） | https://github.com/freqtrade/freqtrade | 2026.10 | GPL-3.0 | 網格 Skill 的回測/交易引擎（獨立 venv，`skills/freqai-grid-trading/scripts/setup_env.sh`） |
 | LightGBM | https://github.com/microsoft/LightGBM | 4.7.0 | MIT | FreqAI 模型 |
+| TradingView Lightweight Charts™ | https://github.com/tradingview/lightweight-charts | 5.2.1 | Apache-2.0 | 網格 Skill 的研究圖表（npm，`skills/freqai-grid-trading/tradingview/`） |
 | TA-Lib（Python） | https://github.com/TA-Lib/ta-lib-python | 0.8.3 | BSD-2-Clause | 指標 |
 
 本倉庫自行撰寫的部分為 MIT（見 LICENSE）。市場資料來自 OKX 公開 REST（不需金鑰）；經濟日曆來自 ForexFactory 公開週曆 JSON。

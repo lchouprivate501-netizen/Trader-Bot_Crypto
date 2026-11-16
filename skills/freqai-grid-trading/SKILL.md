@@ -34,9 +34,13 @@ description: >-
 | `scripts/grid_report.py` | 由成交單重建逐小時盯市權益：報酬、CAGR、最大回撤、逐年、對照買入持有、樣本內/外 |
 | `scripts/tune.py` | 只在樣本內做參數網格搜尋（平行、重用 FreqAI 快取） |
 | `scripts/prediction_quality.py` | FreqAI walk-forward 預測的 IC 檢查（對照天真預測） |
+| `scripts/grid_attribution.py` | 逐輪把損益拆成網格來回 vs 庫存/核心倉，統計各出場原因之後價格怎麼走 |
+| `scripts/tv_research.py` | 用 TradingView Lightweight Charts 產生多面板研究圖（K 線、每筆網格成交、權益 vs 持有、回撤、FreqAI 面板） |
+| `tradingview/` | TradingView Lightweight Charts™ 5.2.1（`npm install`，Apache-2.0）、研究頁模板、研究筆記 |
 | `scripts/ft_offline.py` | 回測包裝：跳過 Freqtrade 對 trade 的深拷貝（結果相同、快數倍）；`FT_OFFLINE=1` 時改用靜態市場清單（交易所 API 被擋時） |
 | `references/strategy-design.md` | 引擎機制、FreqAI 設計與證據、三個幣為什麼這樣設計 |
 | `references/backtest-results.md` | 2021-06 → 2026-10 回測結果（樣本內 / 樣本外 / 逐年 / 消融 / 手續費壓力） |
+| `references/tradingview-research.md` | 在 TradingView 圖上的再研究：獲利來源、出場品質、SOL 滿格破網、被否決的 v3 |
 | `references/tuning-log.md` | 樣本內 195 組調參的完整紀錄（含被否決的永續多空版本） |
 | `references/results/*.json` | 最終回測的完整報告（`grid_report.py` 輸出） |
 | `references/deployment.md` | dry-run → live 檢查表、金鑰與風控、例行監控 |
@@ -85,6 +89,13 @@ $PY $SK/scripts/prediction_quality.py --identifier btc-accum-grid-v2 --pair BTC/
 # 5) （可選）只在樣本內調參 / 消融，再看一次樣本外
 $PY $SK/scripts/tune.py --coin btc --userdir $FT_HOME --grid '{"step_mult":[1.5,2.5,3.5]}'
 $PY $SK/scripts/tune.py --coin btc --userdir $FT_HOME --grid '{"ai_vol":[true,false],"ai_drift":[true,false]}'
+
+# 6) TradingView 圖表研究（Lightweight Charts，開源）
+(cd $SK/tradingview && npm install)
+$PY $SK/scripts/tv_research.py --run "$FT_HOME/backtest_results/<btc>.zip::BTC" --run "<eth>.zip::ETH" \
+    --run "<sol>.zip::SOL" --datadir $FT_HOME/data/binance --models $FT_HOME/models \
+    --notes $SK/tradingview/research_notes.json --out grid_research.html
+$PY $SK/scripts/grid_attribution.py <result.zip> --datadir $FT_HOME/data/binance
 ```
 
 之後的 dry-run / live：`references/deployment.md`。

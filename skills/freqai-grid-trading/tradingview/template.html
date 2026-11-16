@@ -1,0 +1,348 @@
+<title>FreqAI 網格研究圖表</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: terminal-style toolbar, one tall multi-pane chart, notes and tables below. */
+:root {
+  --bg: #fbfbfd; --panel: #f2f3f7; --fg: #131722; --muted: #5d6170; --line: #e1e3ea;
+  --accent: #2962ff; --up: #089981; --down: #f23645; --amber: #c77c00; --violet: #7b3fe4;
+  --shade-win: rgba(8, 153, 129, 0.10); --shade-loss: rgba(242, 54, 69, 0.10); --oos: rgba(41, 98, 255, 0.06);
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", "Noto Sans TC", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1016; --panel: #161a23; --fg: #d6d9e0; --muted: #8b90a0; --line: #252a36;
+    --accent: #5b8cff; --up: #26a69a; --down: #ef5350; --amber: #f0a020; --violet: #a77bff;
+    --shade-win: rgba(38, 166, 154, 0.13); --shade-loss: rgba(239, 83, 80, 0.13); --oos: rgba(91, 140, 255, 0.08);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1016; --panel: #161a23; --fg: #d6d9e0; --muted: #8b90a0; --line: #252a36;
+  --accent: #5b8cff; --up: #26a69a; --down: #ef5350; --amber: #f0a020; --violet: #a77bff;
+  --shade-win: rgba(38, 166, 154, 0.13); --shade-loss: rgba(239, 83, 80, 0.13); --oos: rgba(91, 140, 255, 0.08);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; display: grid; gap: 18px; }
+header { display: grid; gap: 6px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font-size: 16px; font-weight: 600; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0; max-width: 72ch; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
+.seg button { font: 500 13px var(--font-ui); color: var(--muted); background: transparent; border: 0; padding: 7px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { color: var(--fg); background: var(--bg); box-shadow: inset 0 -2px 0 var(--accent); }
+.seg button:focus-visible, .jump:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.stat { background: var(--panel); padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.stat b { font: 500 17px var(--font-data); font-variant-numeric: tabular-nums; }
+.stat small { color: var(--muted); font-family: var(--font-data); font-size: 12px; }
+.pos { color: var(--up); } .neg { color: var(--down); }
+.chartbox { position: relative; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--bg); }
+#chart { height: 780px; }
+.legend { position: absolute; top: 8px; left: 10px; z-index: 3; font: 12px var(--font-data); color: var(--fg); background: color-mix(in srgb, var(--bg) 82%, transparent); padding: 4px 8px; border-radius: 4px; pointer-events: none; max-width: calc(100% - 90px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.panes { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 12px; }
+.key { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.note { border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 8px; align-content: start; background: var(--panel); min-width: 0; }
+.note header { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.note p { margin: 0; color: var(--fg); }
+.note .tag { font: 500 11px var(--font-data); color: var(--accent); letter-spacing: 0.04em; }
+.jump { justify-self: start; font: 500 13px var(--font-ui); color: var(--accent); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.jump:hover { border-color: var(--accent); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 7px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 500; color: var(--muted); background: var(--panel); }
+td { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
+footer { color: var(--muted); font-size: 12px; }
+footer a { color: var(--accent); }
+@media (max-width: 640px) { #chart { height: 620px; } h1 { font-size: 19px; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="label">Freqtrade + FreqAI · TradingView Lightweight Charts</span>
+    <h1>FreqAI 網格研究圖表</h1>
+    <p class="sub">BTC、ETH、SOL 三個現貨網格在 2021-06 → 2026-10 的完整回測，每一筆網格成交都畫在成交價上。陰影是持倉期間（綠 = 該輪獲利、紅 = 虧損），淡藍底是樣本外。</p>
+  </header>
+
+  <div class="toolbar">
+    <div class="seg" id="coins" role="group" aria-label="策略"></div>
+    <div class="seg" id="ranges" role="group" aria-label="期間">
+      <button id="r-all" data-range="all" aria-pressed="true">全期間</button>
+      <button id="r-is" data-range="is" aria-pressed="false">樣本內</button>
+      <button id="r-oos" data-range="oos" aria-pressed="false">樣本外</button>
+    </div>
+    <div class="seg" id="fillsToggle" role="group" aria-label="網格成交點">
+      <button id="f-on" data-fills="1" aria-pressed="true">顯示網格成交</button>
+      <button id="f-off" data-fills="0" aria-pressed="false">隱藏</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="chartbox">
+    <div class="legend" id="legend"></div>
+    <div id="chart"></div>
+  </div>
+
+  <div class="panes" id="keys"></div>
+
+  <section style="display:grid;gap:12px">
+    <h2>研究筆記</h2>
+    <div class="notes" id="notes"></div>
+  </section>
+
+  <section style="display:grid;gap:12px">
+    <h2 id="yearTitle">逐年</h2>
+    <div class="tablewrap"><table id="years"></table></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<!--__LIB__-->
+<script>
+const DATA = /*__DATA__*/null;
+const LC = window.LightweightCharts;
+const $ = (id) => document.getElementById(id);
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmtPct = (v, d = 1) => (v == null ? "–" : (v > 0 ? "+" : "") + Number(v).toFixed(d) + "%");
+const cls = (v) => (v == null ? "" : v >= 0 ? "pos" : "neg");
+const EXIT = { regime_off: "趨勢出", grid_break: "破網", trail_lock: "鎖利", force_exit: "期末", exit_signal: "訊號出" };
+let BAR = 4 * 3600;
+let state = { coin: 0, range: "all", fills: true, visible: null };
+let chart = null;
+
+// Pane primitive: draws time spans as rectangles behind the series (exact at any zoom,
+// unlike per-bar histogram shading whose translucent columns pile up when zoomed out).
+class Spans {
+  constructor(spans, band) { this.spans = spans; this.band = band || null; this.chart = null;
+    const self = this;
+    this.view = { zOrder: () => "bottom", renderer: () => ({ draw: (target) => self.draw(target) }) }; }
+  attached({ chart }) { this.chart = chart; }
+  detached() { this.chart = null; }
+  updateAllViews() {}
+  paneViews() { return [this.view]; }
+  draw(target) {
+    if (!this.chart) return;
+    const ts = this.chart.timeScale();
+    target.useMediaCoordinateSpace(({ context: ctx, mediaSize }) => {
+      const y0 = this.band ? mediaSize.height - this.band : 0;
+      const hh = this.band ? this.band : mediaSize.height;
+      for (const s of this.spans) {
+        const a = ts.timeToCoordinate(s.from), b = ts.timeToCoordinate(s.to);
+        if (a == null || b == null || b < 0 || a > mediaSize.width) continue;
+        ctx.fillStyle = s.color;
+        ctx.fillRect(Math.max(a, 0), y0, Math.max(Math.min(b, mediaSize.width) - Math.max(a, 0), 1), hh);
+      }
+    });
+  }
+}
+
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+function md(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>"); }
+function day(t) { return new Date(t * 1000).toISOString().slice(0, 10); }
+function snap(t) { return t - (t % BAR); }
+
+function renderTabs() {
+  $("coins").innerHTML = DATA.coins.map((c, i) =>
+    `<button id="coin-${i}" data-i="${i}" aria-pressed="${i === state.coin}" title="${esc(c.id)}">${esc(c.label)}</button>`).join("");
+  $("coins").querySelectorAll("button").forEach((b) => b.onclick = () => { state.coin = +b.dataset.i; state.visible = null; renderAll(); });
+}
+
+function renderStats(c) {
+  const f = c.report.full, o = c.report.out_of_sample;
+  const tiles = [
+    ["全期間報酬", fmtPct(f.strategy.total_return_pct), `持有 ${fmtPct(f.buy_hold.total_return_pct)}`, f.strategy.total_return_pct],
+    ["CAGR", fmtPct(f.strategy.cagr_pct), `Calmar ${f.strategy.calmar}`, f.strategy.cagr_pct],
+    ["盯市最大回撤", "−" + f.strategy.max_drawdown_pct.toFixed(1) + "%", `持有 −${f.buy_hold.max_drawdown_pct.toFixed(1)}%`, -1],
+    ["樣本外報酬", o ? fmtPct(o.strategy.total_return_pct) : "–", o ? `持有 ${fmtPct(o.buy_hold.total_return_pct)}` : "", o ? o.strategy.total_return_pct : null],
+    ["網格買 / 賣", `${f.orders.grid_buys} / ${f.orders.grid_sells}`, `${f.orders.sessions} 輪`, null],
+    ["時間在場內", f.exposure.time_in_market_pct + "%", `平均曝險 ${f.exposure.avg_gross_exposure_pct}%`, null],
+  ];
+  $("stats").innerHTML = tiles.map(([k, v, s, sign]) =>
+    `<div class="stat"><span class="label">${k}</span><b class="${sign == null ? "" : cls(sign)}">${v}</b><small>${s}</small></div>`).join("");
+}
+
+function renderYears(c) {
+  $("yearTitle").textContent = `${c.label} 逐年（策略 vs 持有）`;
+  const rows = c.report.yearly.map((y) =>
+    `<tr><td>${y.year}</td><td class="${cls(y.strategy_pct)}">${fmtPct(y.strategy_pct)}</td><td>−${y.strategy_maxdd_pct.toFixed(1)}%</td><td class="${cls(y.buy_hold_pct)}">${fmtPct(y.buy_hold_pct)}</td><td>−${(y.buy_hold_maxdd_pct ?? 0).toFixed(1)}%</td></tr>`).join("");
+  $("years").innerHTML = `<thead><tr><th>年</th><th>策略</th><th>策略最大回撤</th><th>持有</th><th>持有最大回撤</th></tr></thead><tbody>${rows}</tbody>`;
+}
+
+function renderNotes() {
+  $("notes").innerHTML = DATA.notes.map((n, k) => `
+    <article class="note"><header><h2>${esc(n.title)}</h2><span class="tag">${esc(n.coin)}</span></header>
+    ${n.body.map((p) => `<p>${md(p)}</p>`).join("")}
+    ${n.from ? `<button class="jump" id="jump-${k}" data-k="${k}">在圖上看 ${esc(n.from)} → ${esc(n.to)}</button>` : ""}</article>`).join("");
+  $("notes").querySelectorAll(".jump").forEach((b) => b.onclick = () => {
+    const n = DATA.notes[+b.dataset.k];
+    show(n.coin, n.from, n.to);
+    $("chart").scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+}
+
+function keys(c) {
+  const k = [
+    ["sw", css("--accent"), `趨勢 EMA(${c.params.trend_ema}h)`],
+    ["dot", css("--up"), "網格買"], ["dot", css("--amber"), "網格賣"],
+    ["sw", css("--fg"), "策略權益"], ["sw", css("--muted"), "買入持有"],
+    ["sw", css("--violet"), "FreqAI 預測日波動%"], ["sw", css("--muted"), "實際日波動%"], ["sw", css("--amber"), "格距%"],
+    ["sw", css("--accent"), "FreqAI 漂移 z"],
+  ];
+  if (c.risk_on) k.splice(1, 0, ["sw", css("--up"), `BTC risk-on（EMA ${c.params.ref_trend_ema}h）`]);
+  $("keys").innerHTML = "<span>面板：價格 / 權益 vs 持有（對數）/ 回撤 / FreqAI 波動 / FreqAI 漂移</span>" +
+    k.map(([t, col, lab]) => `<span class="key"><i class="${t}" style="background:${col}"></i>${esc(lab)}</span>`).join("");
+}
+
+function buildChart(c) {
+  if (chart) { chart.remove(); chart = null; }
+  const fg = css("--fg"), muted = css("--muted"), line = css("--line"), bg = css("--bg");
+  chart = LC.createChart($("chart"), {
+    autoSize: true,
+    layout: { background: { type: "solid", color: bg }, textColor: muted, fontFamily: css("--font-data"), fontSize: 11,
+      panes: { separatorColor: line, separatorHoverColor: line, enableResize: true } },
+    grid: { vertLines: { color: line }, horzLines: { color: line } },
+    rightPriceScale: { borderColor: line },
+    timeScale: { borderColor: line, timeVisible: false, rightOffset: 4, minBarSpacing: 0.02 },
+    crosshair: { mode: 0 },
+  });
+  const P = { price: 0, eq: 1, dd: 2, vol: 3, z: 4 };
+  const T = c.t;
+  BAR = T[1] - T[0];
+  const lastT = T[T.length - 1];
+  const clampT = (t) => Math.min(Math.max(snap(t), T[0]), lastT);
+  const toLine = (arr) => { const o = []; arr.forEach((v, i) => { if (v != null) o.push({ time: T[i], value: v }); }); return o; };
+  const px = c.c[c.c.length - 1];
+  const prec = px >= 1000 ? 0 : px >= 10 ? 2 : 4;
+  const priceFormat = { type: "price", precision: prec, minMove: Math.pow(10, -prec) };
+  const candles = chart.addSeries(LC.CandlestickSeries, {
+    upColor: css("--up"), downColor: css("--down"), wickUpColor: css("--up"), wickDownColor: css("--down"), borderVisible: false,
+    priceLineVisible: false, priceFormat,
+  }, P.price);
+  candles.setData(T.map((time, i) => ({ time, open: c.o[i], high: c.h[i], low: c.l[i], close: c.c[i] })));
+  candles.priceScale().applyOptions({ mode: 1, scaleMargins: { top: 0.06, bottom: 0.06 } });
+  const win = css("--shade-win"), loss = css("--shade-loss");
+  candles.attachPrimitive(new Spans(c.sessions.map((x) => ({ from: clampT(x.o), to: clampT(x.c), color: x.pnl >= 0 ? win : loss }))));
+  if (c.risk_on) {
+    const spans = []; let start = null;
+    T.forEach((t, i) => { const on = c.risk_on[i] === 1;
+      if (on && start == null) start = t;
+      if ((!on || i === T.length - 1) && start != null) { spans.push({ from: start, to: t, color: css("--up") }); start = null; } });
+    candles.attachPrimitive(new Spans(spans, 5));
+  }
+  const emaS = chart.addSeries(LC.LineSeries, { color: css("--accent"), lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat }, P.price);
+  emaS.setData(toLine(c.ema));
+
+  const marks = [];
+  c.sessions.forEach((s) => {
+    marks.push({ time: snap(s.o), position: "belowBar", shape: "arrowUp", color: css("--accent"), text: "開" });
+    marks.push({ time: snap(s.c), position: "aboveBar", shape: "arrowDown", color: s.pnl >= 0 ? css("--up") : css("--down"),
+      text: `${EXIT[s.exit] || s.exit} ${s.pct > 0 ? "+" : ""}${s.pct.toFixed(1)}%` });
+  });
+  if (state.fills) c.fills.forEach(([t, price, buy]) => marks.push({
+    time: snap(t), position: "atPriceMiddle", price, shape: "circle", size: 0.35, color: buy ? css("--up") : css("--amber"),
+  }));
+  marks.sort((a, b) => a.time - b.time);
+  LC.createSeriesMarkers(candles, marks);
+
+  // pane 1: equity vs buy & hold, OOS tint
+  const bh = chart.addSeries(LC.LineSeries, { color: muted, lineWidth: 1, priceLineVisible: false, lastValueVisible: true, title: "持有" }, P.eq);
+  bh.setData(toLine(c.bh));
+  const eq = chart.addSeries(LC.LineSeries, { color: fg, lineWidth: 2, priceLineVisible: false, lastValueVisible: true, title: "策略" }, P.eq);
+  eq.setData(toLine(c.equity));
+  eq.priceScale().applyOptions({ mode: 1 });
+  if (c.split && c.split < lastT) eq.attachPrimitive(new Spans([{ from: clampT(c.split), to: lastT, color: css("--oos") }]));
+
+  // pane 2: drawdown
+  const ddB = chart.addSeries(LC.LineSeries, { color: muted, lineWidth: 1, priceLineVisible: false, lastValueVisible: false }, P.dd);
+  ddB.setData(toLine(c.dd_bh));
+  const ddS = chart.addSeries(LC.AreaSeries, { lineColor: css("--down"), topColor: css("--shade-loss"), bottomColor: css("--shade-loss"),
+    lineWidth: 1, priceLineVisible: false, lastValueVisible: false, invertFilledArea: true }, P.dd);
+  ddS.setData(toLine(c.dd_eq));
+
+  // pane 3: FreqAI volatility
+  if (c.sigma_pred) {
+    const real = chart.addSeries(LC.LineSeries, { color: muted, lineWidth: 1, priceLineVisible: false, lastValueVisible: false }, P.vol);
+    real.setData(toLine(c.sigma_real));
+    const pred = chart.addSeries(LC.LineSeries, { color: css("--violet"), lineWidth: 2, priceLineVisible: false, lastValueVisible: false }, P.vol);
+    pred.setData(toLine(c.sigma_pred));
+    const step = chart.addSeries(LC.LineSeries, { color: css("--amber"), lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false }, P.vol);
+    step.setData(toLine(c.step));
+  }
+  // pane 4: FreqAI drift z
+  let zS = null;
+  if (c.z) {
+    zS = chart.addSeries(LC.BaselineSeries, { baseValue: { type: "price", price: 0 }, topLineColor: css("--up"), bottomLineColor: css("--down"),
+      topFillColor1: css("--shade-win"), topFillColor2: css("--shade-win"), bottomFillColor1: css("--shade-loss"), bottomFillColor2: css("--shade-loss"),
+      lineWidth: 1, priceLineVisible: false, lastValueVisible: false }, P.z);
+    zS.setData(toLine(c.z));
+    zS.createPriceLine({ price: c.params.enter_z, color: css("--accent"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "開" });
+    zS.createPriceLine({ price: c.params.exit_z, color: css("--down"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "關" });
+  }
+  const panes = chart.panes();
+  [0.47, 0.17, 0.12, 0.12, 0.12].forEach((f, i) => panes[i] && panes[i].setStretchFactor(f));
+
+  // crosshair legend
+  const pos = new Map(T.map((t, i) => [t, i]));
+  const legend = (t) => {
+    const i = pos.get(t);
+    const v = (arr, d = 2) => (arr && i != null && arr[i] != null ? Number(arr[i]).toFixed(d) : "–");
+    $("legend").textContent = `${c.label}  ${day(t)}  收 ${v(c.c, prec)}  權益 ${v(c.equity, 3)}  持有 ${v(c.bh, 3)}  回撤 ${v(c.dd_eq, 1)}%  σ預測 ${v(c.sigma_pred)}%  σ實際 ${v(c.sigma_real)}%  z ${v(c.z)}`;
+  };
+  chart.subscribeCrosshairMove((p) => { if (p && p.time) legend(p.time); });
+  legend(T[T.length - 1]);
+  requestAnimationFrame(() => applyRange(c));
+}
+
+function applyRange(c) {
+  if (!chart) return;
+  const first = c.t[0], last = c.t[c.t.length - 1];
+  let from = first, to = last;
+  if (state.visible) [from, to] = state.visible;
+  else if (state.range === "is" && c.split) to = c.split;
+  else if (state.range === "oos" && c.split) from = c.split;
+  else { chart.timeScale().fitContent(); return; }
+  chart.timeScale().setVisibleRange({ from: Math.max(from, first), to: Math.min(to, last) });
+}
+
+function renderAll() {
+  const c = DATA.coins[state.coin];
+  renderTabs(); renderStats(c); renderYears(c); keys(c); buildChart(c);
+  document.querySelectorAll("#ranges button").forEach((b) => b.setAttribute("aria-pressed", String(!state.visible && b.dataset.range === state.range)));
+  document.querySelectorAll("#fillsToggle button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.fills === "1") === state.fills)));
+}
+
+function show(coin, from, to) {
+  let i = DATA.coins.findIndex((c) => c.label === coin);
+  if (i < 0) i = DATA.coins.findIndex((c) => c.coin === coin);
+  if (i >= 0) state.coin = i;
+  state.visible = from && to ? [Date.parse(from) / 1000, Date.parse(to) / 1000] : null;
+  renderAll();
+}
+window.gridLab = { show };
+
+document.querySelectorAll("#ranges button").forEach((b) => b.onclick = () => { state.range = b.dataset.range; state.visible = null; renderAll(); });
+document.querySelectorAll("#fillsToggle button").forEach((b) => b.onclick = () => { state.fills = b.dataset.fills === "1"; renderAll(); });
+const rerender = () => renderAll();
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender); } catch (e) { /* older browsers */ }
+new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+$("foot").innerHTML = `圖表：TradingView Lightweight Charts™ v${DATA.lib}（Apache-2.0，<a href="https://github.com/tradingview/lightweight-charts" target="_blank" rel="noopener">github.com/tradingview/lightweight-charts</a>）。資料：Binance 公開資料庫；回測：Freqtrade + FreqAI，每邊手續費 0.10%，盯市回撤。歷史回測不代表未來報酬。`;
+renderNotes();
+renderAll();
+</script>

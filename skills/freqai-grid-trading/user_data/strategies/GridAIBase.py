@@ -115,6 +115,8 @@ class GridAIBase(IStrategy):
         "step_min": 0.006,
         "step_max": 0.05,
         "break_steps": 3.0,  # stop: N steps beyond the last fill while full / adds blocked
+        "full_break_steps": None,  # stop distance when the grid is full (None = break_steps)
+        "step_growth": 0.0,  # lot i sits step x (1 + step_growth x i) below the last fill
         "trail_steps": 0.0,  # >0: lock profit when price retraces N steps from session best
         "cooldown_hours": 48,  # no new session after grid_break
         "trend_ema": 1200,  # slow regime EMA (1h candles, ~50 days)
@@ -449,8 +451,9 @@ class GridAIBase(IStrategy):
             _, amount, target = lots[-1]
             cands.append((d * (target - price) / price, "grid_sell", target, amount))
         add_ok = bool(row["grid_long_add"] if d == 1 else row["grid_short_add"])
+        lot_step = step * (1 + float(self.p["step_growth"]) * len(lots))
         if add_ok and len(lots) < int(self.p["max_lots"]):
-            level = st["ref"] * (1 - d * step)
+            level = st["ref"] * (1 - d * lot_step)
             cands.append((d * (price - level) / price, "grid_buy", level, None))
         if not cands:
             return None
@@ -464,7 +467,7 @@ class GridAIBase(IStrategy):
         stake = min(st["lot_stake"], max_stake)
         if stake <= 0 or (min_stake and stake < min_stake):
             return None
-        self._pending[trade.id] = {"price": level, "step": step}
+        self._pending[trade.id] = {"price": level, "step": lot_step}
         return stake, "grid_buy"
 
     def custom_entry_price(self, pair: str, trade: Trade | None, current_time: datetime,
@@ -550,7 +553,10 @@ class GridAIBase(IStrategy):
         full = len(st["lots"]) >= int(self.p["max_lots"])
         blocked = not bool(row["grid_long_add"] if d == 1 else row["grid_short_add"])
         if full or blocked:
-            if d * (st["ref"] * (1 - d * self.p["break_steps"] * step) - current_rate) > 0:
+            steps = float(self.p["break_steps"])
+            if full and self.p.get("full_break_steps") is not None:
+                steps = float(self.p["full_break_steps"])
+            if d * (st["ref"] * (1 - d * steps * step) - current_rate) > 0:
                 return "grid_break"
         trail = float(self.p["trail_steps"])
         if trail > 0 and current_profit > 0:

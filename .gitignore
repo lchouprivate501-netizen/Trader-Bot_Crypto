@@ -28,3 +28,5 @@ graphify-out/
 VERSIONS.md
 .DS_Store
 rnd/strategies/registry.lock
+# npm
+node_modules/
