@@ -37,7 +37,7 @@ description: >-
 | `user_data/strategies/BTCTrendEA.py` | BTC：100 日趨勢 + 突破進場 + 寬吊燈停損 |
 | `user_data/strategies/ETHRiskOnEA.py` | ETH：只在 BTC 處於 100 日多頭時交易 ETH 的突破 |
 | `user_data/strategies/SOLMomentumEA.py` | SOL：50 日 EMA 上升中的長週期突破、最寬停損 |
-| `user_data/freqaimodels/PurgedLGBMMultiTarget.py` | 去除 label 洩漏的 LightGBM（與網格 skill 相同） |
+| `user_data/freqaimodels/PurgedLGBMMultiTarget.py` | 去除 label 洩漏（purged walk-forward）的 LightGBM 多目標模型 |
 | `user_data/configs/config_{btc,eth,sol}_ea.json` | Binance 現貨設定；`ea_params` 可覆寫參數；預設 dry-run |
 | `scripts/ea_lab.py` | `backtest` / `tune`（只限研發期）/ `validate`（事前登記的 V1–V4，自動判 PASS/FAIL） |
 | `deploy/` | Dockerfile（freqtrade[freqai]==2026.10）、docker-compose（三個 EA 各一個容器）、`ea.env.example` |
@@ -46,9 +46,15 @@ description: >-
 | `references/ea-design.md` | 設計、圖表研究過程、研發期調參紀錄 |
 | `references/deployment.md` | 上線檢查表、監控、緊急停止 |
 | `references/results/validation_*.json` | 驗證的完整輸出 |
-| `tradingview/research_notes.json` | TradingView 研究頁的筆記（圖表模板與函式庫在 freqai-grid-trading skill） |
+| `scripts/setup_env.sh` | 安裝固定版本的 Freqtrade 2026.10 + FreqAI venv |
+| `scripts/download_binance_vision.py` | 從 data.binance.vision 下載歷史 K 線（不需金鑰；`--daily-tail` 補當月） |
+| `scripts/ft_offline.py` | 回測包裝：連不到交易所時用靜態市場清單（`FT_OFFLINE=1`），並略過不必要的 deepcopy 加速 |
+| `scripts/mtm_report.py` | 盯市報告：由每筆成交重建權益曲線，算真正經歷到的回撤、逐年、曝險、同期持有 |
+| `scripts/exit_analysis.py` | 逐筆交易與出場原因分析（出場後 3 / 14 天價格怎麼走） |
+| `scripts/prediction_quality.py` | FreqAI 預測力檢查（波動 IC vs 天真預測，逐年） |
+| `scripts/tv_research.py`、`tradingview/` | TradingView Lightweight Charts 研究頁產生器（K 線、趨勢 EMA、突破線、交易、權益 vs 持有、回撤、FreqAI 波動）與研究筆記 |
 
-依賴同倉庫的 `skills/freqai-grid-trading/scripts/`（回測包裝 `ft_offline.py`、盯市報告 `grid_report.py`、資料下載、TradingView 圖表 `tv_research.py`）。
+全部工具都在這個資料夾內，不依賴其他 skill。
 
 ## 讓 AI 依 EA 下單（EA 交易台）
 
@@ -90,16 +96,16 @@ description: >-
 ## 常用指令
 
 ```bash
-SK=skills/freqai-ea-trading; G=skills/freqai-grid-trading
-bash $G/scripts/setup_env.sh
-export FT_VENV=~/crypto-trading/venvs/freqai-grid FT_HOME=~/crypto-trading/freqai-grid/user_data
+SK=skills/freqai-ea-trading
+bash $SK/scripts/setup_env.sh
+export FT_VENV=~/crypto-trading/venvs/freqai-ea FT_HOME=~/crypto-trading/freqai-ea/user_data
 PY=$FT_VENV/bin/python
-$PY $G/scripts/download_binance_vision.py --pairs BTC/USDT ETH/USDT --timeframes 1h 15m --start 2017-08 --datadir $FT_HOME/data/binance
-$PY $G/scripts/download_binance_vision.py --pairs SOL/USDT AVAX/USDT NEAR/USDT DOT/USDT ADA/USDT LINK/USDT DOGE/USDT --timeframes 1h 15m --start 2020-01 --datadir $FT_HOME/data/binance
+$PY $SK/scripts/download_binance_vision.py --pairs BTC/USDT ETH/USDT --timeframes 1h 15m --start 2017-08 --datadir $FT_HOME/data/binance
+$PY $SK/scripts/download_binance_vision.py --pairs SOL/USDT AVAX/USDT NEAR/USDT DOT/USDT ADA/USDT LINK/USDT DOGE/USDT --timeframes 1h 15m --start 2020-01 --datadir $FT_HOME/data/binance
 
 $PY $SK/scripts/ea_lab.py backtest --coin btc --userdir $FT_HOME --keep runs/btc      # 研發期回測
 $PY $SK/scripts/ea_lab.py validate --coin btc --userdir $FT_HOME                       # 事前登記的驗證
-$PY $G/scripts/tv_research.py --strategy-path $SK/user_data/strategies \
+$PY $SK/scripts/tv_research.py \
     --run "runs/btc/<result>.zip::BTC EA" --datadir $FT_HOME/data/binance --models $FT_HOME/models --out ea.html
 
 python3 $SK/desk/ea_engine.py start                                                      # AI 交易台用的無金鑰引擎 + 守衛

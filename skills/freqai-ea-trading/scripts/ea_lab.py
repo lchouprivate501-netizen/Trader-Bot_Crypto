@@ -5,8 +5,8 @@
   python ea_lab.py tune     --coin btc --grid '{"trail_k":[2.5,3,3.5]}'   # dev period only
   python ea_lab.py validate --coin btc        # pre-registered V1-V4, run once, PASS/FAIL
 
-Reuses the freqai-grid-trading skill's backtest wrapper (ft_offline.py) and mark-to-market
-report (grid_report.py). Run with the Freqtrade venv's python. FT_OFFLINE=1 for sandboxes
+Uses the backtest wrapper (ft_offline.py) and mark-to-market report (mtm_report.py) in this
+folder. Run with the Freqtrade venv's python. FT_OFFLINE=1 for sandboxes
 without exchange API access. Thresholds and periods: references/validation-protocol.md.
 """
 
@@ -25,9 +25,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SKILL = HERE.parent
-GRID_SCRIPTS = SKILL.parent / "freqai-grid-trading" / "scripts"
-sys.path.insert(0, str(GRID_SCRIPTS))
-from grid_report import build, load  # noqa: E402
+sys.path.insert(0, str(HERE))
+from mtm_report import build, load  # noqa: E402
 
 DEV = "20210601-20241212"
 V1 = "20180601-20210601"
@@ -54,7 +53,7 @@ def run(coin: str, timerange: str, params: dict | None = None, pair: str | None 
         out = Path(keep) if keep else Path(tmp) / "results"
         out.mkdir(parents=True, exist_ok=True)
         env = {**os.environ, "FT_OFFLINE": os.environ.get("FT_OFFLINE", "0"), "FT_FAST": "1"}
-        cmd = [sys.executable, str(GRID_SCRIPTS / "ft_offline.py"), "backtesting",
+        cmd = [sys.executable, str(HERE / "ft_offline.py"), "backtesting",
                "-c", str(SKILL / "user_data/configs" / f"config_{coin}_ea.json"), "-c", str(ov),
                "--userdir", userdir,
                "--strategy-path", str(SKILL / "user_data/strategies"),

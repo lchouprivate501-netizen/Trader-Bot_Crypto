@@ -1,4 +1,0 @@
-{
-  "_note": "目前啟用的交易所設定檔（company/exchanges/<name>.json）。預設 pionex。用 exchange_get / exchange_set 查詢或更換；禁止寫入任何 API 金鑰。",
-  "active": "pionex"
-}

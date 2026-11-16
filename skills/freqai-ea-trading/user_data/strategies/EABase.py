@@ -17,7 +17,7 @@ Exit    the stop, or the trend ending (close below the EMA band) or BTC turning 
 
 FreqAI (LightGBM, purged walk-forward, retrained every 30 days) predicts the forward/trailing
 volatility ratio; the drift target is trained too but not used for decisions (its
-out-of-sample skill was ~0 in the grid research). ``ai_vol: False`` swaps in the naive
+out-of-sample skill was ~0 in earlier FreqAI research). ``ai_vol: False`` swaps in the naive
 trailing volatility for ablation tests.
 """
 
@@ -98,7 +98,7 @@ class EABase(IStrategy):
         self._rows: dict[str, tuple] = {}
 
     # ------------------------------------------------------------------ FreqAI
-    # Same scale-free feature set and targets as the freqai-grid-trading skill.
+    # Scale-free features (returns, volatility ratios, BTC context) and two targets: drift and volatility.
     def feature_engineering_expand_all(self, dataframe: DataFrame, period: int, metadata: dict,
                                        **kwargs) -> DataFrame:
         df = dataframe
@@ -179,7 +179,7 @@ class EABase(IStrategy):
         ratio = df["&-vol_ratio"].replace([np.inf, -np.inf], np.nan).fillna(0.0)
         if not p["ai_vol"]:
             ratio = ratio * 0.0
-        df["sigma_pred"] = rv * np.exp(ratio)  # hourly, as in the grid skill
+        df["sigma_pred"] = rv * np.exp(ratio)  # hourly sigma
         df["sigma_day"] = (df["sigma_pred"] * np.sqrt(24)).ewm(span=72, adjust=False).mean()
 
         df["ema_slow"] = ta.EMA(df, timeperiod=int(p["trend_ema"]))

@@ -34,7 +34,7 @@ import pandas as pd
 
 HERE = Path(__file__).resolve().parent
 SKILL = HERE.parent
-GRID_SCRIPTS = SKILL.parent / "freqai-grid-trading" / "scripts"
+SCRIPTS = SKILL / "scripts"
 BASELINES = HERE / "baselines.json"
 LEVELS = ["HEALTHY", "WATCH", "DEGRADED", "HALT"]
 ACTIONS = {
@@ -51,8 +51,8 @@ RNG = np.random.default_rng(20261116)
 # ----------------------------------------------------------------- series helpers
 def daily_series(zip_path: Path) -> tuple[pd.Series, pd.Series, list[dict], dict]:
     """Daily mark-to-market equity, daily buy & hold close, closed trades, raw strategy dict."""
-    sys.path.insert(0, str(GRID_SCRIPTS))
-    from grid_report import equity_curve, load
+    sys.path.insert(0, str(SCRIPTS))
+    from mtm_report import equity_curve, load
 
     strat, _w, market = load(zip_path)
     eq, _pos = equity_curve(strat, market)

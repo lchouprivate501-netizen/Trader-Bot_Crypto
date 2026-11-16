@@ -1,6 +1,6 @@
 """SOLMomentumEA - SOL spot momentum EA (FreqAI volatility-sized).
 
-Built from the chart research on the SOL grid: SOL's trends start and end abruptly, and the
+Built from earlier chart research on a SOL grid bot (not part of this project): SOL's trends start and end abruptly, and the
 grid lost money by buying every failed breakout and stopping out near the lows. This EA buys
 only confirmed breakouts while the ~50-day EMA is rising, sizes them small (SOL's volatility
 is 2x BTC's) and trails a wide chandelier stop so it can sit through SOL-sized pullbacks.

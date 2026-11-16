@@ -1,9 +1,0 @@
-{
-  "name": "freqai-grid-tradingview",
-  "private": true,
-  "description": "TradingView Lightweight Charts (open source, Apache-2.0) for the freqai-grid-trading research charts",
-  "license": "MIT",
-  "dependencies": {
-    "lightweight-charts": "5.2.1"
-  }
-}

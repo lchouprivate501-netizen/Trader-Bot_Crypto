@@ -1,38 +1,30 @@
-# secrets
+# secrets (never commit)
 .env
 *.key
+ea.env
+
 # python
 __pycache__/
 *.pyc
 .venv/
 venv/
-mcp/*.egg-info/
-# data & runtime (never commit)
-rnd/data/
-rnd/reports/*/*.csv
-exec/state/
-exec/signals/*
-!exec/signals/.gitkeep
-logs/
-state/*
-!state/.gitkeep
-/journal/
-/reports/
+.ruff_cache/
+
+# Freqtrade data, models, results (live in FT_HOME / ~/.freqai-ea, never in git)
+user_data/data/
+user_data/models/
+user_data/backtest_results/
 *.parquet
+*.feather
 *.sqlite*
-# model weights / caches
 *.gguf
 *.safetensors
 *.bin
-graphify-out/
-VERSIONS.md
-.DS_Store
-rnd/strategies/registry.lock
-# npm
-node_modules/
-
-# EA deployment secrets
-ea.env
 
 # EA guard runtime state
 skills/freqai-ea-trading/maintenance/state/
+
+# npm
+node_modules/
+
+.DS_Store

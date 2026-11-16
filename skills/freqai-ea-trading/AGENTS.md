@@ -96,7 +96,7 @@ HALT 不會平倉；既有部位繼續照 `CLOSE` / `CLOSE_NOW` / `MOVE_STOP` �
 ```bash
 git clone https://github.com/lchouprivate501-netizen/Trader-Bot_Crypto
 cd Trader-Bot_Crypto
-bash skills/freqai-grid-trading/scripts/setup_env.sh      # Freqtrade + FreqAI venv（約 1–2 GB）
+bash skills/freqai-ea-trading/scripts/setup_env.sh        # Freqtrade + FreqAI venv（約 1–2 GB）
 python3 skills/freqai-ea-trading/desk/ea_engine.py start   # 背景啟動三個無金鑰引擎 + 守衛
 python3 skills/freqai-ea-trading/desk/ea_engine.py status  # 等 usable=true（第一次訓練要幾分鐘）
 ```

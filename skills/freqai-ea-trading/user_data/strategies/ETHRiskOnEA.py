@@ -1,6 +1,6 @@
 """ETHRiskOnEA - ETH spot trend-following EA that only trades while BTC is risk-on.
 
-Built from the chart research on the ETH grid: the one robust ETH-specific edge was the BTC
+Built from earlier chart research on an ETH grid bot (not part of this project): the one robust ETH-specific edge was the BTC
 risk-on filter (ETH only in BTC's ~100-day uptrend). Entries are ETH breakouts above its own
 ~50-day EMA inside that regime; exits are a chandelier stop, ETH's trend ending, or BTC
 turning risk-off.

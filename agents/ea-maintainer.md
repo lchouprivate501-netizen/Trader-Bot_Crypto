@@ -21,17 +21,17 @@ tools: Bash, Read, Grep, Glob, Edit, Write
 ## 環境
 
 ```bash
-FT_VENV=${FT_VENV:-$HOME/crypto-trading/venvs/freqai-grid}   # 沒有就跑 skills/freqai-grid-trading/scripts/setup_env.sh
-FT_HOME=${FT_HOME:-$HOME/crypto-trading/freqai-grid/user_data}
+FT_VENV=${FT_VENV:-$HOME/crypto-trading/venvs/freqai-ea}   # 沒有就跑 skills/freqai-ea-trading/scripts/setup_env.sh
+FT_HOME=${FT_HOME:-$HOME/crypto-trading/freqai-ea/user_data}
 PY=$FT_VENV/bin/python
-SK=skills/freqai-ea-trading; G=skills/freqai-grid-trading
+SK=skills/freqai-ea-trading
 ```
 交易所 API 連不到的環境（雲端沙盒、GitHub Actions）在回測指令前加 `FT_OFFLINE=1`。
 
 ## A. 例行檢查（每週一次）
 
 1. 更新資料到昨天：
-   `$PY $G/scripts/download_binance_vision.py --pairs BTC/USDT ETH/USDT SOL/USDT --timeframes 1h 15m --start 2025-01 --datadir $FT_HOME/data/binance --daily-tail`（2025-01 起是為了讓 100 日趨勢 EMA 充分暖機）
+   `$PY $SK/scripts/download_binance_vision.py --pairs BTC/USDT ETH/USDT SOL/USDT --timeframes 1h 15m --start 2025-01 --datadir $FT_HOME/data/binance --daily-tail`（2025-01 起是為了讓 100 日趨勢 EMA 充分暖機）
 2. 前向檢查（凍結參數、2026-11-01 之後的新資料）：
    `$PY $SK/maintenance/ea_guard.py forward --all --userdir $FT_HOME --keep $FT_HOME/ea_forward --json $FT_HOME/ea_health.json --md $FT_HOME/ea_health.md`
 3. 若有實盤/模擬盤機器人：讀實盤守衛的最新報告（`ea_guard.py live` 產生的 `latest.md`），或自己跑一次 `ea_guard.py live`（需要 `EA_GUARD_BOTS` 與 API 帳密）。
@@ -44,9 +44,9 @@ SK=skills/freqai-ea-trading; G=skills/freqai-grid-trading
 1. **是不是基礎設施？** C6：機器人是否在跑、K 線是否更新、持倉是否有交易所停損單。是 → 先修，不碰策略。
 2. **實盤和回測一致嗎？** 用同一段期間跑 `$PY $SK/scripts/ea_lab.py backtest --coin <c> --timerange <起-迄>`，和機器人的 `/api/v1/trades` 比對進出場時間與損益。差很多 → 執行問題（滑價、掛單、手續費等級），不是策略失效。
 3. **市場是不是落在歷史沒見過的狀態？** 產生前向期間的 TradingView 圖：
-   `$PY $G/scripts/tv_research.py --strategy-path $SK/user_data/strategies --run "<forward result zip>::BTC 前向" --datadir $FT_HOME/data/binance --models $FT_HOME/models --split "" --title "EA 前向檢查" --subtitle "..." --out forward.html`
-   看停損與進出場是否和歷史行為一樣，出場原因是否改變，並用 `$PY $G/scripts/grid_attribution.py <zip>` 看各出場原因之後價格怎麼走。
-4. **FreqAI 還有預測力嗎？** C5 與 `$PY $G/scripts/prediction_quality.py --identifier <id> --pair <pair> ...`：波動 IC 是否持續低於天真預測。
+   `$PY $SK/scripts/tv_research.py --run "<forward result zip>::BTC 前向" --datadir $FT_HOME/data/binance --models $FT_HOME/models --split "" --title "EA 前向檢查" --subtitle "..." --out forward.html`
+   看停損與進出場是否和歷史行為一樣，出場原因是否改變，並用 `$PY $SK/scripts/exit_analysis.py <zip>` 看各出場原因之後價格怎麼走。
+4. **FreqAI 還有預測力嗎？** C5 與 `$PY $SK/scripts/prediction_quality.py --identifier <id> --pair <pair> ...`：波動 IC 是否持續低於天真預測。
 5. 把結論寫成：原因分類（基礎設施 / 執行 / 市場狀態 / 模型 / 邊際優勢衰退）、證據、建議動作（照協議第 4 節），寫進 issue 與 `log.md`。
 
 ## C. 年度基準線更新（每年 11 月，且該 EA 為 HEALTHY 或 WATCH）

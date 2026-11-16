@@ -14,7 +14,7 @@ AI 的作業手冊是 [`AGENTS.md`](../AGENTS.md)（MCP 工具 `ea_guide` 會回
 ```bash
 git clone https://github.com/lchouprivate501-netizen/Trader-Bot_Crypto
 cd Trader-Bot_Crypto
-bash skills/freqai-grid-trading/scripts/setup_env.sh        # Freqtrade 2026.10 + FreqAI 的 venv
+bash skills/freqai-ea-trading/scripts/setup_env.sh          # Freqtrade 2026.10 + FreqAI 的 venv
 python3 skills/freqai-ea-trading/desk/ea_engine.py start     # 背景啟動 3 個無金鑰引擎 + 守衛
 python3 skills/freqai-ea-trading/desk/ea_engine.py status    # 等每個引擎 usable=true
 python3 skills/freqai-ea-trading/desk/test_desk.py           # （可選）交易台自我測試，51 項
@@ -27,7 +27,7 @@ python3 skills/freqai-ea-trading/desk/test_desk.py           # （可選）交�
 
 ## Claude Code
 
-外掛市集（會一起安裝兩個 skill、`ea-maintainer` 維護 Agent 與 `freqai-ea-desk` MCP 伺服器）：
+外掛市集（會一起安裝 EA skill、`ea-maintainer` 維護 Agent 與 `freqai-ea-desk` MCP 伺服器）：
 
 ```
 /plugin marketplace add lchouprivate501-netizen/Trader-Bot_Crypto

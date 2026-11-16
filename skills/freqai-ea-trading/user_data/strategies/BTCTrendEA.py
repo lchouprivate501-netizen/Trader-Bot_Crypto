@@ -1,6 +1,6 @@
 """BTCTrendEA - BTC spot trend-following EA (FreqAI volatility-sized).
 
-Built from the chart research on the BTC grid: its profit came almost entirely from holding
+Built from earlier chart research on a BTC grid bot (not part of this project): its profit came almost entirely from holding
 a core position above the ~100-day EMA, and its out-of-sample loss came from exiting too late
 in a fast drop (the EMA cross lagged ~25% behind the top). This EA keeps the slow trend
 filter for entries but replaces the slow exit with a chandelier stop from the highest price.

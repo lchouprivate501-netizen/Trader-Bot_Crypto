@@ -1,18 +1,27 @@
 {
   "name": "trader-bot-crypto",
-  "owner": { "name": "lchouprivate501-netizen", "url": "https://github.com/lchouprivate501-netizen" },
+  "owner": {
+    "name": "lchouprivate501-netizen",
+    "url": "https://github.com/lchouprivate501-netizen"
+  },
   "metadata": {
-    "description": "Open-source crypto trading skills for AI agents (Freqtrade + FreqAI): BTC/ETH/SOL trend-following EAs with an MCP trading desk, and FreqAI grid strategies.",
-    "version": "1.0.0"
+    "description": "Open-source BTC / ETH / SOL trend-following EAs (Freqtrade + FreqAI) that AI agents can trade through an MCP trading desk.",
+    "version": "2.0.0"
   },
   "plugins": [
     {
       "name": "freqai-crypto-trading",
       "source": "./",
-      "description": "BTC / ETH / SOL trend-following EAs (validated, frozen parameters) that an AI executes through the freqai-ea-desk MCP server, plus an EA maintenance agent and FreqAI grid strategies.",
-      "version": "1.0.0",
+      "description": "BTC / ETH / SOL trend-following EAs (validated, frozen parameters) that an AI executes through the freqai-ea-desk MCP server, with research tools and an EA maintenance agent.",
+      "version": "2.0.0",
       "category": "finance",
-      "keywords": ["trading", "crypto", "freqtrade", "freqai", "mcp"]
+      "keywords": [
+        "trading",
+        "crypto",
+        "freqtrade",
+        "freqai",
+        "mcp"
+      ]
     }
   ]
 }

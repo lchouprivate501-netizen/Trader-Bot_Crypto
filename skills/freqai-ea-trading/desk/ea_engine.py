@@ -10,7 +10,7 @@ REST API 只聽 127.0.0.1，帳密隨機產生並存在 $EA_HOME/api.json（權�
     python3 desk/ea_engine.py logs btc [-n 50]
     python3 desk/ea_engine.py stop
 
-需要 Freqtrade + FreqAI 的 venv：bash skills/freqai-grid-trading/scripts/setup_env.sh（或設定 FT_VENV）。
+需要 Freqtrade + FreqAI 的 venv：bash skills/freqai-ea-trading/scripts/setup_env.sh（或設定 FT_VENV）。
 第一次啟動 FreqAI 會下載約 180 天資料並訓練模型，需要幾分鐘到十幾分鐘，之後每 24 小時重訓。
 """
 from __future__ import annotations
@@ -30,7 +30,7 @@ import ea_desk  # noqa: E402
 
 SKILL = ea_desk.SKILL
 HOME = ea_desk.HOME
-FT_VENV = Path(os.environ.get("FT_VENV") or Path.home() / "crypto-trading" / "venvs" / "freqai-grid")
+FT_VENV = Path(os.environ.get("FT_VENV") or Path.home() / "crypto-trading" / "venvs" / "freqai-ea")
 FREQTRADE = FT_VENV / "bin" / "freqtrade"
 FT_PY = FT_VENV / "bin" / "python"
 GUARD_DIR = HOME / "guard"
@@ -176,7 +176,7 @@ def main() -> int:
     coins = [c.strip().lower() for c in a.coins.split(",") if c.strip()] if a.cmd == "start" and a.coins else list(d["coins"])
     if a.cmd == "start":
         if not FREQTRADE.exists():
-            print(f"找不到 {FREQTRADE}。先安裝：bash {SKILL.parent / 'freqai-grid-trading' / 'scripts' / 'setup_env.sh'}（或設定 FT_VENV）")
+            print(f"找不到 {FREQTRADE}。先安裝：bash {SKILL / 'scripts' / 'setup_env.sh'}（或設定 FT_VENV）")
             return 2
         unknown = [c for c in coins if c not in d["coins"]]
         if unknown:

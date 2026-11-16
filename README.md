@@ -1,152 +1,95 @@
-# Trader Bot
+# Trader-Bot_Crypto：BTC / ETH / SOL 趨勢跟隨 EA（Freqtrade + FreqAI）
 
-Grok Bot「Trader」的私人交易公司：**研發部**在 nautilus_trader 上研發、回測、優化短線/剝頭皮策略；**執行部**只拿通過門檻的策略，依紀律在瀏覽器登入的交易所交易 USDT 永續（預設 **Pionex**，2 倍逐倉、可多可空）。所有工具透過同一個 stdio MCP 連接器提供。
+三個只做多、現貨的自動交易 EA（Expert Advisor），每個針對一個幣種設計，參數凍結、依**事前登記**的協議驗證過。可以交給 Freqtrade 用金鑰直接交易，也可以交給 **AI（Claude、Grok 或其他支援 MCP 的 AI）**：無金鑰的引擎算出該做什麼，AI 照指令在你的交易所下單。附維護 Agent，持續檢查 EA 是否還有效。
 
-- 不持有交易所金鑰、程式不下單；下單只由 Trader 在瀏覽器進行。
-- 不使用任何 LLM 模型或付費工具；分析是純規則的多時間框架分析。
-- 起始模式 **PAPER**。策略在樣本外通過全部門檻後，Trader 自行切 **LIVE** 並通知使用者。
-- 安裝：見 [INSTALL.md](INSTALL.md)（`bash bootstrap.sh`）。每輪怎麼做：見 [docs/TRADER_PLAYBOOK.md](docs/TRADER_PLAYBOOK.md)。
+> 不保證獲利。趨勢跟隨的代價：牛市跑輸買入持有、熊市只能空手、每年只有 4–5 筆。回測最大回撤約 30%。上線前至少 30 天 PAPER / dry-run。
 
-倉庫：https://github.com/lchouprivate501-netizen/Trader-Bot_Crypto  
-本機目錄 `~/crypto-trading/pionex-macd`、venv `~/crypto-trading/venvs/pionex-trading-skills`、模組 `pionex_trading_skills` 是現有連接器的相容入口，請不要改掉這三個路徑／名稱。
+## 三個 EA
 
-## Freqtrade + FreqAI 網格交易 Skill（BTC / ETH / SOL）
+| EA | 設計 | 驗證判定 | 從未測過的 2018-06 → 2021-06 | 2024-12 → 2026-10 熊市 |
+|---|---|---|---|---|
+| `BTCTrendEA` | 100 日 EMA 之上、突破前 240 小時高點進場；10 倍日波動的吊燈停損 | **通過** | +137.9%，回撤 31.1%（持有 +395.5% / 70.4%），獲利因子 3.76，17 筆 | +0.7%（持有 −23.1%） |
+| `ETHRiskOnEA` | 只在 BTC 處於 100 日多頭時，交易 ETH 在 50 日 EMA 之上的突破 | **未通過**（只有 12 筆 < 15） | +192.5%，回撤 22.9%（持有 86.8%），獲利因子 14.3 | +27.2%（持有 −40.9%） |
+| `SOLMomentumEA` | 50 日 EMA 上升中、突破前 720 小時高點；最寬的停損、最小的部位 | **通過** | 規則原封不動套到 6 個沒研究過的幣：6/6 獲利，平均 +36% | +1.4%（持有 −58.0%） |
 
-`skills/freqai-grid-trading/` 是一個獨立的 Freqtrade 專案兼 Claude Code Skill（`.claude/skills/freqai-grid-trading` 為符號連結，在本倉庫內開啟 Claude Code 會自動載入；也可複製到 `~/.claude/skills/`）。一個 FreqAI 驅動的網格引擎 + 三個針對幣種特性設計的現貨網格：
+共同引擎 `EABase`：突破進場 → 停損單掛在交易所並依吊燈停損上移 → 跌破趨勢（ETH 另加 BTC 轉弱）出場；FreqAI（LightGBM、purged walk-forward）預測波動，用來決定部位大小，讓每筆停損約虧 EA 資金的 10%。ETH 未通過是樣本數不足，依協議不能事後放寬，所以只做影子紀錄。細節：[`validation-results.md`](skills/freqai-ea-trading/references/validation-results.md)。
 
-| 策略 | 設計 | FreqAI 的角色 | 全期間 2021-06 → 2026-10 | 盯市最大回撤（持有） | 樣本外（持有） |
-|---|---|---|---|---|---|
-| `BTCAccumGridAI` | 100 日趨勢之上：60% 核心倉 + 12 格 | 24h 波動預測 → 格距、暫停加倉；弱方向傾向 | +178.5% | 25.5%（77%） | −8.2%（−23.1%） |
-| `ETHRiskOnGridAI` | 只在 BTC risk-on 且 ETH 50 日趨勢之上：40% 核心倉 + 10 格 | 同上 + BTC 特徵 | +75.2% | 27.1%（81%） | +4.2%（−40.9%） |
-| `SOLTrendGridAI` | 只順上升趨勢：30% 核心倉 + 6 格寬網格 + 鎖利 | 同上 + BTC/ETH 特徵 | +80.2% | 47.6%（97%） | −27.0%（−58.0%） |
+## 功能
 
-Purged walk-forward（66 個 FreqAI 視窗）、5 分鐘掛單成交模擬、每邊 0.10% 手續費、樣本內調參 / 樣本外只看一次。研究圖表用 TradingView 開源的 Lightweight Charts™（`skills/freqai-grid-trading/tradingview/`，`scripts/tv_research.py`），圖上再研究的發現見 [`tradingview-research.md`](skills/freqai-grid-trading/references/tradingview-research.md)。詳見 [`backtest-results.md`](skills/freqai-grid-trading/references/backtest-results.md)；用法見 [`SKILL.md`](skills/freqai-grid-trading/SKILL.md)。**不保證獲利**：樣本外（熊市）只有 ETH 為正，SOL 不建議直接實盤；實盤前至少 30 天 dry-run。
+| 功能 | 說明 | 位置 |
+|---|---|---|
+| EA 策略 | 三個 EA 與共用引擎、FreqAI 模型、Binance 現貨設定（預設 dry-run） | `skills/freqai-ea-trading/user_data/` |
+| AI 交易台 | 每個幣一條指令（OPEN / MOVE_STOP / CLOSE…）、下單前風控、帳本、HALT、使用者專屬的實盤開關 | `desk/ea_desk.py` |
+| MCP 伺服器 | `freqai-ea-desk`：`ea_guide`、`ea_status`、`ea_signals`、`ea_risk_check`、`ea_record`、`ea_halt`；只用 Python 標準函式庫 | `desk/mcp_server.py` |
+| 無金鑰引擎 | 背景執行三個 Freqtrade dry-run 機器人與守衛，REST 只聽本機 | `desk/ea_engine.py` |
+| 研發與驗證 | 回測、只限研發期的調參、事前登記的 V1–V4 驗證（自動判 PASS/FAIL） | `scripts/ea_lab.py`、`references/validation-protocol.md` |
+| 回測工具 | 歷史資料下載、離線回測、盯市回撤報告、出場分析、FreqAI 預測力檢查 | `scripts/` |
+| TradingView 研究圖 | Lightweight Charts™ 多面板研究頁（K 線、趨勢、突破線、交易、權益 vs 持有、回撤、FreqAI 波動） | `scripts/tv_research.py`、`tradingview/` |
+| 維護 Agent | 每週用新資料跑凍結的 EA，和驗證過的正常範圍比較，判 HEALTHY / WATCH / DEGRADED / HALT；HALT 自動停止新進場 | `agents/ea-maintainer.md`、`maintenance/` |
+| 自動化 | GitHub Actions：每週健康檢查（開 issue）、交易台測試 | `.github/workflows/` |
+| Freqtrade 直接交易 | Docker Compose：三個 EA 各一個容器 + 實盤守衛 | `deploy/` |
 
-## Freqtrade + FreqAI 自動交易 EA Skill（BTC / ETH / SOL）
+（`desk/`、`scripts/`、`maintenance/` 等都在 `skills/freqai-ea-trading/` 底下。）
 
-`skills/freqai-ea-trading/`（`.claude/skills/freqai-ea-trading` 為符號連結）：三個只做多、現貨、全自動的趨勢跟隨 EA——突破進場、吊燈停損掛在交易所、跌破趨勢出場、FreqAI 預測波動決定部位（每筆停損約虧 10% 權益）。以 Docker 24 小時執行（`deploy/`，預設 dry-run）。
-
-驗證依**事前登記**的協議（[`validation-protocol.md`](skills/freqai-ea-trading/references/validation-protocol.md)，在任何 EA 回測之前推上 GitHub），各期間只跑一次：
-
-| EA | 判定 | 從未測過的 2018-06 → 2021-06 | 2024-12 → 2026-10 熊市 |
-|---|---|---|---|
-| `BTCTrendEA` | **通過** | +137.9%，回撤 31.1%（持有 70.4%） | +0.7%（持有 −23.1%） |
-| `ETHRiskOnEA` | **未通過**（交易僅 12 筆 < 15） | +192.5%，回撤 22.9%（持有 86.8%） | +27.2%（持有 −40.9%） |
-| `SOLMomentumEA` | **通過** | 移轉測試 6/6 幣獲利（平均 +36%） | +1.4%（持有 −58.0%） |
-
-詳見 [`validation-results.md`](skills/freqai-ea-trading/references/validation-results.md)。**不保證獲利**；牛市會跑輸買入持有；上線前至少 30 天 dry-run。
-
-### 讓 AI（Claude、Grok…）依 EA 替你交易
-
-`skills/freqai-ea-trading/desk/`：三個**無金鑰**的 Freqtrade dry-run 引擎只負責算出 EA 該做什麼，**EA 交易台**把它轉成每個幣一條指令（OPEN / MOVE_STOP / CLOSE…），附下單前風控與帳本；AI 透過 MCP 工具（或指令列）照指令在你的交易所現貨下單、掛停損、記錄。預設 PAPER，實盤只有你能在終端機打開。只用 Python 標準函式庫，任何支援 MCP 或能執行指令的 AI 都能用。
+## 快速開始
 
 ```bash
-python3 skills/freqai-ea-trading/desk/ea_engine.py start   # 先裝 Freqtrade：bash skills/freqai-grid-trading/scripts/setup_env.sh
+git clone https://github.com/lchouprivate501-netizen/Trader-Bot_Crypto
+cd Trader-Bot_Crypto
+bash skills/freqai-ea-trading/scripts/setup_env.sh          # Freqtrade 2026.10 + FreqAI（約 1–2 GB）
+python3 skills/freqai-ea-trading/desk/ea_engine.py start     # 三個無金鑰引擎 + 守衛（第一次要訓練幾分鐘）
+python3 skills/freqai-ea-trading/desk/ea_engine.py status    # 等 usable=true
+python3 skills/freqai-ea-trading/desk/ea_desk.py signals     # 每個幣現在該做什麼
 ```
 
-Claude Code 一行安裝（skill ＋ 維護 Agent ＋ MCP 伺服器）：
+接著把 AI 接上（下一節），讓它每 5–15 分鐘跑一輪。預設 PAPER（只記錄不下單）；實盤只有你能在終端機打開：`python3 skills/freqai-ea-trading/desk/ea_desk.py live on`。每個 EA 的資金在 `~/.freqai-ea/config.json` 設定（預設 1000 USDT）。
+
+## 接上 AI
+
+Claude Code（skill ＋ 維護 Agent ＋ MCP 伺服器一次裝好）：
 
 ```
 /plugin install freqai-crypto-trading --marketplace lchouprivate501-netizen/Trader-Bot_Crypto
 ```
 
-舊版 Claude Code：`/plugin marketplace add lchouprivate501-netizen/Trader-Bot_Crypto` 後 `/plugin install freqai-crypto-trading@trader-bot-crypto`。Claude Desktop、claude.ai、Grok 與其他 AI 的設定見 [`ai-agents.md`](skills/freqai-ea-trading/references/ai-agents.md)；AI 的作業手冊是 [`AGENTS.md`](skills/freqai-ea-trading/AGENTS.md)。
+舊版 Claude Code：`/plugin marketplace add lchouprivate501-netizen/Trader-Bot_Crypto`，再 `/plugin install freqai-crypto-trading@trader-bot-crypto`。
 
-**維護 Agent**：`agents/ea-maintainer.md`（Claude Code 子代理）＋ `skills/freqai-ea-trading/maintenance/ea_guard.py`（健康檢查引擎）＋ 每週 GitHub Actions（`.github/workflows/ea-health.yml`）＋ 實盤守衛容器。每週用凍結參數把 EA 跑在 2026-11-01 之後的新資料上，和各 EA 驗證過的歷史「正常範圍」比較，依事前登記的[維護協議](skills/freqai-ea-trading/maintenance/maintenance-protocol.md)判定 HEALTHY / WATCH / DEGRADED / HALT；HALT 時自動停止新進場，改版只能走候選版本流程並由人核准。
+Claude Desktop、Grok、Cursor 等支援 MCP 的 AI：新增 stdio MCP 連接器，`command` = `python3`，`args` = `<倉庫>/skills/freqai-ea-trading/desk/mcp_server.py`。只能執行指令的 AI 用 `python3 skills/freqai-ea-trading/desk/ea_desk.py …`。完整說明：[`ai-agents.md`](skills/freqai-ea-trading/references/ai-agents.md)；AI 的作業手冊：[`AGENTS.md`](skills/freqai-ea-trading/AGENTS.md)。
 
-## 組織圖（13 個角色）
+## 安全設計
 
-### 研發部（6 人）— `rnd/`
-
-| 角色 | 負責 | 用的工具/程式 |
-|---|---|---|
-| 1. 想策略 | 從執行部紀錄與市場觀察提出假設，登記為 `idea` | `rnd_registry`、`journal/events.jsonl`、`rnd/strategies/registry.json` |
-| 2. 寫程式 | 依模板把策略寫成 `rnd/strategies/<name>.py`（`signals()`、`near()`、`SPACE`） | `rnd/strategies/base.py` |
-| 3. 回測 | nautilus_trader 組合層級回測（手續費用啟用中交易所的 taker、硬性風控同實盤） | `rnd_run_backtest` → `rnd/engine.py` |
-| 4. 優化 | optuna 只在前 70% 資料、少量參數、≤300 次 | `rnd/optimize.py`（`rnd_run_backtest(trials=…)`） |
-| 5. 看報表 | 樣本外門檻表 PASS/FAIL、各幣種/各月份拆解 | `rnd_report` → `rnd/report.py` |
-| 6. 改策略 | 依報表與實盤紀錄修改或淘汰策略（改完是新版本，要重新走完整流程；不准對樣本外調參） | `rnd_registry`、`rnd_report` |
-
-### 執行部（7 人）— `exec/`
-
-| 角色 | 負責 | 用的工具 |
-|---|---|---|
-| 7. 消息面 | 找出危險、不可交易時段（USD 高影響數據、OKX 公告），失敗即封鎖 | `news_danger_windows` |
-| 8. 掃描市場 | 啟用中交易所白名單內，依 24h 成交額選前 10–15 名，附波動率 | `market_scan` |
-| 9. 篩選 | 快要觸發策略的標的 | `shortlist` |
-| 10. 分析 | 規則式多時間框架分析（5m/15m/1h/4h、RSI、ATR、資金費率），提供第二意見 | `analyze_symbol` |
-| 11. 交易計劃 | 只取 `tradable=true` 訊號：進場/停損/停利/數量/有效期 | `live_signals` |
-| 12. 風險管控 | 硬性上限（不可放寬）：每筆 ≤0.5% 風險、日虧 3% 停新單、回撤 15% HALT、連虧 7 筆停 24h、單幣保證金 ≤10%、最多 3 倉、2x 逐倉、禁止提幣/轉帳 | `risk_check`、`risk_state` |
-| 13. 交易紀錄 | 成交、權益、決策與放棄原因寫入帳本與日誌，回流研發部 | `journal_write` |
-
-公司層級：`company_status`、`mode_get` / `mode_set`、`job_status`、`setup_check`、`exchange_get` / `exchange_set`。
-
-## 工作循環
-
-```mermaid
-flowchart LR
-  subgraph RND[研發部]
-    A[想策略] --> B[寫程式] --> D[優化<br/>前70%] --> C[回測<br/>nautilus] --> E[看報表<br/>後30%門檻]
-    E -->|REJECTED| F[改策略] --> B
-  end
-  E -->|PASSED| G{{登記簿 PASSED}}
-  G -->|Trader mode_set LIVE<br/>並通知使用者| X
-  subgraph X[執行部 每 5 分鐘]
-    N[消息面] --> S[掃描] --> L[篩選] --> AN[分析] --> P[交易計劃] --> R[風控] -->|approved| O[(瀏覽器下單)]
-    O --> J[交易紀錄]
-  end
-  J -->|實盤績效| A
-  R -->|回撤15%| H[HALT]
-```
-
-## 更換或新增交易所
-
-預設是 Pionex（`company/exchanges/pionex.json`，由 `company/exchange.json` 指向）。
-
-1. 呼叫 `exchange_get` 查看目前設定與可用設定檔。
-2. 若要沿用 Pionex：不用改。
-3. 若要新增或更換：複製 `company/exchanges/_template.json` 為 `<name>.json` 並填欄位，或把同一份 JSON 傳給 `exchange_set`。也可以 `exchange_set("pionex")` 切回預設。
-4. 交易所必須支援 USDT 保證金永續、逐倉、至少 2 倍槓桿。下單永遠只在瀏覽器進行。
-5. **不要**在設定檔或對話中提供 API 金鑰；含金鑰欄位的請求會被拒絕。
-6. `LIVE` 且仍有未平倉時，`exchange_set` 會拒絕（fail-closed）。更換成功後會依新白名單重掃市場；回測與風控手續費用該設定檔的 taker。
-
-## 自動轉實盤門檻（`company/live_criteria.json`）
-
-樣本外（最後 30%，從未用於調參）必須**全部**通過：交易 ≥300 筆、扣費後獲利因子 ≥1.3、最大回撤 ≤15%、平均每筆淨利 ≥2× 來回手續費、扣掉最好的單一幣種/月份/前兩筆後淨利仍 > 0。
-
-## 使用的開源專案
-
-| 專案 | 網址 | 版本 | 授權 | 用途 |
-|---|---|---|---|---|
-| nautilus_trader | https://github.com/nautechsystems/nautilus_trader | 1.231.0 | LGPL-3.0-or-later | 研發部組合層級回測引擎 |
-| optuna | https://github.com/optuna/optuna | 5.0.0 | MIT | 只在樣本內（前 70%）調參 |
-| mcp (Python SDK) | https://github.com/modelcontextprotocol/python-sdk | 2.3.0 | MIT | stdio MCP 伺服器 |
-| uv | https://github.com/astral-sh/uv | 0.13.8 | Apache-2.0 / MIT | 安裝器與虛擬環境 |
-| graphify (`graphifyy`) | https://github.com/Graphify-Labs/graphify | 0.9.108 | Apache-2.0 | 程式庫知識圖譜（獨立 venv） |
-| pandas | https://github.com/pandas-dev/pandas | 2.3.3 | BSD-3-Clause | 資料與訊號 |
-| pyarrow | https://github.com/apache/arrow | 26.0.1 | Apache-2.0 | Parquet K 線 |
-| requests | https://github.com/psf/requests | 2.32.5 | Apache-2.0 | OKX / 日曆等公開 HTTP |
-| Freqtrade（含 FreqAI） | https://github.com/freqtrade/freqtrade | 2026.10 | GPL-3.0 | 網格 Skill 的回測/交易引擎（獨立 venv，`skills/freqai-grid-trading/scripts/setup_env.sh`） |
-| LightGBM | https://github.com/microsoft/LightGBM | 4.7.0 | MIT | FreqAI 模型 |
-| TradingView Lightweight Charts™ | https://github.com/tradingview/lightweight-charts | 5.2.1 | Apache-2.0 | 網格 Skill 的研究圖表（npm，`skills/freqai-grid-trading/tradingview/`） |
-| TA-Lib（Python） | https://github.com/TA-Lib/ta-lib-python | 0.8.3 | BSD-2-Clause | 指標 |
-
-本倉庫自行撰寫的部分為 MIT（見 LICENSE）。市場資料來自 OKX 公開 REST（不需金鑰）；經濟日曆來自 ForexFactory 公開週曆 JSON。
+- 不需要、也不接受交易所金鑰：引擎強制 dry-run，AI 在你的交易所頁面下單。
+- AI 不能開實盤、不能解除 HALT（要你在終端機互動確認）；任何時候都能 `ea_halt` 停止新進場。
+- 下單前風控：數量不超過 EA 的部位比例、單筆風險 ≤ 資金 10%、不追高超過 2%、守衛 HALT 或累計虧損達資金 35% 就停新單。
+- 停損單一定掛在交易所，只能往上移；引擎壞掉時不開新倉、保留停損。
+- 想直接用 Freqtrade 自動下單的人：[`deployment.md`](skills/freqai-ea-trading/references/deployment.md)（金鑰只放 git-ignored 的 `deploy/ea.env`，關閉提幣權限）。
 
 ## 目錄
 
 | 路徑 | 內容 |
 |---|---|
-| `company/` | 硬性風控、上線門檻、交易所設定檔、回測標的、共用路徑與 OKX 公開資料 |
-| `rnd/` | 資料下載、策略模板與種子策略、nautilus 回測、optuna 優化、報表、`strategies/registry.json` |
-| `exec/` | 消息面、掃描、篩選、分析、訊號、風控、帳本、日誌、單輪週期 |
-| `mcp/` | MCP 套件 `pionex_trading_skills`（相容模組名） |
-| `scripts/` | 5 分鐘排程器、MCP 煙霧測試、交易所設定檔測試 |
-| `skills/freqai-grid-trading/` | Freqtrade + FreqAI 網格交易 Skill（策略、設定、回測/調參/報表腳本、文件） |
-| `skills/freqai-ea-trading/` | Freqtrade + FreqAI 自動交易 EA Skill（BTC/ETH/SOL 趨勢 EA、事前登記驗證、Docker 部署、給 AI 用的 EA 交易台 `desk/`） |
-| `agents/` | EA 維護 Agent（Claude Code 外掛與 `.claude/agents/` 共用） |
-| `.claude-plugin/` | Claude Code 外掛與外掛市集清單（`freqai-crypto-trading`） |
+| `skills/freqai-ea-trading/SKILL.md` | Skill 說明（Claude 會自動讀取） |
+| `skills/freqai-ea-trading/AGENTS.md` | AI 作業手冊 |
+| `skills/freqai-ea-trading/user_data/` | 策略 `EABase`、`BTCTrendEA`、`ETHRiskOnEA`、`SOLMomentumEA`；FreqAI 模型；設定檔 |
+| `skills/freqai-ea-trading/desk/` | AI 交易台、MCP 伺服器、引擎啟動器、預設設定、整合測試 |
+| `skills/freqai-ea-trading/scripts/` | `setup_env.sh`、`download_binance_vision.py`、`ea_lab.py`、`ft_offline.py`、`mtm_report.py`、`exit_analysis.py`、`prediction_quality.py`、`tv_research.py` |
+| `skills/freqai-ea-trading/maintenance/` | 健康檢查引擎 `ea_guard.py`、維護協議、基準線、維護紀錄與報告 |
+| `skills/freqai-ea-trading/references/` | 設計、驗證協議與結果、部署、AI 安裝、完整驗證輸出 |
+| `skills/freqai-ea-trading/tradingview/` | Lightweight Charts 版本鎖定（npm）、頁面模板、研究筆記 |
+| `skills/freqai-ea-trading/deploy/` | Dockerfile、docker-compose、`ea.env.example` |
+| `agents/ea-maintainer.md` | EA 維護 Agent（`.claude/agents/` 有連結） |
+| `.claude-plugin/` | Claude Code 外掛與外掛市集清單 |
+| `.github/workflows/` | `ea-health.yml`（每週健康檢查）、`ea-desk-test.yml`（交易台測試） |
 | `AGENTS.md` | 給所有 AI 的倉庫說明與規則 |
-| `state/`、`journal/` | 模式、帳本、權益與日誌（本機，不進 git） |
 
-手續費來自啟用中交易所設定檔；Pionex 預設 maker 0.02%、taker 0.05%。回測與風控一律以 taker/邊計算（保守）。資金費率未計入回測。
+## 使用的開源專案
+
+| 專案 | 網址 | 版本 | 授權 | 用途 |
+|---|---|---|---|---|
+| Freqtrade（含 FreqAI） | https://github.com/freqtrade/freqtrade | 2026.10 | GPL-3.0 | 回測與交易引擎（獨立 venv，`scripts/setup_env.sh`） |
+| LightGBM | https://github.com/microsoft/LightGBM | 4.7.0 | MIT | FreqAI 模型 |
+| TA-Lib（Python） | https://github.com/TA-Lib/ta-lib-python | 0.8.3 | BSD-2-Clause | 指標 |
+| pandas / NumPy | https://github.com/pandas-dev/pandas | — | BSD-3-Clause | 資料處理 |
+| TradingView Lightweight Charts™ | https://github.com/tradingview/lightweight-charts | 5.2.1 | Apache-2.0 | 研究圖表（npm，`tradingview/`） |
+
+歷史資料來自 Binance 公開資料庫 data.binance.vision；參考價來自 OKX / Binance 公開 API（都不需金鑰）。本倉庫自行撰寫的部分為 MIT（見 [LICENSE](LICENSE)），第三方元件見 [NOTICE](NOTICE)。

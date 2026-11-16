@@ -17,7 +17,7 @@
 ## 1. 準備
 
 - 一台 24 小時開機、能連到交易所 API 的機器（VPS 或家用主機），Docker + Docker Compose。
-- 交易所：設定檔為 Binance 現貨。換成其他 Freqtrade 支援的現貨交易所（OKX、Bybit、Kraken…）只改 `exchange.name` 與交易對；Pionex 不在 Freqtrade 支援名單。
+- 交易所：設定檔為 Binance 現貨。換成其他 Freqtrade 支援的現貨交易所（Bybit、Gate…）只改 `exchange.name` 與交易對。OKX、Kraken、Bitget 不能用：EA 啟動要 2400 根 1 小時 K 線，它們每次給的太少，Freqtrade 會拒絕啟動。Pionex 不在 Freqtrade 支援名單（要用 Pionex 請走 A. AI 交易台）。
 - API 金鑰：只開「現貨交易」，**關閉提幣**，綁 IP 白名單。金鑰只寫在 `deploy/ea.env`（已在 `.gitignore`），不要寫進設定檔或 commit。
 - 資金：每個 EA 一個子帳戶最單純；共用帳戶時每個服務設 `FREQTRADE__AVAILABLE_CAPITAL`，否則三個 EA 會互搶同一筆餘額。
 - 最小金額：單筆部位約為權益的 15%–95%（依波動而定），Binance 現貨最小下單約 5 USDT；建議每個 EA 至少 300 USDT。

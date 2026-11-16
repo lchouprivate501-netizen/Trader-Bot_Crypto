@@ -39,7 +39,7 @@ jobs:
 
       - name: Download market data up to yesterday
         run: |
-          python skills/freqai-grid-trading/scripts/download_binance_vision.py \
+          python skills/freqai-ea-trading/scripts/download_binance_vision.py \
             --pairs BTC/USDT ETH/USDT SOL/USDT --timeframes 1h 15m --start 2025-01 \
             --trading-mode spot --datadir "$FT_HOME/data/binance" --daily-tail
 
