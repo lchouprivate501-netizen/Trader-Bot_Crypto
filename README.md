@@ -22,6 +22,20 @@ Grok Bot「Trader」的私人交易公司：**研發部**在 nautilus_trader 上
 
 Purged walk-forward（66 個 FreqAI 視窗）、5 分鐘掛單成交模擬、每邊 0.10% 手續費、樣本內調參 / 樣本外只看一次。研究圖表用 TradingView 開源的 Lightweight Charts™（`skills/freqai-grid-trading/tradingview/`，`scripts/tv_research.py`），圖上再研究的發現見 [`tradingview-research.md`](skills/freqai-grid-trading/references/tradingview-research.md)。詳見 [`backtest-results.md`](skills/freqai-grid-trading/references/backtest-results.md)；用法見 [`SKILL.md`](skills/freqai-grid-trading/SKILL.md)。**不保證獲利**：樣本外（熊市）只有 ETH 為正，SOL 不建議直接實盤；實盤前至少 30 天 dry-run。
 
+## Freqtrade + FreqAI 自動交易 EA Skill（BTC / ETH / SOL）
+
+`skills/freqai-ea-trading/`（`.claude/skills/freqai-ea-trading` 為符號連結）：三個只做多、現貨、全自動的趨勢跟隨 EA——突破進場、吊燈停損掛在交易所、跌破趨勢出場、FreqAI 預測波動決定部位（每筆停損約虧 10% 權益）。以 Docker 24 小時執行（`deploy/`，預設 dry-run）。
+
+驗證依**事前登記**的協議（[`validation-protocol.md`](skills/freqai-ea-trading/references/validation-protocol.md)，在任何 EA 回測之前推上 GitHub），各期間只跑一次：
+
+| EA | 判定 | 從未測過的 2018-06 → 2021-06 | 2024-12 → 2026-10 熊市 |
+|---|---|---|---|
+| `BTCTrendEA` | **通過** | +137.9%，回撤 31.1%（持有 70.4%） | +0.7%（持有 −23.1%） |
+| `ETHRiskOnEA` | **未通過**（交易僅 12 筆 < 15） | +192.5%，回撤 22.9%（持有 86.8%） | +27.2%（持有 −40.9%） |
+| `SOLMomentumEA` | **通過** | 移轉測試 6/6 幣獲利（平均 +36%） | +1.4%（持有 −58.0%） |
+
+詳見 [`validation-results.md`](skills/freqai-ea-trading/references/validation-results.md)。**不保證獲利**；牛市會跑輸買入持有；上線前至少 30 天 dry-run。
+
 ## 組織圖（13 個角色）
 
 ### 研發部（6 人）— `rnd/`
@@ -111,6 +125,7 @@ flowchart LR
 | `mcp/` | MCP 套件 `pionex_trading_skills`（相容模組名） |
 | `scripts/` | 5 分鐘排程器、MCP 煙霧測試、交易所設定檔測試 |
 | `skills/freqai-grid-trading/` | Freqtrade + FreqAI 網格交易 Skill（策略、設定、回測/調參/報表腳本、文件） |
+| `skills/freqai-ea-trading/` | Freqtrade + FreqAI 自動交易 EA Skill（BTC/ETH/SOL 趨勢 EA、事前登記驗證、Docker 部署） |
 | `state/`、`journal/` | 模式、帳本、權益與日誌（本機，不進 git） |
 
 手續費來自啟用中交易所設定檔；Pionex 預設 maker 0.02%、taker 0.05%。回測與風控一律以 taker/邊計算（保守）。資金費率未計入回測。

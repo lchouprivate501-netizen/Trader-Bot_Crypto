@@ -17,6 +17,16 @@ description: >-
 
 > 不保證獲利。是否「驗證通過」由事前登記的協議決定（`references/validation-protocol.md`，在任何 EA 回測之前推上 GitHub），結果見 `references/validation-results.md`。
 
+## 驗證結果（事前登記協議，各跑一次）
+
+| EA | 判定 | V1 從未測過的 2018-06 → 2021-06 | V2 2024-12 → 2026-10（熊市） | 全歷史連續回測 |
+|---|---|---|---|---|
+| BTCTrendEA | **通過** | +137.9%，回撤 31.1%（持有 +395.5% / 70.4%），PF 3.76，17 筆 | +0.7%（持有 −23.1%），回撤 18.8% | 2018-06 → 2026-10 +303.7%，回撤 31.1% |
+| ETHRiskOnEA | **未通過**（V1 只有 12 筆 < 15） | +192.5%，回撤 22.9%（持有 86.8%），PF 14.3 | +27.2%（持有 −40.9%），回撤 15.5% | +387.8%（持有 +288.3%），回撤 22.9% |
+| SOLMomentumEA | **通過** | V3：SOL 規則套 6 個沒研究過的幣，6/6 獲利、平均 +36%、回撤 26%（持有 93%） | +1.4%（持有 −58.0%），回撤 13.3% | 2021-06 → 2026-10 +246.2%，回撤 22.0% |
+
+趨勢跟隨的代價：牛市跑輸買入持有、熊市只能空手（不會賺）、每年只有 4–5 筆。ETH 未通過是因為樣本太少，不能事後放寬門檻；只建議 dry-run 累積紀錄。細節：`references/validation-results.md`。
+
 ## 檔案
 
 | 路徑 | 內容 |
@@ -33,6 +43,8 @@ description: >-
 | `references/validation-results.md` | 驗證結果 |
 | `references/ea-design.md` | 設計、圖表研究過程、研發期調參紀錄 |
 | `references/deployment.md` | 上線檢查表、監控、緊急停止 |
+| `references/results/validation_*.json` | 驗證的完整輸出 |
+| `tradingview/research_notes.json` | TradingView 研究頁的筆記（圖表模板與函式庫在 freqai-grid-trading skill） |
 
 依賴同倉庫的 `skills/freqai-grid-trading/scripts/`（回測包裝 `ft_offline.py`、盯市報告 `grid_report.py`、資料下載、TradingView 圖表 `tv_research.py`）。
 

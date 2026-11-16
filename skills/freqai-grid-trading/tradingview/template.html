@@ -1,4 +1,4 @@
-<title>FreqAI 網格研究圖表</title>
+<title>__PAGE_TITLE__</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -74,8 +74,8 @@ footer a { color: var(--accent); }
 <div class="wrap">
   <header>
     <span class="label">Freqtrade + FreqAI · TradingView Lightweight Charts</span>
-    <h1>FreqAI 網格研究圖表</h1>
-    <p class="sub">BTC、ETH、SOL 三個現貨網格在 2021-06 → 2026-10 的完整回測，每一筆網格成交都畫在成交價上。陰影是持倉期間（綠 = 該輪獲利、紅 = 虧損），淡藍底是樣本外。</p>
+    <h1>__PAGE_TITLE__</h1>
+    <p class="sub">__PAGE_SUB__</p>
   </header>
 
   <div class="toolbar">
@@ -121,7 +121,8 @@ const $ = (id) => document.getElementById(id);
 const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const fmtPct = (v, d = 1) => (v == null ? "–" : (v > 0 ? "+" : "") + Number(v).toFixed(d) + "%");
 const cls = (v) => (v == null ? "" : v >= 0 ? "pos" : "neg");
-const EXIT = { regime_off: "趨勢出", grid_break: "破網", trail_lock: "鎖利", force_exit: "期末", exit_signal: "訊號出" };
+const EXIT = { regime_off: "趨勢出", grid_break: "破網", trail_lock: "鎖利", force_exit: "期末", exit_signal: "訊號出",
+  trend_off: "趨勢出", risk_off: "BTC轉弱", trailing_stop_loss: "移動停損", stop_loss: "停損", stoploss_on_exchange: "交易所停損" };
 let BAR = 4 * 3600;
 let state = { coin: 0, range: "all", fills: true, visible: null };
 let chart = null;
@@ -169,8 +170,11 @@ function renderStats(c) {
     ["全期間報酬", fmtPct(f.strategy.total_return_pct), `持有 ${fmtPct(f.buy_hold.total_return_pct)}`, f.strategy.total_return_pct],
     ["CAGR", fmtPct(f.strategy.cagr_pct), `Calmar ${f.strategy.calmar}`, f.strategy.cagr_pct],
     ["盯市最大回撤", "−" + f.strategy.max_drawdown_pct.toFixed(1) + "%", `持有 −${f.buy_hold.max_drawdown_pct.toFixed(1)}%`, -1],
-    ["樣本外報酬", o ? fmtPct(o.strategy.total_return_pct) : "–", o ? `持有 ${fmtPct(o.buy_hold.total_return_pct)}` : "", o ? o.strategy.total_return_pct : null],
-    ["網格買 / 賣", `${f.orders.grid_buys} / ${f.orders.grid_sells}`, `${f.orders.sessions} 輪`, null],
+    o ? ["樣本外報酬", fmtPct(o.strategy.total_return_pct), `持有 ${fmtPct(o.buy_hold.total_return_pct)}`, o.strategy.total_return_pct]
+      : (() => { const w = c.report.yearly.reduce((a, y) => (y.strategy_pct < a.strategy_pct ? y : a), c.report.yearly[0]);
+          return ["最差年份", `${w.year} ${fmtPct(w.strategy_pct)}`, `同年持有 ${fmtPct(w.buy_hold_pct)}`, w.strategy_pct]; })(),
+    c.kind === "ea" ? ["交易筆數", `${f.orders.sessions}`, `出場：${Object.entries(f.orders.exit_reasons).map(([k, v]) => `${EXIT[k] || k} ${v}`).join("、")}`, null]
+      : ["網格買 / 賣", `${f.orders.grid_buys} / ${f.orders.grid_sells}`, `${f.orders.sessions} 輪`, null],
     ["時間在場內", f.exposure.time_in_market_pct + "%", `平均曝險 ${f.exposure.avg_gross_exposure_pct}%`, null],
   ];
   $("stats").innerHTML = tiles.map(([k, v, s, sign]) =>
@@ -201,11 +205,13 @@ function keys(c) {
     ["sw", css("--accent"), `趨勢 EMA(${c.params.trend_ema}h)`],
     ["dot", css("--up"), "網格買"], ["dot", css("--amber"), "網格賣"],
     ["sw", css("--fg"), "策略權益"], ["sw", css("--muted"), "買入持有"],
-    ["sw", css("--violet"), "FreqAI 預測日波動%"], ["sw", css("--muted"), "實際日波動%"], ["sw", css("--amber"), "格距%"],
-    ["sw", css("--accent"), "FreqAI 漂移 z"],
+    ["sw", css("--violet"), "FreqAI 預測日波動%"], ["sw", css("--muted"), "實際日波動%"], ["sw", css("--amber"), c.kind === "ea" ? "停損距離%" : "格距%"],
   ];
+  if (c.z) k.push(["sw", css("--accent"), "FreqAI 漂移 z"]);
   if (c.risk_on) k.splice(1, 0, ["sw", css("--up"), `BTC risk-on（EMA ${c.params.ref_trend_ema}h）`]);
-  $("keys").innerHTML = "<span>面板：價格 / 權益 vs 持有（對數）/ 回撤 / FreqAI 波動 / FreqAI 漂移</span>" +
+  if (c.donchian) k.splice(1, 0, ["sw", css("--muted"), `突破線（前 ${c.params.breakout_h}h 高點）`]);
+  if (c.kind === "ea") k.splice(k.findIndex((x) => x[2] === "網格買"), 2);
+  $("keys").innerHTML = `<span>面板：價格 / 權益 vs 持有（對數）/ 回撤 / FreqAI 波動${c.z ? " / FreqAI 漂移" : ""}</span>` +
     k.map(([t, col, lab]) => `<span class="key"><i class="${t}" style="background:${col}"></i>${esc(lab)}</span>`).join("");
 }
 
@@ -247,6 +253,10 @@ function buildChart(c) {
   }
   const emaS = chart.addSeries(LC.LineSeries, { color: css("--accent"), lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat }, P.price);
   emaS.setData(toLine(c.ema));
+  if (c.donchian) {
+    const dc = chart.addSeries(LC.LineSeries, { color: css("--muted"), lineWidth: 1, lineStyle: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat }, P.price);
+    dc.setData(toLine(c.donchian));
+  }
 
   const marks = [];
   c.sessions.forEach((s) => {
@@ -291,18 +301,18 @@ function buildChart(c) {
       topFillColor1: css("--shade-win"), topFillColor2: css("--shade-win"), bottomFillColor1: css("--shade-loss"), bottomFillColor2: css("--shade-loss"),
       lineWidth: 1, priceLineVisible: false, lastValueVisible: false }, P.z);
     zS.setData(toLine(c.z));
-    zS.createPriceLine({ price: c.params.enter_z, color: css("--accent"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "開" });
-    zS.createPriceLine({ price: c.params.exit_z, color: css("--down"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "關" });
+    if (c.params.enter_z != null) zS.createPriceLine({ price: c.params.enter_z, color: css("--accent"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "開" });
+    if (c.params.exit_z != null) zS.createPriceLine({ price: c.params.exit_z, color: css("--down"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "關" });
   }
   const panes = chart.panes();
-  [0.47, 0.17, 0.12, 0.12, 0.12].forEach((f, i) => panes[i] && panes[i].setStretchFactor(f));
+  (c.z ? [0.47, 0.17, 0.12, 0.12, 0.12] : [0.52, 0.18, 0.15, 0.15]).forEach((f, i) => panes[i] && panes[i].setStretchFactor(f));
 
   // crosshair legend
   const pos = new Map(T.map((t, i) => [t, i]));
   const legend = (t) => {
     const i = pos.get(t);
     const v = (arr, d = 2) => (arr && i != null && arr[i] != null ? Number(arr[i]).toFixed(d) : "–");
-    $("legend").textContent = `${c.label}  ${day(t)}  收 ${v(c.c, prec)}  權益 ${v(c.equity, 3)}  持有 ${v(c.bh, 3)}  回撤 ${v(c.dd_eq, 1)}%  σ預測 ${v(c.sigma_pred)}%  σ實際 ${v(c.sigma_real)}%  z ${v(c.z)}`;
+    $("legend").textContent = `${c.label}  ${day(t)}  收 ${v(c.c, prec)}  權益 ${v(c.equity, 3)}  持有 ${v(c.bh, 3)}  回撤 ${v(c.dd_eq, 1)}%  σ預測 ${v(c.sigma_pred)}%  σ實際 ${v(c.sigma_real)}%${c.z ? `  z ${v(c.z)}` : ""}`;
   };
   chart.subscribeCrosshairMove((p) => { if (p && p.time) legend(p.time); });
   legend(T[T.length - 1]);
@@ -323,6 +333,8 @@ function applyRange(c) {
 function renderAll() {
   const c = DATA.coins[state.coin];
   renderTabs(); renderStats(c); renderYears(c); keys(c); buildChart(c);
+  $("r-is").hidden = $("r-oos").hidden = !c.split;
+  $("fillsToggle").hidden = c.kind === "ea";
   document.querySelectorAll("#ranges button").forEach((b) => b.setAttribute("aria-pressed", String(!state.visible && b.dataset.range === state.range)));
   document.querySelectorAll("#fillsToggle button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.fills === "1") === state.fills)));
 }

@@ -1,0 +1,693 @@
+{
+  "coin": "btc",
+  "frozen_params": {
+    "trend_ema": 2400,
+    "ema_band": 0.02,
+    "slope_h": 0,
+    "breakout_h": 240,
+    "init_k": null,
+    "trail_k": 10.0,
+    "risk_per_trade": 0.1,
+    "max_alloc": 0.95,
+    "min_alloc": 0.05,
+    "ref_trend_ema": 0,
+    "ai_vol": true
+  },
+  "ran_at": "2026-11-16T03:51:25.787185Z",
+  "DEV": {
+    "strategy": "BTCTrendEA",
+    "pair_traded": "BTC/USDT",
+    "return_pct": 89.79,
+    "cagr_pct": 19.88,
+    "max_dd_pct": 17.13,
+    "calmar": 1.16,
+    "sharpe": 1.07,
+    "bh_return_pct": 167.54,
+    "bh_max_dd_pct": 77.2,
+    "trades": 15,
+    "win_rate_pct": 46.7,
+    "profit_factor": 5.77,
+    "avg_win": 1551.63,
+    "avg_loss": -235.31,
+    "avg_hold_days": 43.7,
+    "exit_reasons": {
+      "trend_off": 12,
+      "trailing_stop_loss": 2,
+      "force_exit": 1
+    },
+    "exposure": {
+      "time_in_market_pct": 50.8,
+      "time_long_pct": 50.8,
+      "time_short_pct": 0.0,
+      "avg_gross_exposure_pct": 25.2,
+      "max_gross_exposure_pct": 91.6
+    },
+    "yearly": [
+      {
+        "year": 2021,
+        "strategy_pct": 1.39,
+        "strategy_maxdd_pct": 9.21,
+        "buy_hold_pct": 22.27,
+        "buy_hold_maxdd_pct": 33.47
+      },
+      {
+        "year": 2022,
+        "strategy_pct": -1.03,
+        "strategy_maxdd_pct": 3.59,
+        "buy_hold_pct": -64.54,
+        "buy_hold_maxdd_pct": 67.38
+      },
+      {
+        "year": 2023,
+        "strategy_pct": 36.22,
+        "strategy_maxdd_pct": 11.65,
+        "buy_hold_pct": 155.8,
+        "buy_hold_maxdd_pct": 21.74
+      },
+      {
+        "year": 2024,
+        "strategy_pct": 38.33,
+        "strategy_maxdd_pct": 17.13,
+        "buy_hold_pct": 138.08,
+        "buy_hold_maxdd_pct": 32.31
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20210601-20241212",
+    "fee": 0.001,
+    "result_file": "/root/ftwork/ea/val/runs/btc/DEV/backtest-result-2026-11-16_03-51-41.zip"
+  },
+  "V2": {
+    "strategy": "BTCTrendEA",
+    "pair_traded": "BTC/USDT",
+    "return_pct": 0.69,
+    "cagr_pct": 0.37,
+    "max_dd_pct": 18.77,
+    "calmar": 0.02,
+    "sharpe": 0.1,
+    "bh_return_pct": -23.05,
+    "bh_max_dd_pct": 53.74,
+    "trades": 7,
+    "win_rate_pct": 28.6,
+    "profit_factor": 1.04,
+    "avg_win": 864.51,
+    "avg_loss": -331.92,
+    "avg_hold_days": 48.0,
+    "exit_reasons": {
+      "trend_off": 5,
+      "trailing_stop_loss": 1,
+      "force_exit": 1
+    },
+    "exposure": {
+      "time_in_market_pct": 48.8,
+      "time_long_pct": 48.8,
+      "time_short_pct": 0.0,
+      "avg_gross_exposure_pct": 27.1,
+      "max_gross_exposure_pct": 76.1
+    },
+    "yearly": [
+      {
+        "year": 2024,
+        "strategy_pct": -3.9,
+        "strategy_maxdd_pct": 5.73,
+        "buy_hold_pct": -7.14,
+        "buy_hold_maxdd_pct": 15.13
+      },
+      {
+        "year": 2025,
+        "strategy_pct": -2.36,
+        "strategy_maxdd_pct": 16.54,
+        "buy_hold_pct": -7.15,
+        "buy_hold_maxdd_pct": 34.76
+      },
+      {
+        "year": 2026,
+        "strategy_pct": 6.98,
+        "strategy_maxdd_pct": 8.74,
+        "buy_hold_pct": -11.69,
+        "buy_hold_maxdd_pct": 40.31
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20241212-20261101",
+    "fee": 0.001,
+    "result_file": "/root/ftwork/ea/val/runs/btc/V2/backtest-result-2026-11-16_03-52-03.zip"
+  },
+  "V1": {
+    "strategy": "BTCTrendEA",
+    "pair_traded": "BTC/USDT",
+    "return_pct": 137.93,
+    "cagr_pct": 33.47,
+    "max_dd_pct": 31.11,
+    "calmar": 1.08,
+    "sharpe": 1.28,
+    "bh_return_pct": 395.54,
+    "bh_max_dd_pct": 70.41,
+    "trades": 17,
+    "win_rate_pct": 41.2,
+    "profit_factor": 3.76,
+    "avg_win": 2684.49,
+    "avg_loss": -499.85,
+    "avg_hold_days": 31.1,
+    "exit_reasons": {
+      "trend_off": 11,
+      "trailing_stop_loss": 6
+    },
+    "exposure": {
+      "time_in_market_pct": 48.2,
+      "time_long_pct": 48.2,
+      "time_short_pct": 0.0,
+      "avg_gross_exposure_pct": 22.8,
+      "max_gross_exposure_pct": 88.0
+    },
+    "yearly": [
+      {
+        "year": 2018,
+        "strategy_pct": -9.56,
+        "strategy_maxdd_pct": 12.65,
+        "buy_hold_pct": -50.75,
+        "buy_hold_maxdd_pct": 62.39
+      },
+      {
+        "year": 2019,
+        "strategy_pct": 26.52,
+        "strategy_maxdd_pct": 29.0,
+        "buy_hold_pct": 94.45,
+        "buy_hold_maxdd_pct": 53.15
+      },
+      {
+        "year": 2020,
+        "strategy_pct": 93.64,
+        "strategy_maxdd_pct": 13.93,
+        "buy_hold_pct": 303.0,
+        "buy_hold_maxdd_pct": 60.48
+      },
+      {
+        "year": 2021,
+        "strategy_pct": 7.24,
+        "strategy_maxdd_pct": 16.21,
+        "buy_hold_pct": 28.48,
+        "buy_hold_maxdd_pct": 50.08
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20180601-20210601",
+    "fee": 0.001,
+    "result_file": "/root/ftwork/ea/val/runs/btc/V1/backtest-result-2026-11-16_03-52-25.zip"
+  },
+  "V4": {
+    "perturbations": [
+      {
+        "strategy": "BTCTrendEA",
+        "pair_traded": "BTC/USDT",
+        "return_pct": 106.5,
+        "cagr_pct": 22.77,
+        "max_dd_pct": 23.03,
+        "calmar": 0.99,
+        "sharpe": 1.12,
+        "bh_return_pct": 167.54,
+        "bh_max_dd_pct": 77.2,
+        "trades": 16,
+        "win_rate_pct": 43.8,
+        "profit_factor": 4.48,
+        "avg_win": 1958.26,
+        "avg_loss": -339.81,
+        "avg_hold_days": 41.2,
+        "exit_reasons": {
+          "trend_off": 12,
+          "trailing_stop_loss": 3,
+          "force_exit": 1
+        },
+        "exposure": {
+          "time_in_market_pct": 51.0,
+          "time_long_pct": 51.0,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 26.4,
+          "max_gross_exposure_pct": 91.6
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 1.39,
+            "strategy_maxdd_pct": 9.21,
+            "buy_hold_pct": 22.27,
+            "buy_hold_maxdd_pct": 33.47
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -1.03,
+            "strategy_maxdd_pct": 3.59,
+            "buy_hold_pct": -64.54,
+            "buy_hold_maxdd_pct": 67.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 46.31,
+            "strategy_maxdd_pct": 11.01,
+            "buy_hold_pct": 155.8,
+            "buy_hold_maxdd_pct": 21.74
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 40.13,
+            "strategy_maxdd_pct": 23.03,
+            "buy_hold_pct": 138.08,
+            "buy_hold_maxdd_pct": 32.31
+          }
+        ],
+        "params": {
+          "breakout_h": 180
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCTrendEA",
+        "pair_traded": "BTC/USDT",
+        "return_pct": 80.45,
+        "cagr_pct": 18.18,
+        "max_dd_pct": 17.6,
+        "calmar": 1.03,
+        "sharpe": 1.01,
+        "bh_return_pct": 167.54,
+        "bh_max_dd_pct": 77.2,
+        "trades": 15,
+        "win_rate_pct": 40.0,
+        "profit_factor": 5.23,
+        "avg_win": 1658.12,
+        "avg_loss": -211.53,
+        "avg_hold_days": 43.0,
+        "exit_reasons": {
+          "trend_off": 12,
+          "trailing_stop_loss": 2,
+          "force_exit": 1
+        },
+        "exposure": {
+          "time_in_market_pct": 50.0,
+          "time_long_pct": 50.0,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 24.1,
+          "max_gross_exposure_pct": 91.6
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 0.2,
+            "strategy_maxdd_pct": 8.58,
+            "buy_hold_pct": 22.27,
+            "buy_hold_maxdd_pct": 33.47
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -1.03,
+            "strategy_maxdd_pct": 3.59,
+            "buy_hold_pct": -64.54,
+            "buy_hold_maxdd_pct": 67.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 31.8,
+            "strategy_maxdd_pct": 14.52,
+            "buy_hold_pct": 155.8,
+            "buy_hold_maxdd_pct": 21.74
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 37.54,
+            "strategy_maxdd_pct": 17.6,
+            "buy_hold_pct": 138.08,
+            "buy_hold_maxdd_pct": 32.31
+          }
+        ],
+        "params": {
+          "breakout_h": 300
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCTrendEA",
+        "pair_traded": "BTC/USDT",
+        "return_pct": 122.21,
+        "cagr_pct": 25.35,
+        "max_dd_pct": 20.06,
+        "calmar": 1.26,
+        "sharpe": 1.11,
+        "bh_return_pct": 167.54,
+        "bh_max_dd_pct": 77.2,
+        "trades": 16,
+        "win_rate_pct": 43.8,
+        "profit_factor": 5.34,
+        "avg_win": 2147.9,
+        "avg_loss": -312.72,
+        "avg_hold_days": 38.7,
+        "exit_reasons": {
+          "trend_off": 10,
+          "trailing_stop_loss": 5,
+          "force_exit": 1
+        },
+        "exposure": {
+          "time_in_market_pct": 48.0,
+          "time_long_pct": 48.0,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 29.6,
+          "max_gross_exposure_pct": 95.9
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 1.69,
+            "strategy_maxdd_pct": 11.8,
+            "buy_hold_pct": 22.27,
+            "buy_hold_maxdd_pct": 33.47
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -1.37,
+            "strategy_maxdd_pct": 4.74,
+            "buy_hold_pct": -64.54,
+            "buy_hold_maxdd_pct": 67.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 46.78,
+            "strategy_maxdd_pct": 12.48,
+            "buy_hold_pct": 155.8,
+            "buy_hold_maxdd_pct": 21.74
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 50.94,
+            "strategy_maxdd_pct": 20.06,
+            "buy_hold_pct": 138.08,
+            "buy_hold_maxdd_pct": 32.31
+          }
+        ],
+        "params": {
+          "trail_k": 7.5
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCTrendEA",
+        "pair_traded": "BTC/USDT",
+        "return_pct": 64.67,
+        "cagr_pct": 15.16,
+        "max_dd_pct": 14.22,
+        "calmar": 1.07,
+        "sharpe": 0.99,
+        "bh_return_pct": 167.54,
+        "bh_max_dd_pct": 77.2,
+        "trades": 15,
+        "win_rate_pct": 46.7,
+        "profit_factor": 5.55,
+        "avg_win": 1126.97,
+        "avg_loss": -177.67,
+        "avg_hold_days": 44.1,
+        "exit_reasons": {
+          "trend_off": 13,
+          "trailing_stop_loss": 1,
+          "force_exit": 1
+        },
+        "exposure": {
+          "time_in_market_pct": 51.3,
+          "time_long_pct": 51.3,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 20.9,
+          "max_gross_exposure_pct": 73.5
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 1.13,
+            "strategy_maxdd_pct": 7.57,
+            "buy_hold_pct": 22.27,
+            "buy_hold_maxdd_pct": 33.47
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -0.82,
+            "strategy_maxdd_pct": 2.89,
+            "buy_hold_pct": -64.54,
+            "buy_hold_maxdd_pct": 67.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 28.67,
+            "strategy_maxdd_pct": 9.65,
+            "buy_hold_pct": 155.8,
+            "buy_hold_maxdd_pct": 21.74
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 27.2,
+            "strategy_maxdd_pct": 14.22,
+            "buy_hold_pct": 138.08,
+            "buy_hold_maxdd_pct": 32.31
+          }
+        ],
+        "params": {
+          "trail_k": 12.5
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCTrendEA",
+        "pair_traded": "BTC/USDT",
+        "return_pct": 64.11,
+        "cagr_pct": 15.05,
+        "max_dd_pct": 13.46,
+        "calmar": 1.12,
+        "sharpe": 1.04,
+        "bh_return_pct": 167.54,
+        "bh_max_dd_pct": 77.2,
+        "trades": 15,
+        "win_rate_pct": 46.7,
+        "profit_factor": 5.8,
+        "avg_win": 1106.7,
+        "avg_loss": -166.98,
+        "avg_hold_days": 43.7,
+        "exit_reasons": {
+          "trend_off": 12,
+          "trailing_stop_loss": 2,
+          "force_exit": 1
+        },
+        "exposure": {
+          "time_in_market_pct": 50.8,
+          "time_long_pct": 50.8,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 19.4,
+          "max_gross_exposure_pct": 69.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 1.07,
+            "strategy_maxdd_pct": 7.14,
+            "buy_hold_pct": 22.27,
+            "buy_hold_maxdd_pct": 33.47
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -0.77,
+            "strategy_maxdd_pct": 2.71,
+            "buy_hold_pct": -64.54,
+            "buy_hold_maxdd_pct": 67.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 26.89,
+            "strategy_maxdd_pct": 9.07,
+            "buy_hold_pct": 155.8,
+            "buy_hold_maxdd_pct": 21.74
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 28.59,
+            "strategy_maxdd_pct": 13.46,
+            "buy_hold_pct": 138.08,
+            "buy_hold_maxdd_pct": 32.31
+          }
+        ],
+        "params": {
+          "risk_per_trade": 0.075
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCTrendEA",
+        "pair_traded": "BTC/USDT",
+        "return_pct": 118.61,
+        "cagr_pct": 24.77,
+        "max_dd_pct": 20.49,
+        "calmar": 1.21,
+        "sharpe": 1.1,
+        "bh_return_pct": 167.54,
+        "bh_max_dd_pct": 77.2,
+        "trades": 15,
+        "win_rate_pct": 46.7,
+        "profit_factor": 5.97,
+        "avg_win": 2035.46,
+        "avg_loss": -298.34,
+        "avg_hold_days": 43.7,
+        "exit_reasons": {
+          "trend_off": 12,
+          "trailing_stop_loss": 2,
+          "force_exit": 1
+        },
+        "exposure": {
+          "time_in_market_pct": 50.8,
+          "time_long_pct": 50.8,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 30.5,
+          "max_gross_exposure_pct": 96.2
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 1.7,
+            "strategy_maxdd_pct": 11.14,
+            "buy_hold_pct": 22.27,
+            "buy_hold_maxdd_pct": 33.47
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -1.29,
+            "strategy_maxdd_pct": 4.46,
+            "buy_hold_pct": -64.54,
+            "buy_hold_maxdd_pct": 67.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 46.35,
+            "strategy_maxdd_pct": 13.22,
+            "buy_hold_pct": 155.8,
+            "buy_hold_maxdd_pct": 21.74
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 48.15,
+            "strategy_maxdd_pct": 20.49,
+            "buy_hold_pct": 138.08,
+            "buy_hold_maxdd_pct": 32.31
+          }
+        ],
+        "params": {
+          "risk_per_trade": 0.125
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      }
+    ],
+    "fee_0.2pct": {
+      "strategy": "BTCTrendEA",
+      "pair_traded": "BTC/USDT",
+      "return_pct": 87.26,
+      "cagr_pct": 19.42,
+      "max_dd_pct": 17.49,
+      "calmar": 1.11,
+      "sharpe": 1.04,
+      "bh_return_pct": 167.54,
+      "bh_max_dd_pct": 77.2,
+      "trades": 15,
+      "win_rate_pct": 46.7,
+      "profit_factor": 5.47,
+      "avg_win": 1525.7,
+      "avg_loss": -244.21,
+      "avg_hold_days": 43.7,
+      "exit_reasons": {
+        "trend_off": 12,
+        "trailing_stop_loss": 2,
+        "force_exit": 1
+      },
+      "exposure": {
+        "time_in_market_pct": 50.8,
+        "time_long_pct": 50.8,
+        "time_short_pct": 0.0,
+        "avg_gross_exposure_pct": 25.2,
+        "max_gross_exposure_pct": 91.7
+      },
+      "yearly": [
+        {
+          "year": 2021,
+          "strategy_pct": 1.21,
+          "strategy_maxdd_pct": 9.21,
+          "buy_hold_pct": 22.27,
+          "buy_hold_maxdd_pct": 33.47
+        },
+        {
+          "year": 2022,
+          "strategy_pct": -1.09,
+          "strategy_maxdd_pct": 3.62,
+          "buy_hold_pct": -64.54,
+          "buy_hold_maxdd_pct": 67.38
+        },
+        {
+          "year": 2023,
+          "strategy_pct": 35.52,
+          "strategy_maxdd_pct": 12.08,
+          "buy_hold_pct": 155.8,
+          "buy_hold_maxdd_pct": 21.74
+        },
+        {
+          "year": 2024,
+          "strategy_pct": 37.51,
+          "strategy_maxdd_pct": 17.49,
+          "buy_hold_pct": 138.08,
+          "buy_hold_maxdd_pct": 32.31
+        }
+      ],
+      "params": {},
+      "pair": null,
+      "timerange": "20210601-20241212",
+      "fee": 0.002,
+      "result_file": null
+    }
+  },
+  "criteria": [
+    {
+      "test": "V1 \u7e3d\u5831\u916c > 0",
+      "pass": true,
+      "value": "137.93%"
+    },
+    {
+      "test": "V1 \u6700\u5927\u56de\u64a4 < \u6301\u6709\u6700\u5927\u56de\u64a4\u7684 50%",
+      "pass": true,
+      "value": "31.11% vs \u6301\u6709 70.41%"
+    },
+    {
+      "test": "V1 \u7372\u5229\u56e0\u5b50 \u2265 1.3 \u4e14\u4ea4\u6613 \u2265 15 \u7b46",
+      "pass": true,
+      "value": "PF 3.76\uff0c17 \u7b46"
+    },
+    {
+      "test": "V2 \u5831\u916c > \u6301\u6709\u4e14\u6700\u5927\u56de\u64a4 \u2264 30%",
+      "pass": true,
+      "value": "0.69% vs \u6301\u6709 -23.05%\uff0c\u56de\u64a4 18.77%"
+    },
+    {
+      "test": "V4 \u2265 75% \u53c3\u6578\u64fe\u52d5\u4ecd\u7372\u5229\uff0c\u4e14 0.20% \u624b\u7e8c\u8cbb\u4ecd\u7372\u5229",
+      "pass": true,
+      "value": "100% \u64fe\u52d5\u7372\u5229\uff1b0.20% \u624b\u7e8c\u8cbb 87.26%"
+    }
+  ],
+  "verdict": "PASS"
+}

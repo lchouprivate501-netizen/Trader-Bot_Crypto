@@ -24,6 +24,7 @@ Usage (Freqtrade venv):
 from __future__ import annotations
 
 import argparse
+import html
 import importlib
 import json
 import sys
@@ -45,10 +46,17 @@ from grid_report import build as build_report  # noqa: E402
 from grid_report import equity_curve, load  # noqa: E402
 
 
+STRATEGY_PATHS = [SKILL / "user_data/strategies"]
+
+
 def strategy_params(name: str, cfg: dict) -> dict:
-    sys.path.insert(0, str(SKILL / "user_data/strategies"))
+    """Grid strategies keep their parameters in GRID, EA strategies in EA."""
+    for path in STRATEGY_PATHS:
+        if str(path) not in sys.path:
+            sys.path.insert(0, str(path))
     cls = getattr(importlib.import_module(name), name)
-    return {**cls.GRID, **cfg.get("grid_params", {})}
+    base = getattr(cls, "GRID", None) or getattr(cls, "EA", {})
+    return {**base, **cfg.get("grid_params", {}), **cfg.get("ea_params", {})}
 
 
 def candles_1h(datadir: Path, pair: str) -> pd.DataFrame:
@@ -114,14 +122,17 @@ def coin_payload(zip_path: Path, datadir: Path, models: Path, bar: str, split: s
         pr = pr.reindex(h.index)
         sigma = h["rv"] * np.exp(pr["&-vol_ratio"])
         z = (pr["&-drift"] - pr["&-drift_mean"]) / pr["&-drift_std"]
-        h = h.assign(
-            sigma_pred=sigma * np.sqrt(24) * 100,
-            sigma_real=h["fwd_rv"] * np.sqrt(24) * 100,
-            step=(p["step_mult"] * sigma).clip(p["step_min"], p["step_max"]) * 100,
-            z=z,
-        )
+        h = h.assign(sigma_pred=sigma * np.sqrt(24) * 100, sigma_real=h["fwd_rv"] * np.sqrt(24) * 100, z=z)
+        if "step_mult" in p:  # grid strategies: the grid step
+            h["step"] = (p["step_mult"] * sigma).clip(p["step_min"], p["step_max"]) * 100
+        elif "trail_k" in p:  # EAs: the chandelier stop distance
+            h["step"] = p["trail_k"] * (sigma * np.sqrt(24)).ewm(span=72, adjust=False).mean() * 100
+    if int(p.get("breakout_h", 0)) > 0:
+        h["donchian"] = h["high"].rolling(int(p["breakout_h"])).max().shift(1)
 
     agg = {"open": "first", "high": "max", "low": "min", "close": "last", "ema": "last"}
+    if "donchian" in h:
+        agg["donchian"] = "last"
     for col, how in (("sigma_pred", "mean"), ("sigma_real", "mean"), ("step", "mean"), ("z", "last"), ("risk_on", "last")):
         if col in h:
             agg[col] = how
@@ -169,7 +180,9 @@ def coin_payload(zip_path: Path, datadir: Path, models: Path, bar: str, split: s
         "label": label or pair.split("/")[0],
         "pair": pair,
         "mode": strat.get("trading_mode"),
-        "params": {k: p[k] for k in ("trend_ema", "ema_band", "core_frac", "max_lots", "step_mult", "enter_z", "exit_z", "ref_trend_ema", "trail_steps", "break_steps")},
+        "params": {k: p.get(k) for k in ("trend_ema", "ema_band", "core_frac", "max_lots", "step_mult", "enter_z", "exit_z",
+                                          "ref_trend_ema", "trail_steps", "break_steps", "breakout_h", "trail_k", "vol_target")},
+        "kind": "grid" if "step_mult" in p else "ea",
         "t": t,
         "o": sig(b["open"]), "h": sig(b["high"]), "l": sig(b["low"]), "c": sig(b["close"]),
         "ema": sig(b["ema"]),
@@ -182,6 +195,10 @@ def coin_payload(zip_path: Path, datadir: Path, models: Path, bar: str, split: s
         "report": {k: rep[k] for k in ("full", "in_sample", "out_of_sample", "yearly") if k in rep},
         "split": int(pd.Timestamp(split, tz="UTC").timestamp()) if split else None,
     }
+    if "donchian" in b:
+        out["donchian"] = sig(b["donchian"])
+    if out["kind"] == "ea":  # EAs do not use the drift forecast
+        b = b.drop(columns=["z"], errors="ignore")
     for name_, nd in (("sigma_pred", 2), ("sigma_real", 2), ("step", 2), ("z", 2)):
         if name_ in b:
             out[name_] = col(b[name_], nd)
@@ -199,11 +216,17 @@ def main() -> None:
     ap.add_argument("--bar", default="4h", help="chart bar size (resampled from 1h)")
     ap.add_argument("--split", default="2024-12-12", help="in-sample / out-of-sample boundary")
     ap.add_argument("--notes", help="JSON list of research notes {coin,title,from,to,body}")
+    ap.add_argument("--strategy-path", action="append", default=[],
+                    help="extra strategy folder(s) to import from (e.g. the EA skill)")
     ap.add_argument("--out", default="grid_research.html")
     ap.add_argument("--cdn", action="store_true", help="load Lightweight Charts from jsDelivr instead of inlining")
     ap.add_argument("--fragment", action="store_true", help="omit <html>/<head>/<body> (for hosts that add them)")
+    ap.add_argument("--title", default="FreqAI 網格研究圖表")
+    ap.add_argument("--subtitle", default="BTC、ETH、SOL 三個現貨網格在 2021-06 → 2026-10 的完整回測，每一筆網格成交都畫在成交價上。"
+                    "陰影是持倉期間（綠 = 該輪獲利、紅 = 虧損），淡藍底是樣本外。")
     args = ap.parse_args()
 
+    STRATEGY_PATHS.extend(Path(x) for x in args.strategy_path)
     coins = []
     for spec in args.run:
         z, _, label = spec.partition("::")
@@ -217,7 +240,8 @@ def main() -> None:
         if not LIB_FILE.exists():
             sys.exit(f"{LIB_FILE} missing: run `npm install` in {TV_DIR} (or pass --cdn)")
         lib = "<script>\n" + LIB_FILE.read_text() + "\n</script>"
-    page = tpl.replace("<!--__LIB__-->", lib).replace("/*__DATA__*/null", data.replace("</", "<\\/"))
+    page = tpl.replace("__PAGE_TITLE__", html.escape(args.title)).replace("__PAGE_SUB__", html.escape(args.subtitle))
+    page = page.replace("<!--__LIB__-->", lib).replace("/*__DATA__*/null", data.replace("</", "<\\/"))
     if not args.fragment:
         page = (
             '<!doctype html>\n<html lang="zh-Hant">\n<head>\n<meta charset="utf-8">\n'

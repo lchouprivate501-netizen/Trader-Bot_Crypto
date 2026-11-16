@@ -1,0 +1,1080 @@
+{
+  "coin": "sol",
+  "frozen_params": {
+    "trend_ema": 1200,
+    "ema_band": 0.02,
+    "slope_h": 24,
+    "breakout_h": 720,
+    "init_k": null,
+    "trail_k": 12.0,
+    "risk_per_trade": 0.1,
+    "max_alloc": 0.95,
+    "min_alloc": 0.05,
+    "ref_trend_ema": 0,
+    "ai_vol": true
+  },
+  "ran_at": "2026-11-16T03:54:33.780163Z",
+  "DEV": {
+    "strategy": "SOLMomentumEA",
+    "pair_traded": "SOL/USDT",
+    "return_pct": 241.36,
+    "cagr_pct": 41.54,
+    "max_dd_pct": 21.95,
+    "calmar": 1.89,
+    "sharpe": 1.49,
+    "bh_return_pct": 600.78,
+    "bh_max_dd_pct": 96.8,
+    "trades": 14,
+    "win_rate_pct": 50.0,
+    "profit_factor": 11.15,
+    "avg_win": 3787.75,
+    "avg_loss": -339.81,
+    "avg_hold_days": 33.3,
+    "exit_reasons": {
+      "trend_off": 13,
+      "trailing_stop_loss": 1
+    },
+    "exposure": {
+      "time_in_market_pct": 36.2,
+      "time_long_pct": 36.2,
+      "time_short_pct": 0.0,
+      "avg_gross_exposure_pct": 12.0,
+      "max_gross_exposure_pct": 76.0
+    },
+    "yearly": [
+      {
+        "year": 2021,
+        "strategy_pct": 51.57,
+        "strategy_maxdd_pct": 19.04,
+        "buy_hold_pct": 424.11,
+        "buy_hold_maxdd_pct": 52.22
+      },
+      {
+        "year": 2022,
+        "strategy_pct": -7.02,
+        "strategy_maxdd_pct": 13.58,
+        "buy_hold_pct": -94.22,
+        "buy_hold_maxdd_pct": 95.38
+      },
+      {
+        "year": 2023,
+        "strategy_pct": 132.06,
+        "strategy_maxdd_pct": 15.24,
+        "buy_hold_pct": 918.22,
+        "buy_hold_maxdd_pct": 47.18
+      },
+      {
+        "year": 2024,
+        "strategy_pct": 4.2,
+        "strategy_maxdd_pct": 18.01,
+        "buy_hold_pct": 122.92,
+        "buy_hold_maxdd_pct": 46.52
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20210601-20241212",
+    "fee": 0.001,
+    "result_file": "/root/ftwork/ea/val/runs/sol/DEV/backtest-result-2026-11-16_03-54-47.zip"
+  },
+  "V2": {
+    "strategy": "SOLMomentumEA",
+    "pair_traded": "SOL/USDT",
+    "return_pct": 1.41,
+    "cagr_pct": 0.74,
+    "max_dd_pct": 13.29,
+    "calmar": 0.06,
+    "sharpe": 0.12,
+    "bh_return_pct": -57.97,
+    "bh_max_dd_pct": 78.73,
+    "trades": 8,
+    "win_rate_pct": 25.0,
+    "profit_factor": 1.13,
+    "avg_win": 598.42,
+    "avg_loss": -176.0,
+    "avg_hold_days": 23.7,
+    "exit_reasons": {
+      "trend_off": 8
+    },
+    "exposure": {
+      "time_in_market_pct": 27.5,
+      "time_long_pct": 27.5,
+      "time_short_pct": 0.0,
+      "avg_gross_exposure_pct": 9.0,
+      "max_gross_exposure_pct": 53.9
+    },
+    "yearly": [
+      {
+        "year": 2024,
+        "strategy_pct": 0.0,
+        "strategy_maxdd_pct": -0.0,
+        "buy_hold_pct": -16.7,
+        "buy_hold_maxdd_pct": 24.79
+      },
+      {
+        "year": 2025,
+        "strategy_pct": -2.0,
+        "strategy_maxdd_pct": 9.36,
+        "buy_hold_pct": -35.26,
+        "buy_hold_maxdd_pct": 66.06
+      },
+      {
+        "year": 2026,
+        "strategy_pct": 3.48,
+        "strategy_maxdd_pct": 9.34,
+        "buy_hold_pct": -23.68,
+        "buy_hold_maxdd_pct": 58.73
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20241212-20261101",
+    "fee": 0.001,
+    "result_file": "/root/ftwork/ea/val/runs/sol/V2/backtest-result-2026-11-16_03-55-23.zip"
+  },
+  "V3": [
+    {
+      "strategy": "SOLMomentumEA",
+      "pair_traded": "AVAX/USDT",
+      "return_pct": 31.39,
+      "cagr_pct": 5.42,
+      "max_dd_pct": 24.01,
+      "calmar": 0.23,
+      "sharpe": 0.44,
+      "bh_return_pct": -78.56,
+      "bh_max_dd_pct": 95.92,
+      "trades": 23,
+      "win_rate_pct": 30.4,
+      "profit_factor": 1.96,
+      "avg_win": 916.85,
+      "avg_loss": -204.92,
+      "avg_hold_days": 20.2,
+      "exit_reasons": {
+        "trend_off": 23
+      },
+      "exposure": {
+        "time_in_market_pct": 24.6,
+        "time_long_pct": 24.6,
+        "time_short_pct": 0.0,
+        "avg_gross_exposure_pct": 6.4,
+        "max_gross_exposure_pct": 53.8
+      },
+      "yearly": [
+        {
+          "year": 2021,
+          "strategy_pct": 2.76,
+          "strategy_maxdd_pct": 9.65,
+          "buy_hold_pct": 173.51,
+          "buy_hold_maxdd_pct": 46.58
+        },
+        {
+          "year": 2022,
+          "strategy_pct": -9.02,
+          "strategy_maxdd_pct": 9.19,
+          "buy_hold_pct": -90.24,
+          "buy_hold_maxdd_pct": 90.9
+        },
+        {
+          "year": 2023,
+          "strategy_pct": 48.46,
+          "strategy_maxdd_pct": 12.14,
+          "buy_hold_pct": 255.3,
+          "buy_hold_maxdd_pct": 60.85
+        },
+        {
+          "year": 2024,
+          "strategy_pct": -7.59,
+          "strategy_maxdd_pct": 18.54,
+          "buy_hold_pct": -8.29,
+          "buy_hold_maxdd_pct": 72.26
+        },
+        {
+          "year": 2025,
+          "strategy_pct": -1.68,
+          "strategy_maxdd_pct": 6.44,
+          "buy_hold_pct": -65.98,
+          "buy_hold_maxdd_pct": 74.72
+        },
+        {
+          "year": 2026,
+          "strategy_pct": 3.7,
+          "strategy_maxdd_pct": 8.63,
+          "buy_hold_pct": -30.49,
+          "buy_hold_maxdd_pct": 60.38
+        }
+      ],
+      "params": {},
+      "pair": "AVAX/USDT",
+      "timerange": "20210901-20261101",
+      "fee": 0.001,
+      "result_file": "/root/ftwork/ea/val/runs/sol/V3_AVAX/backtest-result-2026-11-16_03-56-41.zip"
+    },
+    {
+      "strategy": "SOLMomentumEA",
+      "pair_traded": "NEAR/USDT",
+      "return_pct": 81.17,
+      "cagr_pct": 12.18,
+      "max_dd_pct": 26.41,
+      "calmar": 0.46,
+      "sharpe": 0.67,
+      "bh_return_pct": -15.26,
+      "bh_max_dd_pct": 95.37,
+      "trades": 22,
+      "win_rate_pct": 31.8,
+      "profit_factor": 3.37,
+      "avg_win": 1649.23,
+      "avg_loss": -228.52,
+      "avg_hold_days": 22.9,
+      "exit_reasons": {
+        "trend_off": 20,
+        "trailing_stop_loss": 2
+      },
+      "exposure": {
+        "time_in_market_pct": 26.7,
+        "time_long_pct": 26.7,
+        "time_short_pct": 0.0,
+        "avg_gross_exposure_pct": 6.5,
+        "max_gross_exposure_pct": 63.5
+      },
+      "yearly": [
+        {
+          "year": 2021,
+          "strategy_pct": -0.59,
+          "strategy_maxdd_pct": 7.24,
+          "buy_hold_pct": 180.01,
+          "buy_hold_maxdd_pct": 48.38
+        },
+        {
+          "year": 2022,
+          "strategy_pct": -2.25,
+          "strategy_maxdd_pct": 7.65,
+          "buy_hold_pct": -91.47,
+          "buy_hold_maxdd_pct": 93.85
+        },
+        {
+          "year": 2023,
+          "strategy_pct": 63.17,
+          "strategy_maxdd_pct": 14.58,
+          "buy_hold_pct": 192.47,
+          "buy_hold_maxdd_pct": 64.77
+        },
+        {
+          "year": 2024,
+          "strategy_pct": -6.43,
+          "strategy_maxdd_pct": 19.9,
+          "buy_hold_pct": 30.32,
+          "buy_hold_maxdd_pct": 64.64
+        },
+        {
+          "year": 2025,
+          "strategy_pct": -4.31,
+          "strategy_maxdd_pct": 7.9,
+          "buy_hold_pct": -69.68,
+          "buy_hold_maxdd_pct": 76.93
+        },
+        {
+          "year": 2026,
+          "strategy_pct": 25.23,
+          "strategy_maxdd_pct": 17.05,
+          "buy_hold_pct": 191.76,
+          "buy_hold_maxdd_pct": 49.84
+        }
+      ],
+      "params": {},
+      "pair": "NEAR/USDT",
+      "timerange": "20210901-20261101",
+      "fee": 0.001,
+      "result_file": "/root/ftwork/ea/val/runs/sol/V3_NEAR/backtest-result-2026-11-16_03-56-44.zip"
+    },
+    {
+      "strategy": "SOLMomentumEA",
+      "pair_traded": "DOT/USDT",
+      "return_pct": 20.89,
+      "cagr_pct": 3.74,
+      "max_dd_pct": 25.6,
+      "calmar": 0.15,
+      "sharpe": 0.32,
+      "bh_return_pct": -96.89,
+      "bh_max_dd_pct": 98.68,
+      "trades": 20,
+      "win_rate_pct": 25.0,
+      "profit_factor": 1.75,
+      "avg_win": 975.88,
+      "avg_loss": -186.0,
+      "avg_hold_days": 19.6,
+      "exit_reasons": {
+        "trend_off": 18,
+        "trailing_stop_loss": 2
+      },
+      "exposure": {
+        "time_in_market_pct": 20.8,
+        "time_long_pct": 20.8,
+        "time_short_pct": 0.0,
+        "avg_gross_exposure_pct": 6.1,
+        "max_gross_exposure_pct": 62.0
+      },
+      "yearly": [
+        {
+          "year": 2021,
+          "strategy_pct": -1.37,
+          "strategy_maxdd_pct": 3.98,
+          "buy_hold_pct": -12.7,
+          "buy_hold_maxdd_pct": 57.21
+        },
+        {
+          "year": 2022,
+          "strategy_pct": -6.66,
+          "strategy_maxdd_pct": 8.8,
+          "buy_hold_pct": -84.18,
+          "buy_hold_maxdd_pct": 86.05
+        },
+        {
+          "year": 2023,
+          "strategy_pct": 35.67,
+          "strategy_maxdd_pct": 15.55,
+          "buy_hold_pct": 91.41,
+          "buy_hold_maxdd_pct": 53.29
+        },
+        {
+          "year": 2024,
+          "strategy_pct": 5.25,
+          "strategy_maxdd_pct": 17.27,
+          "buy_hold_pct": -19.64,
+          "buy_hold_maxdd_pct": 68.91
+        },
+        {
+          "year": 2025,
+          "strategy_pct": -4.26,
+          "strategy_maxdd_pct": 8.54,
+          "buy_hold_pct": -73.48,
+          "buy_hold_maxdd_pct": 78.95
+        },
+        {
+          "year": 2026,
+          "strategy_pct": -4.38,
+          "strategy_maxdd_pct": 7.86,
+          "buy_hold_pct": -46.72,
+          "buy_hold_maxdd_pct": 68.6
+        }
+      ],
+      "params": {},
+      "pair": "DOT/USDT",
+      "timerange": "20210901-20261101",
+      "fee": 0.001,
+      "result_file": "/root/ftwork/ea/val/runs/sol/V3_DOT/backtest-result-2026-11-16_03-56-54.zip"
+    },
+    {
+      "strategy": "SOLMomentumEA",
+      "pair_traded": "ADA/USDT",
+      "return_pct": 39.96,
+      "cagr_pct": 6.72,
+      "max_dd_pct": 30.94,
+      "calmar": 0.22,
+      "sharpe": 0.49,
+      "bh_return_pct": -92.93,
+      "bh_max_dd_pct": 95.51,
+      "trades": 21,
+      "win_rate_pct": 19.0,
+      "profit_factor": 1.91,
+      "avg_win": 2097.97,
+      "avg_loss": -258.6,
+      "avg_hold_days": 19.8,
+      "exit_reasons": {
+        "trend_off": 19,
+        "trailing_stop_loss": 2
+      },
+      "exposure": {
+        "time_in_market_pct": 22.1,
+        "time_long_pct": 22.1,
+        "time_short_pct": 0.0,
+        "avg_gross_exposure_pct": 6.6,
+        "max_gross_exposure_pct": 61.8
+      },
+      "yearly": [
+        {
+          "year": 2021,
+          "strategy_pct": -4.18,
+          "strategy_maxdd_pct": 4.74,
+          "buy_hold_pct": -52.16,
+          "buy_hold_maxdd_pct": 61.1
+        },
+        {
+          "year": 2022,
+          "strategy_pct": -6.17,
+          "strategy_maxdd_pct": 7.36,
+          "buy_hold_pct": -81.53,
+          "buy_hold_maxdd_pct": 85.18
+        },
+        {
+          "year": 2023,
+          "strategy_pct": 43.18,
+          "strategy_maxdd_pct": 11.24,
+          "buy_hold_pct": 142.94,
+          "buy_hold_maxdd_pct": 48.01
+        },
+        {
+          "year": 2024,
+          "strategy_pct": 27.91,
+          "strategy_maxdd_pct": 18.43,
+          "buy_hold_pct": 41.34,
+          "buy_hold_maxdd_pct": 64.17
+        },
+        {
+          "year": 2025,
+          "strategy_pct": -7.91,
+          "strategy_maxdd_pct": 9.76,
+          "buy_hold_pct": -61.2,
+          "buy_hold_maxdd_pct": 71.28
+        },
+        {
+          "year": 2026,
+          "strategy_pct": -8.06,
+          "strategy_maxdd_pct": 9.28,
+          "buy_hold_pct": -42.13,
+          "buy_hold_maxdd_pct": 67.49
+        }
+      ],
+      "params": {},
+      "pair": "ADA/USDT",
+      "timerange": "20210901-20261101",
+      "fee": 0.001,
+      "result_file": "/root/ftwork/ea/val/runs/sol/V3_ADA/backtest-result-2026-11-16_03-57-32.zip"
+    },
+    {
+      "strategy": "SOLMomentumEA",
+      "pair_traded": "LINK/USDT",
+      "return_pct": 17.16,
+      "cagr_pct": 3.11,
+      "max_dd_pct": 26.06,
+      "calmar": 0.12,
+      "sharpe": 0.27,
+      "bh_return_pct": -55.29,
+      "bh_max_dd_pct": 86.94,
+      "trades": 28,
+      "win_rate_pct": 21.4,
+      "profit_factor": 1.46,
+      "avg_win": 909.01,
+      "avg_loss": -169.91,
+      "avg_hold_days": 22.3,
+      "exit_reasons": {
+        "trend_off": 28
+      },
+      "exposure": {
+        "time_in_market_pct": 33.1,
+        "time_long_pct": 33.1,
+        "time_short_pct": 0.0,
+        "avg_gross_exposure_pct": 9.0,
+        "max_gross_exposure_pct": 46.1
+      },
+      "yearly": [
+        {
+          "year": 2021,
+          "strategy_pct": -2.02,
+          "strategy_maxdd_pct": 4.76,
+          "buy_hold_pct": -25.96,
+          "buy_hold_maxdd_pct": 54.65
+        },
+        {
+          "year": 2022,
+          "strategy_pct": -4.92,
+          "strategy_maxdd_pct": 7.67,
+          "buy_hold_pct": -72.08,
+          "buy_hold_maxdd_pct": 81.14
+        },
+        {
+          "year": 2023,
+          "strategy_pct": 20.92,
+          "strategy_maxdd_pct": 12.13,
+          "buy_hold_pct": 170.38,
+          "buy_hold_maxdd_pct": 43.01
+        },
+        {
+          "year": 2024,
+          "strategy_pct": 6.47,
+          "strategy_maxdd_pct": 15.54,
+          "buy_hold_pct": 32.32,
+          "buy_hold_maxdd_pct": 61.76
+        },
+        {
+          "year": 2025,
+          "strategy_pct": -2.49,
+          "strategy_maxdd_pct": 6.86,
+          "buy_hold_pct": -39.64,
+          "buy_hold_maxdd_pct": 62.21
+        },
+        {
+          "year": 2026,
+          "strategy_pct": -0.34,
+          "strategy_maxdd_pct": 10.73,
+          "buy_hold_pct": -3.74,
+          "buy_hold_maxdd_pct": 50.8
+        }
+      ],
+      "params": {},
+      "pair": "LINK/USDT",
+      "timerange": "20210901-20261101",
+      "fee": 0.001,
+      "result_file": "/root/ftwork/ea/val/runs/sol/V3_LINK/backtest-result-2026-11-16_03-58-50.zip"
+    },
+    {
+      "strategy": "SOLMomentumEA",
+      "pair_traded": "DOGE/USDT",
+      "return_pct": 25.33,
+      "cagr_pct": 4.46,
+      "max_dd_pct": 24.73,
+      "calmar": 0.18,
+      "sharpe": 0.34,
+      "bh_return_pct": -72.34,
+      "bh_max_dd_pct": 85.57,
+      "trades": 22,
+      "win_rate_pct": 27.3,
+      "profit_factor": 1.71,
+      "avg_win": 1014.51,
+      "avg_loss": -222.14,
+      "avg_hold_days": 19.2,
+      "exit_reasons": {
+        "trend_off": 19,
+        "trailing_stop_loss": 3
+      },
+      "exposure": {
+        "time_in_market_pct": 22.4,
+        "time_long_pct": 22.4,
+        "time_short_pct": 0.0,
+        "avg_gross_exposure_pct": 6.6,
+        "max_gross_exposure_pct": 49.6
+      },
+      "yearly": [
+        {
+          "year": 2021,
+          "strategy_pct": -4.36,
+          "strategy_maxdd_pct": 4.36,
+          "buy_hold_pct": -37.78,
+          "buy_hold_maxdd_pct": 52.96
+        },
+        {
+          "year": 2022,
+          "strategy_pct": 4.47,
+          "strategy_maxdd_pct": 16.63,
+          "buy_hold_pct": -59.13,
+          "buy_hold_maxdd_pct": 74.86
+        },
+        {
+          "year": 2023,
+          "strategy_pct": 9.67,
+          "strategy_maxdd_pct": 9.18,
+          "buy_hold_pct": 28.3,
+          "buy_hold_maxdd_pct": 43.64
+        },
+        {
+          "year": 2024,
+          "strategy_pct": 28.21,
+          "strategy_maxdd_pct": 21.64,
+          "buy_hold_pct": 251.78,
+          "buy_hold_maxdd_pct": 63.58
+        },
+        {
+          "year": 2025,
+          "strategy_pct": -5.91,
+          "strategy_maxdd_pct": 9.25,
+          "buy_hold_pct": -63.43,
+          "buy_hold_maxdd_pct": 72.79
+        },
+        {
+          "year": 2026,
+          "strategy_pct": -5.32,
+          "strategy_maxdd_pct": 11.15,
+          "buy_hold_pct": -35.81,
+          "buy_hold_maxdd_pct": 55.34
+        }
+      ],
+      "params": {},
+      "pair": "DOGE/USDT",
+      "timerange": "20210901-20261101",
+      "fee": 0.001,
+      "result_file": "/root/ftwork/ea/val/runs/sol/V3_DOGE/backtest-result-2026-11-16_03-58-51.zip"
+    }
+  ],
+  "V4": {
+    "perturbations": [
+      {
+        "strategy": "SOLMomentumEA",
+        "pair_traded": "SOL/USDT",
+        "return_pct": 241.34,
+        "cagr_pct": 41.54,
+        "max_dd_pct": 25.05,
+        "calmar": 1.66,
+        "sharpe": 1.47,
+        "bh_return_pct": 600.78,
+        "bh_max_dd_pct": 96.8,
+        "trades": 18,
+        "win_rate_pct": 38.9,
+        "profit_factor": 9.12,
+        "avg_win": 3872.28,
+        "avg_loss": -270.18,
+        "avg_hold_days": 27.2,
+        "exit_reasons": {
+          "trend_off": 17,
+          "trailing_stop_loss": 1
+        },
+        "exposure": {
+          "time_in_market_pct": 37.9,
+          "time_long_pct": 37.9,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 12.5,
+          "max_gross_exposure_pct": 76.8
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 54.84,
+            "strategy_maxdd_pct": 19.27,
+            "buy_hold_pct": 424.11,
+            "buy_hold_maxdd_pct": 52.22
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -8.9,
+            "strategy_maxdd_pct": 15.91,
+            "buy_hold_pct": -94.22,
+            "buy_hold_maxdd_pct": 95.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 129.06,
+            "strategy_maxdd_pct": 15.4,
+            "buy_hold_pct": 918.22,
+            "buy_hold_maxdd_pct": 47.18
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 5.46,
+            "strategy_maxdd_pct": 17.88,
+            "buy_hold_pct": 122.92,
+            "buy_hold_maxdd_pct": 46.52
+          }
+        ],
+        "params": {
+          "breakout_h": 540
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      },
+      {
+        "strategy": "SOLMomentumEA",
+        "pair_traded": "SOL/USDT",
+        "return_pct": 160.67,
+        "cagr_pct": 31.14,
+        "max_dd_pct": 22.6,
+        "calmar": 1.38,
+        "sharpe": 1.3,
+        "bh_return_pct": 600.78,
+        "bh_max_dd_pct": 96.8,
+        "trades": 13,
+        "win_rate_pct": 38.5,
+        "profit_factor": 7.06,
+        "avg_win": 3743.67,
+        "avg_loss": -331.42,
+        "avg_hold_days": 36.0,
+        "exit_reasons": {
+          "trend_off": 13
+        },
+        "exposure": {
+          "time_in_market_pct": 36.3,
+          "time_long_pct": 36.3,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 11.5,
+          "max_gross_exposure_pct": 65.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 51.57,
+            "strategy_maxdd_pct": 19.04,
+            "buy_hold_pct": 424.11,
+            "buy_hold_maxdd_pct": 52.22
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -7.9,
+            "strategy_maxdd_pct": 14.4,
+            "buy_hold_pct": -94.22,
+            "buy_hold_maxdd_pct": 95.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 84.6,
+            "strategy_maxdd_pct": 13.05,
+            "buy_hold_pct": 918.22,
+            "buy_hold_maxdd_pct": 47.18
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 1.01,
+            "strategy_maxdd_pct": 18.27,
+            "buy_hold_pct": 122.92,
+            "buy_hold_maxdd_pct": 46.52
+          }
+        ],
+        "params": {
+          "breakout_h": 900
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      },
+      {
+        "strategy": "SOLMomentumEA",
+        "pair_traded": "SOL/USDT",
+        "return_pct": 218.37,
+        "cagr_pct": 38.77,
+        "max_dd_pct": 24.7,
+        "calmar": 1.57,
+        "sharpe": 1.36,
+        "bh_return_pct": 600.78,
+        "bh_max_dd_pct": 96.8,
+        "trades": 15,
+        "win_rate_pct": 53.3,
+        "profit_factor": 7.65,
+        "avg_win": 3140.37,
+        "avg_loss": -469.39,
+        "avg_hold_days": 31.3,
+        "exit_reasons": {
+          "trend_off": 13,
+          "trailing_stop_loss": 2
+        },
+        "exposure": {
+          "time_in_market_pct": 36.4,
+          "time_long_pct": 36.4,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 13.5,
+          "max_gross_exposure_pct": 73.8
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 68.76,
+            "strategy_maxdd_pct": 22.61,
+            "buy_hold_pct": 424.11,
+            "buy_hold_maxdd_pct": 52.22
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -9.28,
+            "strategy_maxdd_pct": 17.62,
+            "buy_hold_pct": -94.22,
+            "buy_hold_maxdd_pct": 95.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 90.1,
+            "strategy_maxdd_pct": 16.56,
+            "buy_hold_pct": 918.22,
+            "buy_hold_maxdd_pct": 47.18
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 9.32,
+            "strategy_maxdd_pct": 18.82,
+            "buy_hold_pct": 122.92,
+            "buy_hold_maxdd_pct": 46.52
+          }
+        ],
+        "params": {
+          "trail_k": 9.0
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      },
+      {
+        "strategy": "SOLMomentumEA",
+        "pair_traded": "SOL/USDT",
+        "return_pct": 172.25,
+        "cagr_pct": 32.76,
+        "max_dd_pct": 22.63,
+        "calmar": 1.45,
+        "sharpe": 1.37,
+        "bh_return_pct": 600.78,
+        "bh_max_dd_pct": 96.8,
+        "trades": 14,
+        "win_rate_pct": 50.0,
+        "profit_factor": 11.18,
+        "avg_win": 2702.57,
+        "avg_loss": -241.81,
+        "avg_hold_days": 34.7,
+        "exit_reasons": {
+          "trend_off": 14
+        },
+        "exposure": {
+          "time_in_market_pct": 37.6,
+          "time_long_pct": 37.6,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 11.0,
+          "max_gross_exposure_pct": 69.5
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 41.25,
+            "strategy_maxdd_pct": 16.44,
+            "buy_hold_pct": 424.11,
+            "buy_hold_maxdd_pct": 52.22
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -5.64,
+            "strategy_maxdd_pct": 11.04,
+            "buy_hold_pct": -94.22,
+            "buy_hold_maxdd_pct": 95.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 105.75,
+            "strategy_maxdd_pct": 13.95,
+            "buy_hold_pct": 918.22,
+            "buy_hold_maxdd_pct": 47.18
+          },
+          {
+            "year": 2024,
+            "strategy_pct": -0.87,
+            "strategy_maxdd_pct": 19.07,
+            "buy_hold_pct": 122.92,
+            "buy_hold_maxdd_pct": 46.52
+          }
+        ],
+        "params": {
+          "trail_k": 15.0
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      },
+      {
+        "strategy": "SOLMomentumEA",
+        "pair_traded": "SOL/USDT",
+        "return_pct": 167.78,
+        "cagr_pct": 32.14,
+        "max_dd_pct": 19.33,
+        "calmar": 1.66,
+        "sharpe": 1.45,
+        "bh_return_pct": 600.78,
+        "bh_max_dd_pct": 96.8,
+        "trades": 14,
+        "win_rate_pct": 50.0,
+        "profit_factor": 11.74,
+        "avg_win": 2619.98,
+        "avg_loss": -223.09,
+        "avg_hold_days": 33.3,
+        "exit_reasons": {
+          "trend_off": 13,
+          "trailing_stop_loss": 1
+        },
+        "exposure": {
+          "time_in_market_pct": 36.2,
+          "time_long_pct": 36.2,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 9.5,
+          "max_gross_exposure_pct": 67.6
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 38.68,
+            "strategy_maxdd_pct": 15.72,
+            "buy_hold_pct": 424.11,
+            "buy_hold_maxdd_pct": 52.22
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -5.3,
+            "strategy_maxdd_pct": 10.4,
+            "buy_hold_pct": -94.22,
+            "buy_hold_maxdd_pct": 95.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 99.17,
+            "strategy_maxdd_pct": 13.56,
+            "buy_hold_pct": 918.22,
+            "buy_hold_maxdd_pct": 47.18
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 2.23,
+            "strategy_maxdd_pct": 15.72,
+            "buy_hold_pct": 122.92,
+            "buy_hold_maxdd_pct": 46.52
+          }
+        ],
+        "params": {
+          "risk_per_trade": 0.075
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      },
+      {
+        "strategy": "SOLMomentumEA",
+        "pair_traded": "SOL/USDT",
+        "return_pct": 323.9,
+        "cagr_pct": 50.48,
+        "max_dd_pct": 23.97,
+        "calmar": 2.11,
+        "sharpe": 1.53,
+        "bh_return_pct": 600.78,
+        "bh_max_dd_pct": 96.8,
+        "trades": 14,
+        "win_rate_pct": 50.0,
+        "profit_factor": 10.62,
+        "avg_win": 5107.9,
+        "avg_loss": -480.74,
+        "avg_hold_days": 33.3,
+        "exit_reasons": {
+          "trend_off": 13,
+          "trailing_stop_loss": 1
+        },
+        "exposure": {
+          "time_in_market_pct": 36.2,
+          "time_long_pct": 36.2,
+          "time_short_pct": 0.0,
+          "avg_gross_exposure_pct": 14.3,
+          "max_gross_exposure_pct": 82.1
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 64.46,
+            "strategy_maxdd_pct": 21.8,
+            "buy_hold_pct": 424.11,
+            "buy_hold_maxdd_pct": 52.22
+          },
+          {
+            "year": 2022,
+            "strategy_pct": -8.72,
+            "strategy_maxdd_pct": 16.63,
+            "buy_hold_pct": -94.22,
+            "buy_hold_maxdd_pct": 95.38
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 164.86,
+            "strategy_maxdd_pct": 17.02,
+            "buy_hold_pct": 918.22,
+            "buy_hold_maxdd_pct": 47.18
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 6.42,
+            "strategy_maxdd_pct": 19.8,
+            "buy_hold_pct": 122.92,
+            "buy_hold_maxdd_pct": 46.52
+          }
+        ],
+        "params": {
+          "risk_per_trade": 0.125
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.001,
+        "result_file": null
+      }
+    ],
+    "fee_0.2pct": {
+      "strategy": "SOLMomentumEA",
+      "pair_traded": "SOL/USDT",
+      "return_pct": 239.2,
+      "cagr_pct": 41.28,
+      "max_dd_pct": 22.03,
+      "calmar": 1.87,
+      "sharpe": 1.48,
+      "bh_return_pct": 600.78,
+      "bh_max_dd_pct": 96.8,
+      "trades": 14,
+      "win_rate_pct": 50.0,
+      "profit_factor": 10.85,
+      "avg_win": 3763.89,
+      "avg_loss": -346.76,
+      "avg_hold_days": 33.3,
+      "exit_reasons": {
+        "trend_off": 13,
+        "trailing_stop_loss": 1
+      },
+      "exposure": {
+        "time_in_market_pct": 36.2,
+        "time_long_pct": 36.2,
+        "time_short_pct": 0.0,
+        "avg_gross_exposure_pct": 12.0,
+        "max_gross_exposure_pct": 76.0
+      },
+      "yearly": [
+        {
+          "year": 2021,
+          "strategy_pct": 51.49,
+          "strategy_maxdd_pct": 19.04,
+          "buy_hold_pct": 424.11,
+          "buy_hold_maxdd_pct": 52.22
+        },
+        {
+          "year": 2022,
+          "strategy_pct": -7.16,
+          "strategy_maxdd_pct": 13.69,
+          "buy_hold_pct": -94.22,
+          "buy_hold_maxdd_pct": 95.38
+        },
+        {
+          "year": 2023,
+          "strategy_pct": 131.78,
+          "strategy_maxdd_pct": 15.24,
+          "buy_hold_pct": 918.22,
+          "buy_hold_maxdd_pct": 47.18
+        },
+        {
+          "year": 2024,
+          "strategy_pct": 3.88,
+          "strategy_maxdd_pct": 18.09,
+          "buy_hold_pct": 122.92,
+          "buy_hold_maxdd_pct": 46.52
+        }
+      ],
+      "params": {},
+      "pair": null,
+      "timerange": "20210601-20241212",
+      "fee": 0.002,
+      "result_file": null
+    }
+  },
+  "criteria": [
+    {
+      "test": "V3 6 \u5e63\u4e2d \u2265 4 \u500b\u7372\u5229\u4e14\u5e73\u5747\u5831\u916c > 0",
+      "pass": true,
+      "value": "6/6 \u7372\u5229\uff0c\u5e73\u5747 36.0%"
+    },
+    {
+      "test": "V3 \u5e73\u5747\u6700\u5927\u56de\u64a4 < \u6301\u6709\u5e73\u5747\u6700\u5927\u56de\u64a4\u7684 50%",
+      "pass": true,
+      "value": "26.3% vs \u6301\u6709 93.0%"
+    },
+    {
+      "test": "\u7814\u767c\u671f\u7372\u5229\u56e0\u5b50 \u2265 1.3",
+      "pass": true,
+      "value": "PF 11.15"
+    },
+    {
+      "test": "V2 \u5831\u916c > \u6301\u6709\u4e14\u6700\u5927\u56de\u64a4 \u2264 30%",
+      "pass": true,
+      "value": "1.41% vs \u6301\u6709 -57.97%\uff0c\u56de\u64a4 13.29%"
+    },
+    {
+      "test": "V4 \u2265 75% \u53c3\u6578\u64fe\u52d5\u4ecd\u7372\u5229\uff0c\u4e14 0.20% \u624b\u7e8c\u8cbb\u4ecd\u7372\u5229",
+      "pass": true,
+      "value": "100% \u64fe\u52d5\u7372\u5229\uff1b0.20% \u624b\u7e8c\u8cbb 239.2%"
+    }
+  ],
+  "verdict": "PASS"
+}
