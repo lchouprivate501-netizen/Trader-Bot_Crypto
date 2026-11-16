@@ -40,3 +40,5 @@ jobs:
         run: python skills/freqai-ea-trading/desk/test_desk.py
       - name: Desk futures test (short, leverage, funding)
         run: python skills/freqai-ea-trading/desk/test_desk_perp.py
+      - name: AI office console test
+        run: python skills/freqai-ea-trading/desk/test_console.py

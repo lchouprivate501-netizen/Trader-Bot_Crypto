@@ -118,6 +118,7 @@ cd Trader-Bot_Crypto
 bash skills/freqai-ea-trading/scripts/setup_env.sh        # Freqtrade + FreqAI venv（約 1–2 GB）
 python3 skills/freqai-ea-trading/desk/ea_engine.py start   # 背景啟動三個無金鑰引擎（ETH、SOL 合約；BTC 現貨）+ 守衛
 python3 skills/freqai-ea-trading/desk/ea_engine.py status  # 等 usable=true（第一次訓練要幾分鐘）
+python3 skills/freqai-ea-trading/desk/console.py --open    # AI 交易辦公室：看引擎、交易台、AI 與部位在做什麼
 ```
 
 設定每個 EA 的資金（只寫要改的欄位）：`~/.freqai-ea/config.json`，例如 `{"coins": {"eth": {"capital_usdt": 500}, "sol": {"capital_usdt": 300}}}`。EA 的設計是停損一次約虧該 EA 資金的 10%。回測最大回撤：ETH 合約約 27%、SOL 合約 25–36%（連續回測 35.8%，移轉測試平均 36%）、BTC 現貨約 31%。

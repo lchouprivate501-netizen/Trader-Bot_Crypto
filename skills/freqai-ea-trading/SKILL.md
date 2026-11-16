@@ -89,8 +89,11 @@ description: >-
 | `AGENTS.md` | AI 作業手冊：每輪流程、各 action 的做法、絕對不可以、上線檢查表 |
 | `desk/ea_desk.py` | 交易台（指令、下單前風控、帳本、停損紀錄、HALT、實盤開關）；也是 CLI：`signals` / `check` / `record` / `status` / `halt` |
 | `desk/mcp_server.py` | stdio MCP 伺服器 `freqai-ea-desk`（`ea_guide`、`ea_status`、`ea_signals`、`ea_risk_check`、`ea_record`、`ea_halt`），只用標準函式庫 |
+| `desk/console.py`、`desk/console/` | **AI 交易辦公室**（本機控制台 http://127.0.0.1:8765）：把系統畫成辦公室——行情室、EA 引擎室三個工位、交易台、AI 交易員、交易所、守衛、維護 Agent——即時顯示每個角色在做什麼，附引擎的 K 線與指標、止損、部位、帳本與事件紀錄；回放模式用 `console/replays/*.json` 重播真實回測；`--export` 匯出單檔回放頁。只聽本機；唯一能改狀態的動作是停止新進場 |
+| `scripts/replay_build.py` | 由回測結果產生控制台回放資料（K 線、趨勢線、突破／跌破線、引擎看到的多空狀態、依策略公式重算的止損路徑、事件、權益） |
 | `desk/ea_engine.py` | 背景啟動 / 停止三個無金鑰引擎與 EA 守衛（REST 只聽 127.0.0.1，帳密隨機產生） |
 | `desk/config.json` | 預設值：追價上限 2%、停損上移門檻 0.5%、單筆風險 ≤ 資金 10%、累計虧損 35% 停新單；使用者在 `~/.freqai-ea/config.json` 覆寫 |
+| `desk/test_console.py` | 控制台測試：模擬引擎，檢查頁面、API、回放、停止新進場的來源檢查（16 項）；`--keep` 可開瀏覽器看模擬的即時畫面 |
 | `desk/test_desk.py`、`desk/test_desk_perp.py` | 整合測試：模擬 Freqtrade API。現貨 51 項（指令、風控、帳本、MCP）；合約 25 項（做空、槓桿與保證金、停損方向、資金費、現貨不能做空） |
 | `references/ai-agents.md` | Claude Code / Claude Desktop / claude.ai / Grok / 其他 AI 的安裝方式 |
 
@@ -140,6 +143,7 @@ $PY $SK/scripts/tv_research.py \
 
 python3 $SK/desk/ea_engine.py start                                                      # AI 交易台用的無金鑰引擎 + 守衛
 python3 $SK/desk/ea_desk.py signals                                                     # 每個幣的指令（AI 每輪呼叫）
+python3 $SK/desk/console.py --open                                                       # AI 交易辦公室（控制台）
 docker compose -f $SK/deploy/docker-compose.yml up -d --build                          # 或：Freqtrade 用金鑰直接交易（預設 dry-run）+ 實盤守衛
 $PY $SK/maintenance/ea_guard.py forward --market perp --all --userdir $FT_HOME          # 合約 EA 前向健康檢查（新資料）
 $PY $SK/maintenance/ea_guard.py forward --all --userdir $FT_HOME                        # 現貨 EA 前向健康檢查

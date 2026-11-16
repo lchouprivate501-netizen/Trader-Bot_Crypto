@@ -1,0 +1,743 @@
+<title>AI 交易辦公室</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: a trading-floor plan. Work flows left to right through the rooms (market data -> EA engines ->
+   desk -> AI trader -> exchange), the guard and the maintenance agent watch from above, and the selected
+   coin's workstation opens below with its chart, state machine and the trades it produced. */
+:root {
+  --bg: #f2f4f6; --panel: #ffffff; --panel-2: #eaeef2; --ink: #131f29; --muted: #5a6875; --line: #d6dde4;
+  --accent: #0d7a72; --accent-soft: rgba(13, 122, 114, 0.12);
+  --long: #0a8753; --short: #c06600; --loss: #cc3440; --warn: #a8700f;
+  --long-soft: rgba(10, 135, 83, 0.12); --short-soft: rgba(192, 102, 0, 0.13); --loss-soft: rgba(204, 52, 64, 0.11);
+  --ema: #2f6ad8; --ema-s: #7a52d4; --grid: rgba(19, 31, 41, 0.06);
+  --f-ui: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --f-head: "Space Grotesk", "Noto Sans TC", "PingFang TC", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1217; --panel: #131b22; --panel-2: #19232c; --ink: #e1e8ee; --muted: #8b99a6; --line: #25313c;
+    --accent: #3fb9ad; --accent-soft: rgba(63, 185, 173, 0.15);
+    --long: #34c28b; --short: #f1a03b; --loss: #ef606a; --warn: #ddb04c;
+    --long-soft: rgba(52, 194, 139, 0.14); --short-soft: rgba(241, 160, 59, 0.15); --loss-soft: rgba(239, 96, 106, 0.14);
+    --ema: #6c9dff; --ema-s: #a98bff; --grid: rgba(225, 232, 238, 0.06); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1217; --panel: #131b22; --panel-2: #19232c; --ink: #e1e8ee; --muted: #8b99a6; --line: #25313c;
+  --accent: #3fb9ad; --accent-soft: rgba(63, 185, 173, 0.15);
+  --long: #34c28b; --short: #f1a03b; --loss: #ef606a; --warn: #ddb04c;
+  --long-soft: rgba(52, 194, 139, 0.14); --short-soft: rgba(241, 160, 59, 0.15); --loss-soft: rgba(239, 96, 106, 0.14);
+  --ema: #6c9dff; --ema-s: #a98bff; --grid: rgba(225, 232, 238, 0.06); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px 40px; display: grid; gap: 14px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* top bar */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.brand { display: grid; gap: 0; min-width: 0; margin-right: auto; }
+.brand h1 { margin: 0; font-family: var(--f-head); font-size: 22px; letter-spacing: 0.01em; text-wrap: balance; }
+.brand small { color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel);
+  border-radius: 999px; padding: 3px 10px; font-size: 12.5px; white-space: nowrap; }
+.pill b { font-family: var(--f-num); font-weight: 600; letter-spacing: 0.04em; }
+.pill.paper b { color: var(--accent); } .pill.live b { color: var(--loss); } .pill.halt b { color: var(--warn); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: transparent; padding: 5px 12px; font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.seg button[disabled] { opacity: 0.45; cursor: not-allowed; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 5px 12px; font-size: 13px; }
+.btn.danger { border-color: var(--loss); color: var(--loss); }
+.btn.danger.armed { background: var(--loss); color: var(--panel); }
+
+/* replay bar */
+.rbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 8px 12px; }
+.rbar .clock { font-family: var(--f-num); font-size: 15px; font-weight: 600; min-width: 150px; }
+.rbar input[type=range] { flex: 1 1 240px; min-width: 0; accent-color: var(--accent); }
+.rbar .play { min-width: 76px; font-weight: 700; border-color: var(--accent); color: var(--accent); }
+.rbar label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+.rbar select { font: inherit; font-size: 13px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; }
+
+/* floor plan */
+.floor { position: relative; display: grid; gap: 10px; }
+.watch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.flow { display: grid; grid-template-columns: minmax(0, 0.9fr) 26px minmax(0, 1.6fr) 26px minmax(0, 1.1fr) 26px minmax(0, 1.1fr) 26px minmax(0, 1.1fr);
+  align-items: stretch; }
+.room { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; display: grid;
+  gap: 6px; align-content: start; min-width: 0; transition: box-shadow 0.25s, border-color 0.25s; }
+.room header { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.room h2 { margin: 0; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.room header .role { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.ok { background: var(--long); } .dot.busy { background: var(--accent); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--loss); }
+.say { font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.room.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.arrow { display: grid; place-items: center; color: var(--line); }
+.arrow svg { width: 26px; height: 18px; overflow: visible; }
+.arrow path { stroke: currentColor; stroke-width: 2; fill: none; }
+.arrow.on { color: var(--accent); }
+.arrow.on path.shaft { stroke-dasharray: 4 4; animation: flow 0.5s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -8; } }
+.stations { display: grid; gap: 6px; }
+.station { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; display: grid; gap: 2px; background: var(--panel-2);
+  text-align: left; width: 100%; transition: box-shadow 0.25s, border-color 0.25s; }
+.station[aria-pressed="true"] { border-color: var(--ink); }
+.station.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.station .row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.station b { font-family: var(--f-head); font-size: 14px; }
+.chip { font-size: 11.5px; border-radius: 6px; padding: 0 6px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.chip.long { color: var(--long); border-color: var(--long); background: var(--long-soft); }
+.chip.short { color: var(--short); border-color: var(--short); background: var(--short-soft); }
+.chip.flat { color: var(--muted); }
+.chip.bad { color: var(--loss); border-color: var(--loss); background: var(--loss-soft); }
+.card { border: 1px dashed var(--accent); border-radius: 8px; padding: 6px 8px; font-size: 12.5px; background: var(--accent-soft); }
+.card b { font-family: var(--f-num); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 1px 10px; font-size: 12.5px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; text-align: right; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+
+/* coin desk */
+.desk { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); display: grid; }
+.deskhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.deskhead h2 { margin: 0; font-family: var(--f-head); font-size: 18px; }
+.tabs { display: inline-flex; gap: 4px; }
+.tabs button { border: 1px solid var(--line); background: var(--panel-2); border-radius: 8px; padding: 3px 12px; font-family: var(--f-head); font-weight: 600; }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.deskgrid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
+.chartbox { position: relative; min-width: 0; border-right: 1px solid var(--line); }
+#chart { height: 470px; }
+.legend { position: absolute; left: 10px; top: 8px; z-index: 3; font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 10px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; max-width: calc(100% - 80px); }
+.legend i { display: inline-block; width: 12px; height: 3px; vertical-align: middle; margin-right: 4px; border-radius: 2px; }
+.side { display: grid; gap: 12px; padding: 12px; align-content: start; min-width: 0; }
+.machine { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.machine span { text-align: center; font-size: 12px; padding: 4px 2px; border-radius: 6px; background: var(--panel-2); color: var(--muted); }
+.machine span.cur { background: var(--accent); color: var(--panel); font-weight: 700; }
+.explain { font-size: 13px; line-height: 1.6; border-left: 3px solid var(--accent); padding-left: 10px; }
+.side h3 { margin: 0; font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: 0.06em; }
+.results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.results div { background: var(--panel-2); border-radius: 8px; padding: 6px 8px; display: grid; }
+.results small { color: var(--muted); font-size: 11.5px; }
+.results b { font-family: var(--f-num); font-size: 15px; }
+.pos { color: var(--long); } .neg { color: var(--loss); }
+
+/* lower */
+.lower { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; min-width: 0; display: grid; gap: 8px; align-content: start; }
+.panel h2 { margin: 0; font-size: 14px; }
+.tape { display: grid; gap: 0; max-height: 330px; overflow: auto; }
+.tape div { display: grid; grid-template-columns: 112px 42px 70px minmax(0, 1fr); gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.tape time { font-family: var(--f-num); color: var(--muted); font-size: 11.5px; }
+.tape .who { color: var(--muted); font-size: 11.5px; }
+.tablewrap { overflow: auto; max-height: 330px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--panel); }
+td:first-child, th:first-child, td:nth-child(2), th:nth-child(2) { text-align: left; }
+td { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+footer { color: var(--muted); font-size: 12px; line-height: 1.6; }
+footer a { color: var(--accent); }
+.notice { font-size: 13px; border: 1px solid var(--warn); color: var(--warn); border-radius: 8px; padding: 6px 10px; }
+
+@media (max-width: 1080px) {
+  .flow { grid-template-columns: minmax(0, 1fr); }
+  .arrow { height: 22px; }
+  .arrow svg { transform: rotate(90deg); }
+  .deskgrid { grid-template-columns: minmax(0, 1fr); }
+  .chartbox { border-right: 0; border-bottom: 1px solid var(--line); }
+  .lower { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .watch { grid-template-columns: minmax(0, 1fr); }
+  #chart { height: 380px; }
+  .tape div { grid-template-columns: 92px 38px minmax(0, 1fr); }
+  .tape .who { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arrow.on path.shaft { animation: none; }
+  .room, .station { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>AI 交易辦公室</h1>
+      <small>BTC / ETH / SOL EA：ETH、SOL 用合約 EA（多空、逐倉），BTC 用現貨 EA</small>
+    </div>
+    <span class="pill" id="modePill">模式 <b id="modeText">PAPER</b></span>
+    <div class="seg" role="group" aria-label="資料來源">
+      <button id="srcLive" type="button" aria-pressed="false">即時</button>
+      <button id="srcReplay" type="button" aria-pressed="true">回放</button>
+    </div>
+    <button class="btn" id="refreshBtn" type="button" hidden>問一次引擎</button>
+    <button class="btn danger" id="haltBtn" type="button" hidden>停止新進場</button>
+  </header>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <section class="rbar" id="rbar" aria-label="回放控制">
+    <button class="btn play" id="playBtn" type="button">▶ 播放</button>
+    <span class="clock" id="clock">—</span>
+    <input type="range" id="scrub" min="0" max="0" value="0" aria-label="回放位置">
+    <label for="speed">速度
+      <select id="speed">
+        <option value="3">慢（半天/秒）</option>
+        <option value="12" selected>中（2 天/秒）</option>
+        <option value="48">快（8 天/秒）</option>
+        <option value="180">很快（1 月/秒）</option>
+      </select>
+    </label>
+    <button class="btn" id="nextBtn" type="button">下一個事件 ⏭</button>
+    <span class="muted" id="rtitle"></span>
+  </section>
+
+  <section class="floor" aria-label="辦公室">
+    <div class="watch">
+      <article class="room" id="r-guard"><header><span class="dot ok" id="d-guard"></span><h2>守衛</h2><span class="role">每 15 分鐘檢查回撤與連敗，超出正常範圍就停止新進場</span></header><div class="say" id="s-guard"></div></article>
+      <article class="room" id="r-maint"><header><span class="dot ok" id="d-maint"></span><h2>維護 Agent</h2><span class="role">每週用新資料跑凍結的 EA，和驗證過的正常範圍比較</span></header><div class="say" id="s-maint"></div></article>
+    </div>
+    <div class="flow">
+      <article class="room" id="r-market"><header><span class="dot ok"></span><h2>行情室</h2><span class="role">公開 K 線與報價</span></header><div class="say" id="s-market"></div></article>
+      <div class="arrow" id="a-1"><svg viewBox="0 0 26 18" aria-hidden="true"><path class="shaft" d="M1 9 H22"/><path d="M16 3 L23 9 L16 15"/></svg></div>
+      <article class="room" id="r-engine"><header><span class="dot busy"></span><h2>EA 引擎室</h2><span class="role">Freqtrade + FreqAI（無金鑰）</span></header><div class="stations" id="stations"></div></article>
+      <div class="arrow" id="a-2"><svg viewBox="0 0 26 18" aria-hidden="true"><path class="shaft" d="M1 9 H22"/><path d="M16 3 L23 9 L16 15"/></svg></div>
+      <article class="room" id="r-desk"><header><span class="dot ok" id="d-desk"></span><h2>交易台</h2><span class="role">指令、風控、帳本</span></header><div class="say" id="s-desk"></div></article>
+      <div class="arrow" id="a-3"><svg viewBox="0 0 26 18" aria-hidden="true"><path class="shaft" d="M1 9 H22"/><path d="M16 3 L23 9 L16 15"/></svg></div>
+      <article class="room" id="r-ai"><header><span class="dot ok" id="d-ai"></span><h2>AI 交易員</h2><span class="role">Claude / Grok，照指令下單</span></header><div class="say" id="s-ai"></div></article>
+      <div class="arrow" id="a-4"><svg viewBox="0 0 26 18" aria-hidden="true"><path class="shaft" d="M1 9 H22"/><path d="M16 3 L23 9 L16 15"/></svg></div>
+      <article class="room" id="r-ex"><header><span class="dot ok"></span><h2>交易所</h2><span class="role">你的帳戶（合約逐倉 / 現貨）</span></header><div class="say" id="s-ex"></div></article>
+    </div>
+  </section>
+
+  <section class="desk" aria-label="工位">
+    <div class="deskhead">
+      <h2 id="deskTitle">ETH 工位</h2>
+      <div class="tabs" id="tabs" role="group" aria-label="選擇幣種"></div>
+      <span class="muted" id="deskSub"></span>
+    </div>
+    <div class="deskgrid">
+      <div class="chartbox"><div class="legend" id="legend"></div><div id="chart"></div></div>
+      <aside class="side">
+        <div>
+          <h3>引擎現在在哪一步</h3>
+          <div class="machine" id="machine"><span>等待訊號</span><span>開倉</span><span>持有／移止損</span><span>平倉</span></div>
+        </div>
+        <div class="explain" id="explain"></div>
+        <dl class="kv" id="facts"></dl>
+        <div><h3 id="resTitle">這段期間的結果</h3></div>
+        <div class="results" id="results"></div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="lower">
+    <div class="panel"><h2>辦公室紀錄</h2><div class="tape" id="tape"></div></div>
+    <div class="panel"><h2 id="ledgerTitle">交易明細</h2><div class="tablewrap"><table id="ledger"></table></div></div>
+  </section>
+
+  <footer id="foot">
+    圖表：TradingView Lightweight Charts™ v5.2.1（Apache-2.0，<a href="https://github.com/tradingview/lightweight-charts" target="_blank" rel="noopener">github.com/tradingview/lightweight-charts</a>）。
+    回放用的是真實回測（Freqtrade + FreqAI；合約每邊手續費 0.05% 並計入資金費，現貨 0.10%），止損線依策略公式在 1 小時 K 線上重算。歷史回測不代表未來報酬。
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"></script>
+<script id="replay-data" type="application/json">null</script>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const TZ = -new Date().getTimezoneOffset() * 60; // chart shows the viewer's local time
+const ORDER = ["ETH", "SOL", "BTC"];
+const EXIT = { trailing_stop_loss: "移動停損", stop_loss: "停損", trend_off: "趨勢轉向", risk_off: "BTC 轉弱", risk_on: "BTC 轉強",
+  force_exit: "期末", liquidation: "強平", exit_signal: "訊號出場", engine_flat: "引擎空手" };
+const ACT = { OPEN: "開倉", HOLD: "持有", MOVE_STOP: "移止損", CLOSE: "平倉", CLOSE_NOW: "立即平倉", MISSED: "錯過", WAIT: "等待",
+  SHADOW: "影子", BLOCKED: "擋下", ENGINE_DOWN: "引擎異常", ERROR: "錯誤" };
+
+function fp(v) {
+  if (v == null || !isFinite(v)) return "–";
+  const a = Math.abs(v);
+  const d = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : 3;
+  return Number(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+const fu = (v) => (v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") +
+  Math.abs(v).toLocaleString("en-US", { maximumFractionDigits: Math.abs(v) >= 100 ? 0 : 1 })); // USDT amounts
+const pct = (v, d = 1) => (v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : "") + Number(v).toFixed(d) + "%");
+const signCls = (v) => (v == null ? "" : v >= 0 ? "pos" : "neg");
+const dtf = new Intl.DateTimeFormat("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+const when = (t) => dtf.format(new Date(t * 1000)).replace(/\//g, "-");
+const sideTxt = (s) => (s === "short" ? "空" : "多");
+
+/* ------------------------------------------------------------------ state */
+const S = { src: "replay", R: null, i: 0, playing: false, timer: null, sel: "ETH", live: null, liveOk: false, candles: {}, tape: [] };
+
+/* ------------------------------------------------------------------ chart */
+let chart = null, ser = {}, markers = null;
+function buildChart() {
+  if (!window.LightweightCharts) return;
+  const LC = window.LightweightCharts;
+  if (chart) chart.remove();
+  const muted = css("--muted"), line = css("--grid");
+  chart = LC.createChart($("chart"), {
+    autoSize: true, layout: { background: { color: css("--panel") }, textColor: muted, fontFamily: css("--f-num"), panes: { separatorColor: css("--line") } },
+    grid: { vertLines: { color: line }, horzLines: { color: line } }, rightPriceScale: { borderColor: css("--line") },
+    timeScale: { borderColor: css("--line"), timeVisible: true, secondsVisible: false }, crosshair: { mode: 0 },
+  });
+  const up = css("--long"), down = css("--loss");
+  ser.c = chart.addSeries(LC.CandlestickSeries, { upColor: up, downColor: down, borderUpColor: up, borderDownColor: down, wickUpColor: up, wickDownColor: down, priceLineVisible: false });
+  const mk = (color, width, style) => chart.addSeries(LC.LineSeries, { color, lineWidth: width, lineStyle: style || 0, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  ser.ema = mk(css("--ema"), 2); ser.emas = mk(css("--ema-s"), 2); ser.dh = mk(muted, 1, 2); ser.dl = mk(css("--short"), 1, 2);
+  ser.stop = chart.addSeries(LC.LineSeries, { color: css("--loss"), lineWidth: 2, lineType: 1, priceLineVisible: false, lastValueVisible: true, crosshairMarkerVisible: false, title: "止損" });
+  ser.eq = chart.addSeries(LC.LineSeries, { color: css("--ink"), lineWidth: 2, priceLineVisible: false, lastValueVisible: true, title: "策略" }, 1);
+  ser.bh = chart.addSeries(LC.LineSeries, { color: muted, lineWidth: 1, priceLineVisible: false, lastValueVisible: true, title: "持有" }, 1);
+  markers = LC.createSeriesMarkers(ser.c, []);
+  try { chart.panes()[1].setHeight(110); } catch (e) { /* older layouts */ }
+}
+const P = (t, v) => (v == null ? { time: t + TZ } : { time: t + TZ, value: v });
+
+/* ------------------------------------------------------------------ replay model */
+function coinR(code) { return S.R && S.R.coins.find((c) => c.coin === code); }
+function barOf(c, t) { // last bar whose start <= t
+  let lo = 0, hi = c.t.length - 1;
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; if (c.t[m] <= t) lo = m; else hi = m - 1; }
+  return lo;
+}
+function prepReplay() {
+  for (const c of S.R.coins) for (const e of c.events) e.bar = barOf(c, e.t);
+  $("scrub").max = String(S.R.coins[0].t.length - 1);
+  $("rtitle").textContent = S.R.title || "";
+}
+function snapshot(c, i) { // what the office knows about coin c at bar i
+  let pos = null, last = null, closed = [], streak = 0;
+  for (const e of c.events) {
+    if (e.bar > i) break;
+    if (e.type === "open") pos = { side: e.side, price: e.price, stop: e.stop, lev: e.lev, t: e.t, sigma: e.sigma };
+    else if (e.type === "stop" && pos) pos.stop = e.to;
+    else if (e.type === "close") { closed.push(e); streak = e.pnl < 0 ? streak + 1 : 0; pos = null; }
+    last = e;
+  }
+  let peak = 0; for (let k = 0; k <= i; k++) if (c.eq[k] != null && c.eq[k] > peak) peak = c.eq[k];
+  const dd = peak ? (1 - c.eq[i] / peak) * 100 : 0;
+  return { pos, last, closed, streak, dd, price: c.c[i], regime: c.regime[i], dh: c.dh[i], dl: c.dl ? c.dl[i] : null,
+    ema: c.ema[i], emas: c.ema_s ? c.ema_s[i] : null, sigma: c.sigma[i], eq: c.eq[i], bh: c.bh[i], stop: c.stop[i] };
+}
+
+/* ------------------------------------------------------------------ text */
+function engineLine(c, s) {
+  if (s.pos) {
+    const d = s.pos.side === "short" ? (s.pos.stop / s.price - 1) * 100 : (1 - s.pos.stop / s.price) * 100;
+    return `持${sideTxt(s.pos.side)} @${fp(s.pos.price)}｜止損 ${fp(s.pos.stop)}（距 ${d.toFixed(1)}%）`;
+  }
+  if (s.regime === 1 && s.dh) return `多頭可進：等突破 ${fp(s.dh)}（${pct((s.dh / s.price - 1) * 100)}）`;
+  if (s.regime === -1 && s.dl) return `空頭可空：等跌破 ${fp(s.dl)}（${pct((s.dl / s.price - 1) * 100)}）`;
+  return c.market === "perp" ? "中性：趨勢不夠明確，不做多也不做空" : "空手：價格不在上升趨勢之上";
+}
+function explain(c, s) {
+  const p = c.params || {};
+  const lEma = Math.round((p.trend_ema || 0) / 24), sEma = Math.round((p.s_trend_ema || 0) / 24);
+  if (s.pos && s.pos.side === "long") return `${c.coin} 持有多單。止損從進場後的最高價往下 ${p.trail_k} 倍日波動計算，只會往上移；價格跌破止損、或收盤跌破 ${lEma} 日均線帶，就平倉。`;
+  if (s.pos) return `${c.coin} 持有空單。止損從進場後的最低價往上 ${p.s_trail_k} 倍日波動計算，只會往下移——熊市反彈很猛，所以空單的止損比多單緊很多；價格回到 ${sEma} 日均線帶之上也會平倉。`;
+  if (s.regime === 1) return `${c.coin} 在 ${lEma} 日均線之上${c.coin === "ETH" ? "，而且 BTC 也在多頭" : ""}，引擎只等突破：收盤高於前 ${p.breakout_h} 小時最高點 ${fp(s.dh)} 時做多。`;
+  if (s.regime === -1) return `${c.coin} 在 ${sEma} 日均線之下，而且均線已經下降 ${Math.round((p.s_slope_h || 0) / 24)} 天${c.coin === "ETH" ? "、BTC 也是空頭" : ""}，引擎只等跌破：收盤低於前 ${p.s_breakout_h} 小時最低點 ${fp(s.dl)} 時做空。`;
+  if (c.market === "perp") return `${c.coin} 現在既不是明確上升（多單條件）也不是明確下降（空單要求均線已下降 ${Math.round((p.s_slope_h || 0) / 24)} 天），引擎空手等待。`;
+  return `${c.coin} 現貨 EA 只做多：價格要先站上 ${lEma} 日均線帶，再突破前 ${p.breakout_h} 小時高點才進場；現在空手。`;
+}
+function stepOf(s) { // index in the state machine
+  if (s.last && s.last.type === "close" && s.last.bar === S.i) return 3;
+  if (s.last && s.last.type === "open" && s.last.bar === S.i) return 1;
+  return s.pos ? 2 : 0;
+}
+
+/* ------------------------------------------------------------------ office render (shared) */
+const HOT = { coin: null, until: 0 };
+function renderStations(vm) {
+  $("stations").innerHTML = ORDER.filter((k) => vm.coins[k]).map((k) => {
+    const v = vm.coins[k];
+    const st = v.pos ? `<span class="chip ${v.pos.side}">持${sideTxt(v.pos.side)}</span>` : v.down ? `<span class="chip bad">異常</span>` : `<span class="chip flat">空手</span>`;
+    const hot = HOT.coin === k && Date.now() < HOT.until ? " on" : "";
+    return `<button class="station${hot}" type="button" id="st-${k}" data-coin="${k}" aria-pressed="${k === S.sel}">
+      <span class="row"><b>${k}</b><span class="chip">${v.market === "perp" ? "合約" : "現貨"}</span>${st}<span class="muted num" style="margin-left:auto">${fp(v.price)}</span></span>
+      <span class="say">${esc(v.line)}</span></button>`;
+  }).join("");
+  document.querySelectorAll(".station").forEach((b) => (b.onclick = () => selectCoin(b.dataset.coin)));
+}
+function renderOffice(vm) {
+  const m = vm.mode || "PAPER";
+  $("modeText").textContent = m;
+  $("modePill").className = "pill " + m.toLowerCase();
+  $("s-market").innerHTML = `<dl class="kv">${ORDER.filter((k) => vm.coins[k]).map((k) => `<dt>${k}</dt><dd>${fp(vm.coins[k].price)} <span class="${signCls(vm.coins[k].chg)}">${pct(vm.coins[k].chg)}</span></dd>`).join("")}</dl><span class="muted">${esc(vm.marketNote || "")}</span>`;
+  renderStations(vm);
+  $("s-desk").innerHTML = (vm.deskCard ? `<div class="card">${vm.deskCard}</div>` : "") +
+    `<dl class="kv">${ORDER.filter((k) => vm.coins[k]).map((k) => `<dt>${k}</dt><dd>${esc(vm.coins[k].action)}</dd>`).join("")}</dl>`;
+  $("d-desk").className = "dot " + (m === "HALT" ? "warn" : "ok");
+  $("s-ai").innerHTML = esc(vm.aiLine || "");
+  const pos = ORDER.filter((k) => vm.coins[k] && vm.coins[k].pos);
+  $("s-ex").innerHTML = pos.length ? `<dl class="kv">${pos.map((k) => {
+    const p = vm.coins[k].pos, u = p.side === "short" ? (p.price / vm.coins[k].price - 1) * 100 : (vm.coins[k].price / p.price - 1) * 100;
+    return `<dt><span class="chip ${p.side}">${k} ${sideTxt(p.side)}${p.lev > 1 ? " " + p.lev + "x" : ""}</span></dt><dd class="${signCls(u)}">${pct(u)}</dd>`;
+  }).join("")}</dl>` : `<span class="muted">沒有部位</span>`;
+  $("s-guard").innerHTML = vm.guardLine || "";
+  $("d-guard").className = "dot " + (vm.guardLevel || "ok");
+  $("s-maint").innerHTML = vm.maintLine || "";
+}
+let flashT = [];
+function flash(coin) { // walk the instruction through the office
+  flashT.forEach(clearTimeout); flashT = [];
+  document.querySelectorAll(".on").forEach((el) => el.classList.remove("on"));
+  const seq = [`st-${coin}`, "a-2", "r-desk", "a-3", "r-ai", "a-4", "r-ex"];
+  const fast = S.playing && Number($("speed").value) >= 48;
+  HOT.coin = coin; HOT.until = Date.now() + (fast ? 500 : 2200);
+  seq.forEach((id, k) => flashT.push(setTimeout(() => { const el = $(id); if (el) el.classList.add("on"); }, fast ? 0 : k * 160)));
+  flashT.push(setTimeout(() => document.querySelectorAll(".on").forEach((el) => el.classList.remove("on")), fast ? 500 : 2200));
+}
+function addTape(t, coin, who, msg) {
+  S.tape.unshift({ t, coin, who, msg });
+  if (S.tape.length > 120) S.tape.length = 120;
+}
+function renderTape() {
+  $("tape").innerHTML = S.tape.map((r) => `<div><time>${when(r.t)}</time><span><span class="chip ${r.cls || ""}">${esc(r.coin)}</span></span><span class="who">${esc(r.who)}</span><span>${esc(r.msg)}</span></div>`).join("")
+    || `<div><span></span><span></span><span></span><span class="muted">還沒有事件。按「播放」，或「下一個事件」。</span></div>`;
+}
+
+/* ------------------------------------------------------------------ replay */
+function eventText(c, e) {
+  if (e.type === "open") return { who: "引擎→交易台→AI", msg: `${e.side === "short" ? "跌破" : "突破"}，開${sideTxt(e.side)} @${fp(e.price)}${e.lev > 1 ? `，逐倉 ${e.lev}x` : ""}，止損 ${fp(e.stop)}（日波動 ${e.sigma}%）` };
+  if (e.type === "stop") return { who: "引擎→AI", msg: `止損${e.side === "short" ? "下移" : "上移"} ${fp(e.from)} → ${fp(e.to)}` };
+  return { who: "引擎→AI", msg: `平${sideTxt(e.side)} @${fp(e.price)}（${EXIT[e.reason] || e.reason}），損益 ${fu(e.pnl)} USDT（${pct(e.pct)}）` };
+}
+function replayVM(newEvents) {
+  const vm = { mode: "PAPER", coins: {}, marketNote: "回放：4 小時 K", aiLine: "", deskCard: "" };
+  let worst = "ok"; const g = [];
+  for (const c of S.R.coins) {
+    const s = snapshot(c, S.i), prev = S.i >= 6 ? c.c[S.i - 6] : c.c[0];
+    const act = s.last && s.last.bar === S.i ? (s.last.type === "open" ? "OPEN" : s.last.type === "stop" ? "MOVE_STOP" : "CLOSE") : s.pos ? "HOLD" : "WAIT";
+    vm.coins[c.coin] = { market: c.market, price: s.price, chg: (s.price / prev - 1) * 100, pos: s.pos, line: engineLine(c, s), action: `${act}（${ACT[act]}）` };
+    const gd = c.guard || {}, ddw = (gd.dd_1y_p95 || 0.3) * 100;
+    const lvl = s.dd >= ddw || s.streak >= (gd.streak_p95 || 99) ? "warn" : "ok";
+    if (lvl === "warn") worst = "warn";
+    g.push(`<span class="chip ${lvl === "warn" ? "bad" : ""}">${c.coin}</span> 回撤 <span class="num">${s.dd.toFixed(1)}%</span>（正常 ≤ ${ddw.toFixed(0)}%），連敗 ${s.streak}`);
+  }
+  vm.guardLine = g.join("<br>");
+  vm.guardLevel = worst;
+  vm.maintLine = `回放中：守衛用每個 EA 驗證過的回撤與連敗範圍判斷。實際運作時每週一自動跑一次前向檢查，有問題就在 GitHub 開 issue。`;
+  const ev = newEvents && newEvents.length ? newEvents[newEvents.length - 1] : null;
+  if (ev) {
+    const { msg } = eventText(ev.c, ev.e);
+    vm.deskCard = `<b>${ev.e.type === "open" ? "OPEN" : ev.e.type === "stop" ? "MOVE_STOP" : "CLOSE"}</b> · ${esc(ev.c.coin)} ${esc(msg)}`;
+    vm.aiLine = ev.e.type === "open" ? `在交易所${ev.c.market === "perp" ? "合約頁（逐倉）" : "現貨頁"}開${sideTxt(ev.e.side)} ${ev.c.coin}，立刻設止損 ${fp(ev.e.stop)}，再記帳。`
+      : ev.e.type === "stop" ? `把 ${ev.c.coin} 的止損單改到 ${fp(ev.e.to)}，再記帳。` : `平掉 ${ev.c.coin} 的${sideTxt(ev.e.side)}單、取消止損單，記錄損益 ${fu(ev.e.pnl)} USDT。`;
+  } else {
+    const held = ORDER.filter((k) => vm.coins[k] && vm.coins[k].pos);
+    vm.aiLine = held.length ? `每 5–15 分鐘問一次交易台；目前看著 ${held.join("、")} 的止損單。` : "每 5–15 分鐘問一次交易台；三個幣都空手，沒有事要做。";
+  }
+  return vm;
+}
+const sepShort = (c) => c.ema_s && c.params.s_trend_ema && c.params.s_trend_ema !== c.params.trend_ema; // own short EMA?
+function chartReplay(full, markersOnly) {
+  const c = coinR(S.sel); if (!c || !chart) return;
+  const i = S.i;
+  if (markersOnly) { /* bars were already fed by tick() */ } else if (full) {
+    const rng = [...Array(i + 1).keys()];
+    ser.c.setData(rng.map((k) => ({ time: c.t[k] + TZ, open: c.o[k], high: c.h[k], low: c.l[k], close: c.c[k] })));
+    ser.ema.setData(rng.map((k) => P(c.t[k], c.ema[k])));
+    ser.emas.setData(sepShort(c) ? rng.map((k) => P(c.t[k], c.ema_s[k])) : []);
+    ser.dh.setData(rng.map((k) => P(c.t[k], c.dh[k])));
+    ser.dl.setData(c.dl ? rng.map((k) => P(c.t[k], c.dl[k])) : []);
+    ser.stop.setData(rng.map((k) => P(c.t[k], c.stop[k])));
+    ser.eq.setData(rng.map((k) => P(c.t[k], c.eq[k])));
+    ser.bh.setData(rng.map((k) => P(c.t[k], c.bh[k])));
+    chart.timeScale().fitContent();
+  } else {
+    ser.c.update({ time: c.t[i] + TZ, open: c.o[i], high: c.h[i], low: c.l[i], close: c.c[i] });
+    ser.ema.update(P(c.t[i], c.ema[i])); if (sepShort(c)) ser.emas.update(P(c.t[i], c.ema_s[i]));
+    ser.dh.update(P(c.t[i], c.dh[i])); if (c.dl) ser.dl.update(P(c.t[i], c.dl[i]));
+    ser.stop.update(P(c.t[i], c.stop[i])); ser.eq.update(P(c.t[i], c.eq[i])); ser.bh.update(P(c.t[i], c.bh[i]));
+  }
+  const ms = [];
+  for (const e of c.events) {
+    if (e.bar > i) break;
+    if (e.type === "open") ms.push({ time: c.t[e.bar] + TZ, position: e.side === "short" ? "aboveBar" : "belowBar", shape: e.side === "short" ? "arrowDown" : "arrowUp", color: e.side === "short" ? css("--short") : css("--long"), text: e.side === "short" ? "空" : "多" });
+    if (e.type === "close") ms.push({ time: c.t[e.bar] + TZ, position: e.side === "short" ? "belowBar" : "aboveBar", shape: "circle", color: e.pnl >= 0 ? css("--long") : css("--loss"), text: `${e.pnl >= 0 ? "+" : ""}${e.pct.toFixed(0)}%` });
+  }
+  markers.setMarkers(ms);
+}
+function deskReplay() {
+  const c = coinR(S.sel); if (!c) return;
+  const s = snapshot(c, S.i);
+  $("deskTitle").textContent = `${c.coin} 工位`;
+  $("deskSub").textContent = `${c.strategy}｜${c.market === "perp" ? "USDT 永續、多空、逐倉" : "現貨、只做多"}`;
+  const step = stepOf(s);
+  [...$("machine").children].forEach((el, k) => el.classList.toggle("cur", k === step));
+  $("explain").textContent = explain(c, s);
+  const rows = [["價格", fp(s.price)], [sepShort(c) ? "多單趨勢線" : "趨勢線", fp(s.ema)], ["突破線", `${fp(s.dh)}（${pct((s.dh / s.price - 1) * 100)}）`]];
+  if (sepShort(c)) rows.push(["空單趨勢線", fp(s.emas)]);
+  if (c.market === "perp") rows.push(["跌破線", `${fp(s.dl)}（${pct((s.dl / s.price - 1) * 100)}）`]);
+  rows.push(["FreqAI 日波動", `${(s.sigma ?? 0).toFixed(2)}%`]);
+  if (s.pos) {
+    const u = s.pos.side === "short" ? (s.pos.price / s.price - 1) * 100 : (s.price / s.pos.price - 1) * 100;
+    rows.push(["部位", `${sideTxt(s.pos.side)} @${fp(s.pos.price)}${s.pos.lev > 1 ? " · " + s.pos.lev + "x" : ""}`], ["止損", fp(s.pos.stop)], ["價格變動", `<span class="${signCls(u)}">${pct(u)}</span>`]);
+  }
+  $("facts").innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+  const sm = c.summary, last = c.t.length - 1;
+  $("resTitle").textContent = S.i >= last ? "整段回放的結果" : "到目前為止";
+  const ret = (s.eq - 1) * 100, bh = (s.bh - 1) * 100;
+  const done = s.closed, lp = done.filter((e) => e.side === "long").reduce((a, e) => a + e.pnl, 0), sp = done.filter((e) => e.side === "short").reduce((a, e) => a + e.pnl, 0);
+  $("results").innerHTML = [["策略", pct(ret), ret], ["同期持有", pct(bh), bh], ["已平倉交易", String(done.length), null],
+    ["最大回撤（整段）", "−" + sm.max_dd_pct.toFixed(1) + "%", null], ["多單損益（USDT）", fu(lp), lp], ["空單損益（USDT）", c.market === "perp" ? fu(sp) : "—（只做多）", c.market === "perp" ? sp : null]]
+    .map(([k, v, n]) => `<div><small>${k}</small><b class="${n == null ? "" : signCls(n)}">${v}</b></div>`).join("");
+  $("legend").innerHTML = [["--ema", `${c.market === "perp" && !sepShort(c) ? "多空共用" : "多單"}趨勢線（${Math.round(c.params.trend_ema / 24)} 日）`], ...(sepShort(c) ? [["--ema-s", `空單趨勢線`]] : []),
+    ["--muted", `突破線（${c.params.breakout_h}h 高）`], ...(c.dl ? [["--short", `跌破線（${c.params.s_breakout_h}h 低）`]] : []), ["--loss", "止損"]]
+    .map(([v, t]) => `<span><i style="background:${css(v)}"></i>${t}</span>`).join("");
+  ledgerReplay(c);
+}
+function ledgerReplay(c) {
+  $("ledgerTitle").textContent = `${c.coin} 交易明細（回放到目前）`;
+  const rows = []; let open = null;
+  for (const e of c.events) {
+    if (e.bar > S.i) break;
+    if (e.type === "open") open = e;
+    if (e.type === "close" && open) { rows.push([open, e]); open = null; }
+  }
+  $("ledger").innerHTML = `<thead><tr><th>開倉</th><th>方向</th><th>進場</th><th>出場</th><th>原因</th><th>損益 USDT</th></tr></thead><tbody>` +
+    (rows.reverse().map(([o, x]) => `<tr><td>${when(o.t).slice(0, 10)}</td><td><span class="chip ${o.side}">${sideTxt(o.side)}${o.lev > 1 ? " " + o.lev + "x" : ""}</span></td><td>${fp(o.price)}</td><td>${fp(x.price)}</td><td>${EXIT[x.reason] || x.reason}</td><td class="${signCls(x.pnl)}">${fu(x.pnl)}</td></tr>`).join("")
+      || `<tr><td colspan="6" class="muted">還沒有平倉的交易</td></tr>`) + "</tbody>";
+}
+function renderReplay(full, newEvents) {
+  $("clock").textContent = when(S.R.coins[0].t[S.i]);
+  $("scrub").value = String(S.i);
+  renderOffice(replayVM(newEvents));
+  deskReplay();
+  if (full !== null) chartReplay(full);
+  else chartReplay(false, true);
+  if (newEvents && newEvents.length) {
+    for (const { c, e } of newEvents) { const t = eventText(c, e); addTape(e.t, c.coin, t.who, t.msg); S.tape[0].cls = e.side; }
+    flash(newEvents[newEvents.length - 1].c.coin);
+  }
+  renderTape();
+}
+function eventsBetween(a, b) { // bars (a, b]
+  const out = [];
+  for (const c of S.R.coins) for (const e of c.events) if (e.bar > a && e.bar <= b) out.push({ c, e });
+  return out.sort((x, y) => x.e.t - y.e.t);
+}
+function seek(i) {
+  S.i = Math.max(0, Math.min(i, S.R.coins[0].t.length - 1));
+  S.tape = [];
+  const evs = eventsBetween(-1, S.i).slice(-60);
+  for (const { c, e } of evs) { const t = eventText(c, e); addTape(e.t, c.coin, t.who, t.msg); S.tape[0].cls = e.side; }
+  renderReplay(true, null);
+}
+function tick() {
+  const last = S.R.coins[0].t.length - 1;
+  if (S.i >= last) return pause();
+  const prev = S.i, step = Math.max(1, Math.round(Number($("speed").value) / 30));
+  const evs = [];
+  for (let k = 0; k < step && S.i < last; k++) { // feed the chart bar by bar, redraw the office once
+    S.i += 1; chartReplay(false);
+  }
+  evs.push(...eventsBetween(prev, S.i));
+  renderReplay(null, evs);
+}
+function play() {
+  if (S.i >= S.R.coins[0].t.length - 1) seek(0);
+  S.playing = true; $("playBtn").textContent = "❚❚ 暫停";
+  clearInterval(S.timer); S.timer = setInterval(tick, 1000 / Math.min(30, Number($("speed").value)));
+}
+function pause() { S.playing = false; clearInterval(S.timer); $("playBtn").textContent = "▶ 播放"; }
+function nextEvent() {
+  pause();
+  const nxt = eventsBetween(S.i, Infinity)[0];
+  if (!nxt) return;
+  if (nxt.c.coin !== S.sel) { S.sel = nxt.c.coin; renderTabs(); }
+  const prev = S.i; S.i = nxt.e.bar;
+  if (S.i - prev > 1) { seek(S.i - 1); }
+  S.i = nxt.e.bar; renderReplay(true, eventsBetween(S.i - 1, S.i));
+}
+
+/* ------------------------------------------------------------------ live */
+async function getJSON(url, opt) { const r = await fetch(url, opt); if (!r.ok) throw new Error(url + " " + r.status); return r.json(); }
+function liveVM() {
+  const L = S.live, st = L.status, sig = L.signals || {}, vm = { mode: st.ea_mode, coins: {}, marketNote: "OKX / Binance 公開報價" };
+  for (const [k, cfg] of Object.entries(st.coins || {})) {
+    const code = k.toUpperCase(), ins = (sig.coins || {})[k] || {}, eng = (st.engines || {})[k] || {};
+    const p = ((st.positions || {})[k] || [])[0];
+    const pos = p ? { side: p.side, price: p.entry, stop: p.stop, lev: p.leverage } : null;
+    const down = !eng.ok || (eng.problems || []).length;
+    const bt = eng.trade;
+    const line = down ? `引擎異常：${(eng.problems || [])[0] || eng.error || "連不上"}`
+      : bt ? `引擎持${sideTxt(bt.side)} @${fp(bt.open_rate)}｜止損 ${fp(bt.stop)}${bt.leverage > 1 ? `｜${bt.leverage}x` : ""}`
+      : "引擎空手：等突破或跌破";
+    vm.coins[code] = { market: cfg.market, price: ins.reference_price, chg: null, pos, down, line,
+      action: ins.action ? `${ins.action}（${ACT[ins.action] || ""}）` : "—" };
+  }
+  const todo = (sig.todo || []);
+  vm.deskCard = todo.length ? `<b>待辦</b> · ${esc(todo.join("、"))}` : "";
+  const j = (L.journal || []).filter((x) => ["fill", "stop", "skip", "halt"].includes(x.kind)).slice(-1)[0];
+  vm.aiLine = j ? `最後一次動作 ${when(Date.parse(j.at) / 1000)}：${j.kind === "fill" ? `${j.action === "OPEN" ? "開" : "平"}${sideTxt(j.side)} ${String(j.coin || "").toUpperCase()} @${fp(Number(j.price))}` : j.kind === "stop" ? `止損 ${fp(j.from)} → ${fp(j.to)}` : j.kind === "halt" ? "停止新進場" : "放棄一個指令"}`
+    : "還沒有任何記錄。AI 接上 MCP 後每 5–15 分鐘會呼叫 ea_signals。";
+  const gc = (st.guard || {}).coins || {};
+  const gl = Object.entries(gc).map(([k, v]) => `<span class="chip ${v.status === "HEALTHY" ? "" : "bad"}">${k.toUpperCase()}</span> ${esc(v.status)}`);
+  vm.guardLine = gl.length ? gl.join("<br>") : "守衛還沒有報告（引擎啟動後每 15 分鐘一次）。";
+  vm.guardLevel = Object.values(gc).some((v) => v.status === "HALT") ? "bad" : Object.values(gc).some((v) => v.status !== "HEALTHY") ? "warn" : "ok";
+  vm.maintLine = (st.halt || {}).halted ? `<span class="neg">交易台暫停中：${esc(st.halt.reason)}</span>（只有你能在終端機解除）` : `每週一自動前向檢查；守衛最後報告 ${esc((st.guard || {}).generated_at || "—")}`;
+  return vm;
+}
+async function loadLive() {
+  try { S.live = await getJSON("/api/state"); } catch (e) { $("notice").hidden = false; $("notice").textContent = "連不到控制台伺服器：" + e.message; return; }
+  $("notice").hidden = true;
+  renderOffice(liveVM());
+  deskLive();
+  tapeLive();
+}
+async function loadCandles() {
+  try { S.candles[S.sel] = await getJSON("/api/candles?coin=" + S.sel.toLowerCase()); } catch (e) { S.candles[S.sel] = { ok: false, error: e.message }; }
+  chartLive();
+}
+function chartLive() {
+  const d = S.candles[S.sel]; if (!chart) return;
+  if (!d || !d.ok) { Object.values(ser).forEach((s) => s.setData([])); markers.setMarkers([]); $("legend").innerHTML = `<span>${esc(d ? d.error : "載入中…")}</span>`; return; }
+  const ix = Object.fromEntries(d.columns.map((c, k) => [c, k])), rows = d.data;
+  const t = (r) => Date.parse(r[ix.date]) / 1000;
+  const col = (name) => rows.map((r) => P(t(r), ix[name] != null ? r[ix[name]] : null));
+  ser.c.setData(rows.map((r) => ({ time: t(r) + TZ, open: r[ix.open], high: r[ix.high], low: r[ix.low], close: r[ix.close] })));
+  ser.ema.setData(col("ema_slow")); ser.emas.setData(ix.ema_short != null ? col("ema_short") : []);
+  ser.dh.setData(col("donchian_high")); ser.dl.setData(ix.donchian_low != null ? col("donchian_low") : []);
+  const k = S.sel.toLowerCase(), p = ((S.live && S.live.status.positions) || {})[k];
+  const bt = S.live && (((S.live.status.engines || {})[k] || {}).trade);
+  const stopPx = bt ? bt.stop : p && p[0] ? p[0].stop : null;
+  ser.stop.setData(stopPx && rows.length ? rows.slice(-48).map((r) => P(t(r), stopPx)) : []);
+  ser.eq.setData([]); ser.bh.setData([]);
+  const ms = [];
+  rows.forEach((r) => { if (r[ix.enter_long] === 1) ms.push({ time: t(r) + TZ, position: "belowBar", shape: "arrowUp", color: css("--long"), text: "多訊號" });
+    if (r[ix.enter_short] === 1) ms.push({ time: t(r) + TZ, position: "aboveBar", shape: "arrowDown", color: css("--short"), text: "空訊號" }); });
+  markers.setMarkers(ms);
+  chart.timeScale().fitContent();
+  $("legend").innerHTML = [["--ema", "多單趨勢線"], ["--ema-s", "空單趨勢線"], ["--muted", "突破線"], ["--short", "跌破線"], ["--loss", "止損"]].map(([v, x]) => `<span><i style="background:${css(v)}"></i>${x}</span>`).join("");
+}
+function deskLive() {
+  const L = S.live, k = S.sel.toLowerCase(), cfg = (L.status.coins || {})[k] || {}, ins = ((L.signals || {}).coins || {})[k] || {};
+  $("deskTitle").textContent = `${S.sel} 工位`;
+  $("deskSub").textContent = `${cfg.strategy || ""}｜${cfg.market === "perp" ? "USDT 永續、多空、逐倉" : "現貨、只做多"}`;
+  const step = ins.action === "OPEN" ? 1 : ["HOLD", "MOVE_STOP"].includes(ins.action) ? 2 : ["CLOSE", "CLOSE_NOW"].includes(ins.action) ? 3 : 0;
+  [...$("machine").children].forEach((el, n) => el.classList.toggle("cur", n === step));
+  const bt = (((L.status.engines || {})[k] || {}).trade) || null;
+  const human = {
+    OPEN: bt ? `引擎已${bt.side === "short" ? "做空" : "做多"} ${S.sel} @${fp(bt.open_rate)}（${bt.enter_tag || ""}），交易台發出開倉指令，等 AI 在交易所執行${L.status.ea_mode === "LIVE" ? "" : "（PAPER 只記錄、不下單）"}。` : "交易台發出開倉指令，等 AI 執行。",
+    HOLD: "AI 的部位和引擎一致，止損單掛在交易所上；引擎每分鐘更新吊燈停損。",
+    MOVE_STOP: "引擎的吊燈停損往有利方向移動了，交易台請 AI 把交易所的止損單改到新價位。",
+    CLOSE: "引擎已經出場（趨勢轉向或停損），交易台請 AI 平倉並記帳。",
+    CLOSE_NOW: "價格已穿過止損：交易所的止損單應該已成交，AI 要確認，還沒成交就市價平倉。",
+    MISSED: "引擎在場內，但價格已經離進場價太遠，不追，等下一筆。",
+    WAIT: "引擎在場外，等價格突破（做多）或在下降趨勢中跌破（做空）。",
+    SHADOW: "這個 EA 沒有通過驗證，只看不做。",
+    BLOCKED: "風控擋下新單（暫停、守衛判定或資金設定），不開倉。",
+    ENGINE_DOWN: "引擎連不上或停擺：不開新倉、不移止損，交易所上的止損單保留。",
+  }[ins.action] || "交易台還沒有這個幣的指令。按「問一次引擎」。";
+  $("explain").innerHTML = esc(human) + (ins.why ? `<br><small class="muted">交易台給 AI 的原文：${esc(ins.why)}</small>` : "");
+  const p = ((L.status.positions || {})[k] || [])[0];
+  const rows = [["指令", `${ins.action || "—"}`], ["參考價", fp(ins.reference_price)], ["驗證", esc(cfg.validation || "")]];
+  if (p) rows.push(["部位", `${sideTxt(p.side)} @${fp(p.entry)} · ${p.leverage || 1}x`], ["止損", fp(p.stop)], ["執行", esc(p.execution)]);
+  $("facts").innerHTML = rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("");
+  const pnl = (L.status.closed_pnl || {});
+  $("resTitle").textContent = "帳本（已實現）";
+  $("results").innerHTML = Object.entries(pnl).filter(([x]) => x.startsWith(k + "_")).map(([x, v]) => `<div><small>${esc(x.split("_")[1])}｜${v.trades} 筆</small><b class="${signCls(v.realized_pnl_usdt)}">${fu(v.realized_pnl_usdt)}</b></div>`).join("")
+    || `<div><small>已實現</small><b>0</b></div>`;
+  $("ledgerTitle").textContent = "帳本（AI 記錄的成交）";
+  const rowsL = (L.ledger || []).slice().reverse().slice(0, 80);
+  $("ledger").innerHTML = `<thead><tr><th>時間</th><th>動作</th><th>幣</th><th>價格</th><th>數量</th><th>損益 USDT</th></tr></thead><tbody>` +
+    (rowsL.map((r) => `<tr><td>${esc(String(r.ts_utc).replace("T", " ").slice(0, 16))}</td><td><span class="chip ${r.side}">${r.action === "OPEN" ? "開" : "平"}${sideTxt(r.side)}</span> ${esc(r.execution)}</td><td>${esc(String(r.coin).toUpperCase())}</td><td>${fp(Number(r.price))}</td><td>${esc(r.qty)}</td><td class="${signCls(Number(r.realized_pnl_usdt))}">${r.realized_pnl_usdt || ""}</td></tr>`).join("")
+      || `<tr><td colspan="6" class="muted">帳本是空的</td></tr>`) + "</tbody>";
+}
+function tapeLive() {
+  const L = S.live; S.tape = [];
+  const evs = [...(L.journal || []).map((j) => ({ t: Date.parse(j.at) / 1000, coin: String(j.coin || "全部").toUpperCase(), who: j.kind, msg: j.kind === "fill" ? `${j.action} ${j.side || ""} @${j.price}（${j.execution}）` : j.kind === "stop" ? `止損 ${j.from} → ${j.to}` : j.kind === "halt" ? `停止新進場：${j.reason}` : j.reason || j.kind })),
+    ...(L.history || []).map((h) => ({ t: Date.parse(h.at) / 1000, coin: "交易台", who: "指令", msg: Object.entries(h.changed || {}).map(([k, v]) => `${k.toUpperCase()} ${v}`).join("、") }))]
+    .sort((a, b) => b.t - a.t).slice(0, 120);
+  S.tape = evs; renderTape();
+}
+let liveTimers = [];
+function startLive() {
+  S.src = "live"; pause(); liveTimers.forEach(clearInterval);
+  $("rbar").hidden = true; $("refreshBtn").hidden = false; $("haltBtn").hidden = false;
+  $("srcLive").setAttribute("aria-pressed", "true"); $("srcReplay").setAttribute("aria-pressed", "false");
+  buildChart(); loadLive(); loadCandles();
+  liveTimers = [setInterval(loadLive, 10000), setInterval(loadCandles, 60000)];
+}
+function startReplay() {
+  S.src = "replay"; liveTimers.forEach(clearInterval);
+  $("rbar").hidden = false; $("refreshBtn").hidden = true; $("haltBtn").hidden = true;
+  $("srcLive").setAttribute("aria-pressed", "false"); $("srcReplay").setAttribute("aria-pressed", "true");
+  buildChart(); seek(S.R.coins[0].t.length - 1);
+}
+
+/* ------------------------------------------------------------------ wiring */
+function renderTabs() {
+  const codes = S.src === "replay" && S.R ? ORDER.filter((k) => coinR(k)) : ORDER;
+  $("tabs").innerHTML = codes.map((k) => `<button type="button" data-coin="${k}" aria-pressed="${k === S.sel}">${k}</button>`).join("");
+  document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => selectCoin(b.dataset.coin)));
+}
+function selectCoin(code) {
+  S.sel = code; renderTabs();
+  if (S.src === "replay") renderReplay(true, null); else { deskLive(); loadCandles(); renderOffice(liveVM()); }
+}
+$("playBtn").onclick = () => (S.playing ? pause() : play());
+$("nextBtn").onclick = nextEvent;
+$("speed").onchange = () => { if (S.playing) play(); };
+$("scrub").oninput = (e) => { pause(); seek(Number(e.target.value)); };
+$("srcLive").onclick = () => { if (S.liveOk) { startLive(); renderTabs(); } };
+$("srcReplay").onclick = () => { if (S.R) { startReplay(); renderTabs(); } };
+$("refreshBtn").onclick = async () => { $("refreshBtn").disabled = true; try { await getJSON("/api/signals"); await loadLive(); await loadCandles(); } finally { $("refreshBtn").disabled = false; } };
+let armT = null;
+$("haltBtn").onclick = async () => {
+  const b = $("haltBtn");
+  if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "再按一次確認停止新進場"; armT = setTimeout(() => { b.classList.remove("armed"); b.textContent = "停止新進場"; }, 4000); return; }
+  clearTimeout(armT); b.classList.remove("armed"); b.textContent = "停止新進場";
+  try { const r = await getJSON("/api/halt", { method: "POST", headers: { "Content-Type": "application/json", "X-EA-Console": "1" }, body: JSON.stringify({ reason: "使用者在控制台按下停止新進場" }) });
+    $("notice").hidden = false; $("notice").textContent = r.ok ? "已停止新進場。既有部位照止損管理；解除要在終端機執行 python3 desk/ea_desk.py resume。" : "沒有成功：" + (r.error || ""); loadLive();
+  } catch (e) { $("notice").hidden = false; $("notice").textContent = "沒有成功：" + e.message; }
+};
+const rerender = () => { if (!chart) return; buildChart(); if (S.src === "replay") renderReplay(true, null); else chartLive(); };
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender); } catch (e) { /* old browsers */ }
+new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+async function libReady() {
+  if (window.LightweightCharts) return;
+  await new Promise((ok) => { const s = document.createElement("script"); s.src = "/lib/lightweight-charts.js"; s.onload = ok; s.onerror = ok; document.head.appendChild(s); });
+}
+async function init() {
+  await libReady();
+  try { S.R = JSON.parse($("replay-data").textContent); } catch (e) { S.R = null; }
+  try { const c = new AbortController(); setTimeout(() => c.abort(), 1500); const r = await fetch("/api/ping", { signal: c.signal }); S.liveOk = r.ok && (await r.json()).console === true; } catch (e) { S.liveOk = false; }
+  if (!S.R && S.liveOk) {
+    try { const list = await getJSON("/api/replays"); if (list.length) S.R = await getJSON("/api/replay?name=" + encodeURIComponent(list[0].name)); } catch (e) { S.R = null; }
+  }
+  $("srcLive").disabled = !S.liveOk; $("srcReplay").disabled = !S.R;
+  if (!S.liveOk) $("srcLive").title = "即時畫面要在你的電腦執行 python3 desk/ea_engine.py start 與 python3 desk/console.py";
+  if (S.R) prepReplay();
+  renderTabs();
+  let enginesUp = false;
+  if (S.liveOk) {
+    try { const st = await getJSON("/api/state"); enginesUp = Object.values(st.status.engines || {}).some((e) => e.ok); } catch (e) { enginesUp = false; }
+  }
+  if (S.liveOk && (enginesUp || !S.R)) startLive();
+  else if (S.R) {
+    startReplay();
+    if (S.liveOk) { $("notice").hidden = false; $("notice").textContent = "EA 引擎沒有在跑，先顯示回放。啟動引擎（python3 desk/ea_engine.py start）後按「即時」。"; }
+  } else { $("notice").hidden = false; $("notice").textContent = "沒有回放資料，也連不到控制台伺服器。"; }
+  if (!window.LightweightCharts) { $("notice").hidden = false; $("notice").textContent = "圖表函式庫沒有載入（需要網路連到 cdn.jsdelivr.net，或先在 tradingview/ 執行 npm install）。"; }
+}
+init();
+</script>

@@ -15,6 +15,7 @@ Details are in Traditional Chinese.
 
 - 使用者要你「依 EA 交易」「執行 EA」「跑一輪交易台」：讀 `skills/freqai-ea-trading/AGENTS.md`，用 MCP 伺服器 `freqai-ea-desk` 或 `python3 skills/freqai-ea-trading/desk/ea_desk.py` 指令。
 - 使用者問 EA 還有沒有效：照 `agents/ea-maintainer.md` 做例行檢查。
+- 使用者想「看」系統在做什麼：請他執行 `python3 skills/freqai-ea-trading/desk/console.py --open`（AI 交易辦公室）。
 - 安裝到各家 AI：[`references/ai-agents.md`](skills/freqai-ea-trading/references/ai-agents.md)。
 
 ## 對所有 AI 都適用的規則
@@ -31,5 +32,6 @@ Details are in Traditional Chinese.
 ```bash
 python3 skills/freqai-ea-trading/desk/test_desk.py                 # EA 交易台（現貨）+ MCP 伺服器（不需網路或套件）
 python3 skills/freqai-ea-trading/desk/test_desk_perp.py            # EA 交易台（合約：做空、槓桿、資金費）
+python3 skills/freqai-ea-trading/desk/test_console.py              # AI 交易辦公室（控制台）
 python3 skills/freqai-ea-trading/maintenance/test_guard_live.py    # 實盤守衛（Freqtrade venv）
 ```
