@@ -1,0 +1,169 @@
+{
+  "strategy": "ETHRiskOnGridAI",
+  "result_file": "backtest-result-2026-11-16_02-28-21.zip",
+  "timerange": "20210601-20261101",
+  "trading_mode": "spot",
+  "freqai_identifier": "eth-grid-spot-v2",
+  "starting_balance": 10000,
+  "final_balance": 17518.06,
+  "rebuilt_final_equity": 17518.06,
+  "full": {
+    "strategy": {
+      "start": "2021-06-01",
+      "end": "2026-10-31",
+      "days": 1978.9,
+      "total_return_pct": 75.18,
+      "cagr_pct": 10.89,
+      "max_drawdown_pct": 27.09,
+      "calmar": 0.4,
+      "sharpe_daily": 0.59,
+      "sortino_daily": 0.52,
+      "longest_underwater_days": 490.8
+    },
+    "buy_hold": {
+      "start": "2021-06-01",
+      "end": "2026-10-31",
+      "days": 1978.9,
+      "total_return_pct": -17.43,
+      "cagr_pct": -3.47,
+      "max_drawdown_pct": 81.34,
+      "calmar": -0.04,
+      "sharpe_daily": 0.31,
+      "sortino_daily": 0.45,
+      "longest_underwater_days": 1381.2
+    },
+    "orders": {
+      "sessions": 41,
+      "grid_buys": 301,
+      "grid_sells": 233,
+      "order_volume_quote": 1074920.62,
+      "exit_reasons": {
+        "regime_off": 32,
+        "grid_break": 9
+      }
+    },
+    "exposure": {
+      "time_in_market_pct": 38.7,
+      "time_long_pct": 38.7,
+      "time_short_pct": 0.0,
+      "avg_gross_exposure_pct": 19.5,
+      "max_gross_exposure_pct": 93.7
+    }
+  },
+  "yearly": [
+    {
+      "year": 2021,
+      "strategy_pct": 28.51,
+      "strategy_maxdd_pct": 15.85,
+      "buy_hold_pct": 34.63,
+      "buy_hold_maxdd_pct": 39.94
+    },
+    {
+      "year": 2022,
+      "strategy_pct": 2.94,
+      "strategy_maxdd_pct": 2.22,
+      "buy_hold_pct": -67.87,
+      "buy_hold_maxdd_pct": 76.67
+    },
+    {
+      "year": 2023,
+      "strategy_pct": -1.86,
+      "strategy_maxdd_pct": 22.17,
+      "buy_hold_pct": 91.1,
+      "buy_hold_maxdd_pct": 28.16
+    },
+    {
+      "year": 2024,
+      "strategy_pct": 21.88,
+      "strategy_maxdd_pct": 25.68,
+      "buy_hold_pct": 45.4,
+      "buy_hold_maxdd_pct": 46.66
+    },
+    {
+      "year": 2025,
+      "strategy_pct": 16.4,
+      "strategy_maxdd_pct": 25.13,
+      "buy_hold_pct": -11.66,
+      "buy_hold_maxdd_pct": 61.8
+    },
+    {
+      "year": 2026,
+      "strategy_pct": -5.22,
+      "strategy_maxdd_pct": 7.16,
+      "buy_hold_pct": -24.33,
+      "buy_hold_maxdd_pct": 55.0
+    }
+  ],
+  "in_sample": {
+    "strategy": {
+      "start": "2021-06-01",
+      "end": "2024-12-11",
+      "days": 1290.0,
+      "total_return_pct": 68.35,
+      "cagr_pct": 15.88,
+      "max_drawdown_pct": 25.68,
+      "calmar": 0.62,
+      "sharpe_daily": 0.78,
+      "sortino_daily": 0.75,
+      "longest_underwater_days": 436.2
+    },
+    "buy_hold": {
+      "start": "2021-06-01",
+      "end": "2024-12-11",
+      "days": 1290.0,
+      "total_return_pct": 40.32,
+      "cagr_pct": 10.06,
+      "max_drawdown_pct": 81.34,
+      "calmar": 0.12,
+      "sharpe_daily": 0.51,
+      "sortino_daily": 0.72,
+      "longest_underwater_days": 1127.3
+    },
+    "orders": {
+      "sessions": 24,
+      "grid_buys": 203,
+      "grid_sells": 169,
+      "order_volume_quote": 584814.73,
+      "exit_reasons": {
+        "regime_off": 17,
+        "grid_break": 7
+      }
+    }
+  },
+  "out_of_sample": {
+    "strategy": {
+      "start": "2024-12-12",
+      "end": "2026-10-31",
+      "days": 688.9,
+      "total_return_pct": 4.24,
+      "cagr_pct": 2.22,
+      "max_drawdown_pct": 27.09,
+      "calmar": 0.08,
+      "sharpe_daily": 0.19,
+      "sortino_daily": 0.14,
+      "longest_underwater_days": 433.1
+    },
+    "buy_hold": {
+      "start": "2024-12-12",
+      "end": "2026-10-31",
+      "days": 688.9,
+      "total_return_pct": -40.94,
+      "cagr_pct": -24.35,
+      "max_drawdown_pct": 69.15,
+      "calmar": -0.35,
+      "sharpe_daily": -0.08,
+      "sortino_daily": -0.12,
+      "longest_underwater_days": 433.1
+    },
+    "orders": {
+      "sessions": 17,
+      "grid_buys": 98,
+      "grid_sells": 64,
+      "order_volume_quote": 490105.89,
+      "exit_reasons": {
+        "regime_off": 15,
+        "grid_break": 2
+      }
+    }
+  }
+}

@@ -7,5 +7,8 @@ Trader Bot。本倉庫自行撰寫的策略、研發流水線、執行部工具�
 - uv（Apache-2.0/MIT），astral-sh/uv 官方 GitHub release 0.13.8
 - Graphify-Labs/graphify（Apache-2.0），PyPI `graphifyy` 0.9.108
 - pandas（BSD-3-Clause）、pyarrow（Apache-2.0）、requests（Apache-2.0）
+- freqtrade/freqtrade（GPL-3.0，含 FreqAI），PyPI `freqtrade[freqai]` 2026.10（僅網格 Skill，獨立 venv）
+- microsoft/LightGBM（MIT）、scikit-learn（BSD-3-Clause）、TA-Lib Python（BSD-2-Clause）、ccxt（MIT）
 
-市場資料：OKX 公開 REST API（不需金鑰）；經濟日曆：ForexFactory 公開週曆 JSON。
+市場資料：OKX 公開 REST API（不需金鑰）；經濟日曆：ForexFactory 公開週曆 JSON；
+網格 Skill 的歷史 K 線 / mark price / funding：Binance 公開資料庫 data.binance.vision（不需金鑰）。

@@ -10,6 +10,18 @@ Grok Bot「Trader」的私人交易公司：**研發部**在 nautilus_trader 上
 倉庫：https://github.com/lchouprivate501-netizen/Trader-Bot_Crypto  
 本機目錄 `~/crypto-trading/pionex-macd`、venv `~/crypto-trading/venvs/pionex-trading-skills`、模組 `pionex_trading_skills` 是現有連接器的相容入口，請不要改掉這三個路徑／名稱。
 
+## Freqtrade + FreqAI 網格交易 Skill（BTC / ETH / SOL）
+
+`skills/freqai-grid-trading/` 是一個獨立的 Freqtrade 專案兼 Claude Code Skill（`.claude/skills/freqai-grid-trading` 為符號連結，在本倉庫內開啟 Claude Code 會自動載入；也可複製到 `~/.claude/skills/`）。一個 FreqAI 驅動的網格引擎 + 三個針對幣種特性設計的現貨網格：
+
+| 策略 | 設計 | FreqAI 的角色 | 全期間 2021-06 → 2026-10 | 盯市最大回撤（持有） | 樣本外（持有） |
+|---|---|---|---|---|---|
+| `BTCAccumGridAI` | 100 日趨勢之上：60% 核心倉 + 12 格 | 24h 波動預測 → 格距、暫停加倉；弱方向傾向 | +178.5% | 25.5%（77%） | −8.2%（−23.1%） |
+| `ETHRiskOnGridAI` | 只在 BTC risk-on 且 ETH 50 日趨勢之上：40% 核心倉 + 10 格 | 同上 + BTC 特徵 | +75.2% | 27.1%（81%） | +4.2%（−40.9%） |
+| `SOLTrendGridAI` | 只順上升趨勢：30% 核心倉 + 6 格寬網格 + 鎖利 | 同上 + BTC/ETH 特徵 | +80.2% | 47.6%（97%） | −27.0%（−58.0%） |
+
+Purged walk-forward（66 個 FreqAI 視窗）、5 分鐘掛單成交模擬、每邊 0.10% 手續費、樣本內調參 / 樣本外只看一次。詳見 [`backtest-results.md`](skills/freqai-grid-trading/references/backtest-results.md)；用法見 [`SKILL.md`](skills/freqai-grid-trading/SKILL.md)。**不保證獲利**：樣本外（熊市）只有 ETH 為正，SOL 不建議直接實盤；實盤前至少 30 天 dry-run。
+
 ## 組織圖（13 個角色）
 
 ### 研發部（6 人）— `rnd/`
@@ -82,6 +94,9 @@ flowchart LR
 | pandas | https://github.com/pandas-dev/pandas | 2.3.3 | BSD-3-Clause | 資料與訊號 |
 | pyarrow | https://github.com/apache/arrow | 26.0.1 | Apache-2.0 | Parquet K 線 |
 | requests | https://github.com/psf/requests | 2.32.5 | Apache-2.0 | OKX / 日曆等公開 HTTP |
+| Freqtrade（含 FreqAI） | https://github.com/freqtrade/freqtrade | 2026.10 | GPL-3.0 | 網格 Skill 的回測/交易引擎（獨立 venv，`skills/freqai-grid-trading/scripts/setup_env.sh`） |
+| LightGBM | https://github.com/microsoft/LightGBM | 4.7.0 | MIT | FreqAI 模型 |
+| TA-Lib（Python） | https://github.com/TA-Lib/ta-lib-python | 0.8.3 | BSD-2-Clause | 指標 |
 
 本倉庫自行撰寫的部分為 MIT（見 LICENSE）。市場資料來自 OKX 公開 REST（不需金鑰）；經濟日曆來自 ForexFactory 公開週曆 JSON。
 
@@ -94,6 +109,7 @@ flowchart LR
 | `exec/` | 消息面、掃描、篩選、分析、訊號、風控、帳本、日誌、單輪週期 |
 | `mcp/` | MCP 套件 `pionex_trading_skills`（相容模組名） |
 | `scripts/` | 5 分鐘排程器、MCP 煙霧測試、交易所設定檔測試 |
+| `skills/freqai-grid-trading/` | Freqtrade + FreqAI 網格交易 Skill（策略、設定、回測/調參/報表腳本、文件） |
 | `state/`、`journal/` | 模式、帳本、權益與日誌（本機，不進 git） |
 
 手續費來自啟用中交易所設定檔；Pionex 預設 maker 0.02%、taker 0.05%。回測與風控一律以 taker/邊計算（保守）。資金費率未計入回測。

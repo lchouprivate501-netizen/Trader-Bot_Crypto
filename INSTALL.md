@@ -57,3 +57,13 @@ $PY scripts/test_exchange_set.py                # 交易所設定檔測試（用
 1. 複製 `rnd/strategies/vwap_pullback.py`，改 `NAME/DESCRIPTION/DEFAULTS/SPACE/signals()/near()`。
 2. 把名稱加進 `rnd/strategies/__init__.py` 的 `ALL`。
 3. `rnd_run_backtest("<name>")`；結果會寫進 `rnd/strategies/registry.json` 與 `rnd/reports/<name>/`。
+
+## （可選）Freqtrade + FreqAI 網格交易 Skill
+
+與上面的 MCP 環境分開，安裝在自己的 venv：
+
+```bash
+bash skills/freqai-grid-trading/scripts/setup_env.sh   # freqtrade[freqai]==2026.10
+```
+
+下載資料、回測、調參、dry-run/live 的完整步驟見 [skills/freqai-grid-trading/SKILL.md](skills/freqai-grid-trading/SKILL.md)。
