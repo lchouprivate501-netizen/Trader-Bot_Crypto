@@ -1,7 +1,8 @@
 # Weekly forward health check of the BTC / ETH / SOL EAs (skills/freqai-ea-trading).
-# Runs the frozen EAs on market data after 2026-11-01, grades them against their validated
-# baselines (maintenance/maintenance-protocol.md) and opens / updates an `ea-health` issue
-# when any EA is DEGRADED or HALT. The report is kept as a workflow artifact.
+# Runs the frozen EAs on market data after 2026-11-01 - the USDT-M futures EAs (primary for ETH and
+# SOL; BTC's is shadow-only) and the spot EAs (primary for BTC) - grades them against their validated
+# baselines (maintenance/maintenance-protocol.md) and opens / updates an `ea-health` issue when any
+# EA is DEGRADED or HALT. The reports are kept as a workflow artifact.
 name: EA health check
 
 on:
@@ -42,14 +43,22 @@ jobs:
           python skills/freqai-ea-trading/scripts/download_binance_vision.py \
             --pairs BTC/USDT ETH/USDT SOL/USDT --timeframes 1h 15m --start 2025-01 \
             --trading-mode spot --datadir "$FT_HOME/data/binance" --daily-tail
+          python skills/freqai-ea-trading/scripts/download_binance_vision.py \
+            --pairs BTC/USDT ETH/USDT SOL/USDT --timeframes 1h 15m --start 2025-01 \
+            --trading-mode futures --datadir "$FT_HOME/data/binance" --daily-tail
 
       - name: Forward health check
         id: guard
         run: |
           set +e
+          python skills/freqai-ea-trading/maintenance/ea_guard.py forward --market perp --all \
+            --userdir "$FT_HOME" --keep out/runs --json out/health_perp.json --md out/health_perp.md
+          perp=$?
           python skills/freqai-ea-trading/maintenance/ea_guard.py forward --all \
-            --userdir "$FT_HOME" --keep out/runs --json out/health.json --md out/health.md
-          echo "code=$?" >> "$GITHUB_OUTPUT"
+            --userdir "$FT_HOME" --keep out/runs --json out/health_spot.json --md out/health_spot.md
+          spot=$?
+          cat out/health_perp.md out/health_spot.md > out/health.md
+          echo "code=$(( perp > spot ? perp : spot ))" >> "$GITHUB_OUTPUT"
           cat out/health.md >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4

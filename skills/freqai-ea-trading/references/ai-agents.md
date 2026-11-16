@@ -76,7 +76,7 @@ Grok 用戶端若支援本機（stdio）MCP 連接器，新增一個連接器：
 
 然後給 Grok 這段指示（放在系統提示或第一則訊息）：
 
-> 你是我的 EA 交易執行者。先呼叫 `ea_guide` 讀作業手冊並照做。每一輪呼叫 `ea_signals`，依每個幣的 action 在我的交易所現貨下單或記錄；買入前一定 `ea_risk_check`，成交後一定 `ea_record`。不要向我要 API 金鑰、不要提幣或轉帳、不能自己開實盤或解除 HALT。有成交或問題時用一兩句話回報我。
+> 你是我的 EA 交易執行者。先呼叫 `ea_guide` 讀作業手冊並照做。每一輪呼叫 `ea_signals`，依每個幣的 action 在我的交易所下單或記錄（ETH、SOL 是 USDT 永續合約、逐倉、可做多也可做空，槓桿照指令；BTC 是現貨只做多）；開倉前一定 `ea_risk_check`，成交後一定 `ea_record`。不要向我要 API 金鑰、不要提幣或轉帳、不要提高槓桿或改全倉、不能自己開實盤或解除 HALT。有成交或問題時用一兩句話回報我。
 
 Grok 用戶端只支援遠端（HTTP）MCP 時：本專案目前只提供本機 stdio 版本；可以讓 Grok 執行 `python3 desk/ea_desk.py …` 指令（見下一節），或把 `AGENTS.md` 貼給它，由你代為執行指令。
 
@@ -89,7 +89,7 @@ Grok 用戶端只支援遠端（HTTP）MCP 時：本專案目前只提供本機 
   python3 desk/ea_desk.py guide                       # 作業手冊
   python3 desk/ea_desk.py signals                     # 每輪：每個幣的指令
   python3 desk/ea_desk.py check --coin btc --price 100500
-  python3 desk/ea_desk.py record --event OPEN --coin btc --position-id EA-BTC-7-2026111601 --qty 0.0039 --price 100500 --stop-price 80000
+  python3 desk/ea_desk.py record --event OPEN --coin eth --position-id EA-ETH-7-2026111601 --side short --leverage 2 --qty 0.85 --price 3000 --stop-price 3240
   python3 desk/ea_desk.py halt --reason "帳本對不上"
   ```
 
@@ -109,9 +109,11 @@ EA 的進場判斷每小時一次、停損每分鐘更新，AI 至少每小時�
 |---|---|
 | 金鑰外洩 | 引擎不需要金鑰（強制 dry-run、清空金鑰欄位、移除 `FREQTRADE__*` 環境變數）；交易台與 MCP 伺服器不讀金鑰。 |
 | AI 自己開實盤 | `live on` 與 `resume` 需要互動式終端機與確認字句；MCP 沒有這兩個工具。 |
-| 下單過大 | `ea_risk_check` 依 EA 的部位比例、單筆風險上限（資金 10%）、資金上限計算最大數量。 |
-| 追高 | 價格超過引擎進場價 2% 不進場（`MISSED`）。 |
-| 停損被往下移 | `ea_record STOP` 拒絕降低停損。 |
+| 下單過大 | `ea_risk_check` 依 EA 的部位比例、單筆風險上限（資金 10%）、資金上限（名目 ≤ 資金）計算最大數量；槓桿只影響保證金。 |
+| 強平 | 合約只用逐倉，槓桿由引擎依停損距離決定（清算價距離 ≥ 2 倍停損距離，1–3 倍）；回測與驗證期 0 次強平。守衛把任何一次強平當 ALERT。 |
+| 追價 | 價格離引擎進場價超過 2%（做多往上、做空往下）不進場（`MISSED`）。 |
+| 停損被往不利方向移 | `ea_record STOP` 拒絕降低多單停損、拒絕提高空單停損。 |
+| 方向弄錯 | 記錄的方向和引擎不同會警告；現貨 EA 不能記空單。 |
 | 引擎壞掉 | 引擎連不上、停擺、不是 dry-run、策略不符 → `ENGINE_DOWN`，不開新倉。 |
 | EA 失效 | EA 守衛依驗證過的正常範圍判定 HALT → 停止新進場；累計虧損達資金 35% → 停止新進場。 |
 | 帳本與交易所不一致 | 每筆成交都要記；同一幣兩筆部位 → `ERROR`；AI 不確定時可 `ea_halt`。 |

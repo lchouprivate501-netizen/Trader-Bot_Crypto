@@ -1,4 +1,5 @@
-# Runs the three EAs unattended (one container each). Start in dry-run first:
+# Runs the three primary EAs unattended (one container each): ETH and SOL on their USDT-M futures EAs
+# (config_*_perp.json, isolated margin, long + short), BTC on its spot EA. Start in dry-run first:
 #   cp deploy/ea.env.example deploy/ea.env    # fill in, never commit
 #   docker compose -f deploy/docker-compose.yml up -d --build
 #   docker compose -f deploy/docker-compose.yml logs -f btc-ea
@@ -33,7 +34,7 @@ services:
       - ../user_data:/freqtrade/ea:ro        # strategies, FreqAI model class, configs (read-only)
       - eth-data:/freqtrade/user_data     # this bot's candles, FreqAI models, trade DB, logs
     command: >
-      trade --config /freqtrade/ea/configs/config_eth_ea.json
+      trade --config /freqtrade/ea/configs/config_eth_perp.json
       --userdir /freqtrade/user_data
       --strategy-path /freqtrade/ea/strategies --freqaimodel-path /freqtrade/ea/freqaimodels
       --db-url sqlite:////freqtrade/user_data/eth-ea.sqlite
@@ -45,7 +46,7 @@ services:
       - ../user_data:/freqtrade/ea:ro        # strategies, FreqAI model class, configs (read-only)
       - sol-data:/freqtrade/user_data     # this bot's candles, FreqAI models, trade DB, logs
     command: >
-      trade --config /freqtrade/ea/configs/config_sol_ea.json
+      trade --config /freqtrade/ea/configs/config_sol_perp.json
       --userdir /freqtrade/user_data
       --strategy-path /freqtrade/ea/strategies --freqaimodel-path /freqtrade/ea/freqaimodels
       --db-url sqlite:////freqtrade/user_data/sol-ea.sqlite

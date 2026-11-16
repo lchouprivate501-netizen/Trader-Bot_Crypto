@@ -1,0 +1,1166 @@
+{
+  "coin": "btc",
+  "market": "perp",
+  "strategy": "BTCFuturesEA",
+  "frozen_params": {
+    "trend_ema": 2400,
+    "ema_band": 0.02,
+    "slope_h": 0,
+    "breakout_h": 240,
+    "init_k": null,
+    "trail_k": 10.0,
+    "risk_per_trade": 0.1,
+    "max_alloc": 0.95,
+    "min_alloc": 0.05,
+    "ref_trend_ema": 0,
+    "ai_vol": true,
+    "short": true,
+    "s_trend_ema": 2400,
+    "s_ema_band": 0.02,
+    "s_slope_h": 720,
+    "s_cross": 0,
+    "s_breakout_h": 360,
+    "s_init_k": 3.0,
+    "s_trail_k": 3.0,
+    "s_risk_per_trade": 0.1,
+    "max_stop_pct": 0.3,
+    "max_leverage": 3,
+    "liq_buffer": 2.0
+  },
+  "tuned": [
+    "s_trend_ema",
+    "s_slope_h",
+    "s_breakout_h",
+    "s_trail_k",
+    "s_risk_per_trade"
+  ],
+  "fee": 0.0005,
+  "ran_at": "2026-11-16T09:37:59.705235Z",
+  "DEV": {
+    "strategy": "BTCFuturesEA",
+    "pair_traded": "BTC/USDT:USDT",
+    "return_pct": 112.43,
+    "cagr_pct": 23.76,
+    "max_dd_pct": 19.68,
+    "calmar": 1.21,
+    "sharpe": 0.9,
+    "bh_return_pct": 167.66,
+    "bh_max_dd_pct": 77.24,
+    "trades": 36,
+    "win_rate_pct": 44.4,
+    "profit_factor": 2.58,
+    "avg_win": 1146.52,
+    "avg_loss": -355.06,
+    "avg_hold_days": 20.7,
+    "exit_reasons": {
+      "trailing_stop_loss": 24,
+      "trend_off": 11,
+      "force_exit": 1
+    },
+    "long_trades": 14,
+    "long_pnl": 8613.28,
+    "long_pf": 5.49,
+    "short_trades": 22,
+    "short_pnl": 2629.96,
+    "short_pf": 1.51,
+    "funding_total": -1755.28,
+    "liquidations": 0,
+    "leverage_used": [
+      1.0,
+      2.0,
+      3.0
+    ],
+    "exposure": {
+      "time_in_market_pct": 57.8,
+      "time_long_pct": 50.3,
+      "time_short_pct": 7.5,
+      "avg_gross_exposure_pct": 32.2,
+      "max_gross_exposure_pct": 105.0
+    },
+    "yearly": [
+      {
+        "year": 2021,
+        "strategy_pct": -13.56,
+        "strategy_maxdd_pct": 17.93,
+        "buy_hold_pct": 22.32,
+        "buy_hold_maxdd_pct": 33.58
+      },
+      {
+        "year": 2022,
+        "strategy_pct": 25.58,
+        "strategy_maxdd_pct": 19.68,
+        "buy_hold_pct": -64.55,
+        "buy_hold_maxdd_pct": 67.39
+      },
+      {
+        "year": 2023,
+        "strategy_pct": 32.15,
+        "strategy_maxdd_pct": 14.97,
+        "buy_hold_pct": 156.03,
+        "buy_hold_maxdd_pct": 21.83
+      },
+      {
+        "year": 2024,
+        "strategy_pct": 47.54,
+        "strategy_maxdd_pct": 17.56,
+        "buy_hold_pct": 137.9,
+        "buy_hold_maxdd_pct": 32.39
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20210601-20241212",
+    "fee": 0.0005,
+    "result_file": "/tmp/claude-0/-home-user-Trader-Bot-Crypto/f455301e-bffb-584f-933a-465fec8594cf/scratchpad/perp/validation/btc_perp/DEV/backtest-result-2026-11-16_09-38-22.zip"
+  },
+  "V2": {
+    "strategy": "BTCFuturesEA",
+    "pair_traded": "BTC/USDT:USDT",
+    "return_pct": -6.88,
+    "cagr_pct": -3.7,
+    "max_dd_pct": 19.82,
+    "calmar": -0.19,
+    "sharpe": -0.06,
+    "bh_return_pct": -23.06,
+    "bh_max_dd_pct": 53.77,
+    "trades": 19,
+    "win_rate_pct": 31.6,
+    "profit_factor": 0.86,
+    "avg_win": 730.66,
+    "avg_loss": -390.12,
+    "avg_hold_days": 21.5,
+    "exit_reasons": {
+      "trend_off": 5,
+      "trailing_stop_loss": 13,
+      "force_exit": 1
+    },
+    "long_trades": 7,
+    "long_pnl": -249.36,
+    "long_pf": 0.86,
+    "short_trades": 12,
+    "short_pnl": -438.18,
+    "short_pf": 0.87,
+    "funding_total": -194.67,
+    "liquidations": 0,
+    "leverage_used": [
+      1.0,
+      2.0,
+      3.0
+    ],
+    "exposure": {
+      "time_in_market_pct": 59.3,
+      "time_long_pct": 48.8,
+      "time_short_pct": 10.5,
+      "avg_gross_exposure_pct": 37.4,
+      "max_gross_exposure_pct": 112.9
+    },
+    "yearly": [
+      {
+        "year": 2024,
+        "strategy_pct": -3.91,
+        "strategy_maxdd_pct": 5.76,
+        "buy_hold_pct": -7.15,
+        "buy_hold_maxdd_pct": 15.13
+      },
+      {
+        "year": 2025,
+        "strategy_pct": -1.59,
+        "strategy_maxdd_pct": 19.49,
+        "buy_hold_pct": -7.16,
+        "buy_hold_maxdd_pct": 34.76
+      },
+      {
+        "year": 2026,
+        "strategy_pct": -1.64,
+        "strategy_maxdd_pct": 19.59,
+        "buy_hold_pct": -11.68,
+        "buy_hold_maxdd_pct": 40.32
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20241212-20261101",
+    "fee": 0.0005,
+    "result_file": "/tmp/claude-0/-home-user-Trader-Bot-Crypto/f455301e-bffb-584f-933a-465fec8594cf/scratchpad/perp/validation/btc_perp/V2/backtest-result-2026-11-16_09-38-45.zip"
+  },
+  "V1": {
+    "strategy": "BTCFuturesEA",
+    "pair_traded": "BTC/USDT:USDT",
+    "return_pct": 92.38,
+    "cagr_pct": 24.35,
+    "max_dd_pct": 34.02,
+    "calmar": 0.72,
+    "sharpe": 0.87,
+    "bh_return_pct": 395.4,
+    "bh_max_dd_pct": 70.9,
+    "trades": 34,
+    "win_rate_pct": 38.2,
+    "profit_factor": 1.89,
+    "avg_win": 1510.97,
+    "avg_loss": -495.45,
+    "avg_hold_days": 17.8,
+    "exit_reasons": {
+      "trailing_stop_loss": 23,
+      "trend_off": 11
+    },
+    "long_trades": 18,
+    "long_pnl": 9027.34,
+    "long_pf": 2.7,
+    "short_trades": 16,
+    "short_pnl": 210.83,
+    "short_pf": 1.04,
+    "funding_total": -2402.82,
+    "liquidations": 0,
+    "leverage_used": [
+      1.0,
+      2.0,
+      3.0
+    ],
+    "exposure": {
+      "time_in_market_pct": 55.2,
+      "time_long_pct": 46.7,
+      "time_short_pct": 8.5,
+      "avg_gross_exposure_pct": 29.1,
+      "max_gross_exposure_pct": 107.8
+    },
+    "yearly": [
+      {
+        "year": 2018,
+        "strategy_pct": 3.86,
+        "strategy_maxdd_pct": 27.16,
+        "buy_hold_pct": -50.75,
+        "buy_hold_maxdd_pct": 62.39
+      },
+      {
+        "year": 2019,
+        "strategy_pct": 22.08,
+        "strategy_maxdd_pct": 31.74,
+        "buy_hold_pct": 94.45,
+        "buy_hold_maxdd_pct": 53.15
+      },
+      {
+        "year": 2020,
+        "strategy_pct": 53.01,
+        "strategy_maxdd_pct": 15.51,
+        "buy_hold_pct": 303.7,
+        "buy_hold_maxdd_pct": 61.18
+      },
+      {
+        "year": 2021,
+        "strategy_pct": -0.95,
+        "strategy_maxdd_pct": 19.63,
+        "buy_hold_pct": 28.36,
+        "buy_hold_maxdd_pct": 50.16
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20180601-20210601",
+    "fee": 0.0005,
+    "result_file": "/tmp/claude-0/-home-user-Trader-Bot-Crypto/f455301e-bffb-584f-933a-465fec8594cf/scratchpad/perp/validation/btc_perp/V1/backtest-result-2026-11-16_09-39-10.zip"
+  },
+  "V4": {
+    "perturbations": [
+      {
+        "strategy": "BTCFuturesEA",
+        "pair_traded": "BTC/USDT:USDT",
+        "return_pct": 108.45,
+        "cagr_pct": 23.1,
+        "max_dd_pct": 19.68,
+        "calmar": 1.17,
+        "sharpe": 0.89,
+        "bh_return_pct": 167.66,
+        "bh_max_dd_pct": 77.24,
+        "trades": 36,
+        "win_rate_pct": 44.4,
+        "profit_factor": 2.41,
+        "avg_win": 1159.75,
+        "avg_loss": -385.53,
+        "avg_hold_days": 20.4,
+        "exit_reasons": {
+          "trailing_stop_loss": 24,
+          "trend_off": 11,
+          "force_exit": 1
+        },
+        "long_trades": 14,
+        "long_pnl": 8610.62,
+        "long_pf": 5.52,
+        "short_trades": 22,
+        "short_pnl": 2234.81,
+        "short_pf": 1.38,
+        "funding_total": -1766.2,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 57.0,
+          "time_long_pct": 50.3,
+          "time_short_pct": 6.7,
+          "avg_gross_exposure_pct": 31.5,
+          "max_gross_exposure_pct": 105.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": -13.56,
+            "strategy_maxdd_pct": 17.93,
+            "buy_hold_pct": 22.32,
+            "buy_hold_maxdd_pct": 33.58
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 32.97,
+            "strategy_maxdd_pct": 19.68,
+            "buy_hold_pct": -64.55,
+            "buy_hold_maxdd_pct": 67.39
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 25.41,
+            "strategy_maxdd_pct": 19.3,
+            "buy_hold_pct": 156.03,
+            "buy_hold_maxdd_pct": 21.83
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 44.09,
+            "strategy_maxdd_pct": 19.49,
+            "buy_hold_pct": 137.9,
+            "buy_hold_maxdd_pct": 32.39
+          }
+        ],
+        "params": {
+          "s_trend_ema": 1800
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCFuturesEA",
+        "pair_traded": "BTC/USDT:USDT",
+        "return_pct": 86.51,
+        "cagr_pct": 19.29,
+        "max_dd_pct": 21.41,
+        "calmar": 0.9,
+        "sharpe": 0.77,
+        "bh_return_pct": 167.66,
+        "bh_max_dd_pct": 77.24,
+        "trades": 35,
+        "win_rate_pct": 42.9,
+        "profit_factor": 2.23,
+        "avg_win": 1044.81,
+        "avg_loss": -351.07,
+        "avg_hold_days": 21.2,
+        "exit_reasons": {
+          "trailing_stop_loss": 23,
+          "trend_off": 11,
+          "force_exit": 1
+        },
+        "long_trades": 14,
+        "long_pnl": 8087.57,
+        "long_pf": 5.38,
+        "short_trades": 21,
+        "short_pnl": 563.12,
+        "short_pf": 1.11,
+        "funding_total": -1723.47,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 57.6,
+          "time_long_pct": 50.3,
+          "time_short_pct": 7.3,
+          "avg_gross_exposure_pct": 32.0,
+          "max_gross_exposure_pct": 105.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": -13.56,
+            "strategy_maxdd_pct": 17.93,
+            "buy_hold_pct": 22.32,
+            "buy_hold_maxdd_pct": 33.58
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 25.58,
+            "strategy_maxdd_pct": 19.68,
+            "buy_hold_pct": -64.55,
+            "buy_hold_maxdd_pct": 67.39
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 32.15,
+            "strategy_maxdd_pct": 14.97,
+            "buy_hold_pct": 156.03,
+            "buy_hold_maxdd_pct": 21.83
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 29.54,
+            "strategy_maxdd_pct": 21.41,
+            "buy_hold_pct": 137.9,
+            "buy_hold_maxdd_pct": 32.39
+          }
+        ],
+        "params": {
+          "s_trend_ema": 3000
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCFuturesEA",
+        "pair_traded": "BTC/USDT:USDT",
+        "return_pct": 82.23,
+        "cagr_pct": 18.51,
+        "max_dd_pct": 23.25,
+        "calmar": 0.8,
+        "sharpe": 0.76,
+        "bh_return_pct": 167.66,
+        "bh_max_dd_pct": 77.24,
+        "trades": 35,
+        "win_rate_pct": 42.9,
+        "profit_factor": 2.12,
+        "avg_win": 1038.55,
+        "avg_loss": -367.77,
+        "avg_hold_days": 20.9,
+        "exit_reasons": {
+          "trailing_stop_loss": 23,
+          "trend_off": 11,
+          "force_exit": 1
+        },
+        "long_trades": 14,
+        "long_pnl": 8009.26,
+        "long_pf": 5.38,
+        "short_trades": 21,
+        "short_pnl": 213.7,
+        "short_pf": 1.04,
+        "funding_total": -1720.86,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 56.8,
+          "time_long_pct": 50.3,
+          "time_short_pct": 6.5,
+          "avg_gross_exposure_pct": 31.2,
+          "max_gross_exposure_pct": 105.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": -13.56,
+            "strategy_maxdd_pct": 17.93,
+            "buy_hold_pct": 22.32,
+            "buy_hold_maxdd_pct": 33.58
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 25.64,
+            "strategy_maxdd_pct": 19.68,
+            "buy_hold_pct": -64.55,
+            "buy_hold_maxdd_pct": 67.39
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 32.15,
+            "strategy_maxdd_pct": 14.97,
+            "buy_hold_pct": 156.03,
+            "buy_hold_maxdd_pct": 21.83
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 26.51,
+            "strategy_maxdd_pct": 23.25,
+            "buy_hold_pct": 137.9,
+            "buy_hold_maxdd_pct": 32.39
+          }
+        ],
+        "params": {
+          "s_slope_h": 540
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCFuturesEA",
+        "pair_traded": "BTC/USDT:USDT",
+        "return_pct": 102.81,
+        "cagr_pct": 22.15,
+        "max_dd_pct": 19.68,
+        "calmar": 1.13,
+        "sharpe": 0.85,
+        "bh_return_pct": 167.66,
+        "bh_max_dd_pct": 77.24,
+        "trades": 37,
+        "win_rate_pct": 43.2,
+        "profit_factor": 2.31,
+        "avg_win": 1132.64,
+        "avg_loss": -373.4,
+        "avg_hold_days": 20.2,
+        "exit_reasons": {
+          "trailing_stop_loss": 25,
+          "trend_off": 11,
+          "force_exit": 1
+        },
+        "long_trades": 14,
+        "long_pnl": 8391.18,
+        "long_pf": 5.38,
+        "short_trades": 23,
+        "short_pnl": 1889.61,
+        "short_pf": 1.32,
+        "funding_total": -1741.35,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 57.9,
+          "time_long_pct": 50.3,
+          "time_short_pct": 7.6,
+          "avg_gross_exposure_pct": 32.2,
+          "max_gross_exposure_pct": 105.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": -13.56,
+            "strategy_maxdd_pct": 17.93,
+            "buy_hold_pct": 22.32,
+            "buy_hold_maxdd_pct": 33.58
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 25.58,
+            "strategy_maxdd_pct": 19.68,
+            "buy_hold_pct": -64.55,
+            "buy_hold_maxdd_pct": 67.39
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 32.15,
+            "strategy_maxdd_pct": 14.97,
+            "buy_hold_pct": 156.03,
+            "buy_hold_maxdd_pct": 21.83
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 40.86,
+            "strategy_maxdd_pct": 17.56,
+            "buy_hold_pct": 137.9,
+            "buy_hold_maxdd_pct": 32.39
+          }
+        ],
+        "params": {
+          "s_slope_h": 900
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCFuturesEA",
+        "pair_traded": "BTC/USDT:USDT",
+        "return_pct": 125.92,
+        "cagr_pct": 25.94,
+        "max_dd_pct": 18.98,
+        "calmar": 1.37,
+        "sharpe": 0.96,
+        "bh_return_pct": 167.66,
+        "bh_max_dd_pct": 77.24,
+        "trades": 39,
+        "win_rate_pct": 43.6,
+        "profit_factor": 2.54,
+        "avg_win": 1222.94,
+        "avg_loss": -372.65,
+        "avg_hold_days": 19.4,
+        "exit_reasons": {
+          "trailing_stop_loss": 27,
+          "trend_off": 11,
+          "force_exit": 1
+        },
+        "long_trades": 14,
+        "long_pnl": 9183.28,
+        "long_pf": 5.43,
+        "short_trades": 25,
+        "short_pnl": 3408.47,
+        "short_pf": 1.56,
+        "funding_total": -1871.68,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 58.7,
+          "time_long_pct": 50.3,
+          "time_short_pct": 8.4,
+          "avg_gross_exposure_pct": 33.0,
+          "max_gross_exposure_pct": 105.1
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": -6.52,
+            "strategy_maxdd_pct": 11.26,
+            "buy_hold_pct": 22.32,
+            "buy_hold_maxdd_pct": 33.58
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 29.62,
+            "strategy_maxdd_pct": 17.73,
+            "buy_hold_pct": -64.55,
+            "buy_hold_maxdd_pct": 67.39
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 25.91,
+            "strategy_maxdd_pct": 18.98,
+            "buy_hold_pct": 156.03,
+            "buy_hold_maxdd_pct": 21.83
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 47.54,
+            "strategy_maxdd_pct": 17.56,
+            "buy_hold_pct": 137.9,
+            "buy_hold_maxdd_pct": 32.39
+          }
+        ],
+        "params": {
+          "s_breakout_h": 270
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCFuturesEA",
+        "pair_traded": "BTC/USDT:USDT",
+        "return_pct": 97.7,
+        "cagr_pct": 21.27,
+        "max_dd_pct": 21.83,
+        "calmar": 0.97,
+        "sharpe": 0.84,
+        "bh_return_pct": 167.66,
+        "bh_max_dd_pct": 77.24,
+        "trades": 34,
+        "win_rate_pct": 44.1,
+        "profit_factor": 2.37,
+        "avg_win": 1126.52,
+        "avg_loss": -375.16,
+        "avg_hold_days": 21.8,
+        "exit_reasons": {
+          "trailing_stop_loss": 22,
+          "trend_off": 11,
+          "force_exit": 1
+        },
+        "long_trades": 14,
+        "long_pnl": 8022.5,
+        "long_pf": 5.44,
+        "short_trades": 20,
+        "short_pnl": 1747.29,
+        "short_pf": 1.33,
+        "funding_total": -1635.68,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 57.6,
+          "time_long_pct": 50.3,
+          "time_short_pct": 7.3,
+          "avg_gross_exposure_pct": 32.1,
+          "max_gross_exposure_pct": 105.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": -9.65,
+            "strategy_maxdd_pct": 13.54,
+            "buy_hold_pct": 22.32,
+            "buy_hold_maxdd_pct": 33.58
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 15.48,
+            "strategy_maxdd_pct": 21.83,
+            "buy_hold_pct": -64.55,
+            "buy_hold_maxdd_pct": 67.39
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 27.88,
+            "strategy_maxdd_pct": 14.97,
+            "buy_hold_pct": 156.03,
+            "buy_hold_maxdd_pct": 21.83
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 47.54,
+            "strategy_maxdd_pct": 17.56,
+            "buy_hold_pct": 137.9,
+            "buy_hold_maxdd_pct": 32.39
+          }
+        ],
+        "params": {
+          "s_breakout_h": 450
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCFuturesEA",
+        "pair_traded": "BTC/USDT:USDT",
+        "return_pct": 107.43,
+        "cagr_pct": 22.93,
+        "max_dd_pct": 17.56,
+        "calmar": 1.31,
+        "sharpe": 0.9,
+        "bh_return_pct": 167.66,
+        "bh_max_dd_pct": 77.24,
+        "trades": 40,
+        "win_rate_pct": 50.0,
+        "profit_factor": 2.38,
+        "avg_win": 925.97,
+        "avg_loss": -388.8,
+        "avg_hold_days": 18.2,
+        "exit_reasons": {
+          "trailing_stop_loss": 28,
+          "trend_off": 11,
+          "force_exit": 1
+        },
+        "long_trades": 14,
+        "long_pnl": 8591.36,
+        "long_pf": 5.48,
+        "short_trades": 26,
+        "short_pnl": 2152.1,
+        "short_pf": 1.37,
+        "funding_total": -1777.78,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 56.4,
+          "time_long_pct": 50.3,
+          "time_short_pct": 6.1,
+          "avg_gross_exposure_pct": 31.1,
+          "max_gross_exposure_pct": 110.6
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": -9.73,
+            "strategy_maxdd_pct": 16.34,
+            "buy_hold_pct": 22.32,
+            "buy_hold_maxdd_pct": 33.58
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 21.25,
+            "strategy_maxdd_pct": 17.29,
+            "buy_hold_pct": -64.55,
+            "buy_hold_maxdd_pct": 67.39
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 33.22,
+            "strategy_maxdd_pct": 14.28,
+            "buy_hold_pct": 156.03,
+            "buy_hold_maxdd_pct": 21.83
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 41.74,
+            "strategy_maxdd_pct": 17.56,
+            "buy_hold_pct": 137.9,
+            "buy_hold_maxdd_pct": 32.39
+          }
+        ],
+        "params": {
+          "s_trail_k": 2.25
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCFuturesEA",
+        "pair_traded": "BTC/USDT:USDT",
+        "return_pct": 155.58,
+        "cagr_pct": 30.41,
+        "max_dd_pct": 19.85,
+        "calmar": 1.53,
+        "sharpe": 1.12,
+        "bh_return_pct": 167.66,
+        "bh_max_dd_pct": 77.24,
+        "trades": 30,
+        "win_rate_pct": 50.0,
+        "profit_factor": 3.38,
+        "avg_win": 1473.8,
+        "avg_loss": -436.63,
+        "avg_hold_days": 27.2,
+        "exit_reasons": {
+          "trailing_stop_loss": 18,
+          "trend_off": 11,
+          "force_exit": 1
+        },
+        "long_trades": 14,
+        "long_pnl": 10536.61,
+        "long_pf": 5.6,
+        "short_trades": 16,
+        "short_pnl": 5021.02,
+        "short_pf": 2.18,
+        "funding_total": -2006.44,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 63.3,
+          "time_long_pct": 50.3,
+          "time_short_pct": 13.0,
+          "avg_gross_exposure_pct": 35.7,
+          "max_gross_exposure_pct": 100.4
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": -15.93,
+            "strategy_maxdd_pct": 19.85,
+            "buy_hold_pct": 22.32,
+            "buy_hold_maxdd_pct": 33.58
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 67.24,
+            "strategy_maxdd_pct": 14.27,
+            "buy_hold_pct": -64.55,
+            "buy_hold_maxdd_pct": 67.39
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 26.58,
+            "strategy_maxdd_pct": 15.66,
+            "buy_hold_pct": 156.03,
+            "buy_hold_maxdd_pct": 21.83
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 42.98,
+            "strategy_maxdd_pct": 17.56,
+            "buy_hold_pct": 137.9,
+            "buy_hold_maxdd_pct": 32.39
+          }
+        ],
+        "params": {
+          "s_trail_k": 3.75
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCFuturesEA",
+        "pair_traded": "BTC/USDT:USDT",
+        "return_pct": 118.63,
+        "cagr_pct": 24.77,
+        "max_dd_pct": 17.56,
+        "calmar": 1.41,
+        "sharpe": 0.97,
+        "bh_return_pct": 167.66,
+        "bh_max_dd_pct": 77.24,
+        "trades": 36,
+        "win_rate_pct": 44.4,
+        "profit_factor": 2.84,
+        "avg_win": 1145.17,
+        "avg_loss": -322.96,
+        "avg_hold_days": 20.7,
+        "exit_reasons": {
+          "trailing_stop_loss": 24,
+          "trend_off": 11,
+          "force_exit": 1
+        },
+        "long_trades": 14,
+        "long_pnl": 8870.89,
+        "long_pf": 5.49,
+        "short_trades": 22,
+        "short_pnl": 2992.54,
+        "short_pf": 1.67,
+        "funding_total": -1811.22,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 57.8,
+          "time_long_pct": 50.3,
+          "time_short_pct": 7.5,
+          "avg_gross_exposure_pct": 31.4,
+          "max_gross_exposure_pct": 104.3
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": -10.08,
+            "strategy_maxdd_pct": 14.19,
+            "buy_hold_pct": 22.32,
+            "buy_hold_maxdd_pct": 33.58
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 24.37,
+            "strategy_maxdd_pct": 17.09,
+            "buy_hold_pct": -64.55,
+            "buy_hold_maxdd_pct": 67.39
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 32.15,
+            "strategy_maxdd_pct": 14.97,
+            "buy_hold_pct": 156.03,
+            "buy_hold_maxdd_pct": 21.83
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 47.39,
+            "strategy_maxdd_pct": 17.56,
+            "buy_hold_pct": 137.9,
+            "buy_hold_maxdd_pct": 32.39
+          }
+        ],
+        "params": {
+          "s_risk_per_trade": 0.075
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "BTCFuturesEA",
+        "pair_traded": "BTC/USDT:USDT",
+        "return_pct": 101.67,
+        "cagr_pct": 21.96,
+        "max_dd_pct": 21.21,
+        "calmar": 1.04,
+        "sharpe": 0.83,
+        "bh_return_pct": 167.66,
+        "bh_max_dd_pct": 77.24,
+        "trades": 36,
+        "win_rate_pct": 44.4,
+        "profit_factor": 2.39,
+        "avg_win": 1092.12,
+        "avg_loss": -365.33,
+        "avg_hold_days": 20.7,
+        "exit_reasons": {
+          "trailing_stop_loss": 24,
+          "trend_off": 11,
+          "force_exit": 1
+        },
+        "long_trades": 14,
+        "long_pnl": 8176.52,
+        "long_pf": 5.48,
+        "short_trades": 22,
+        "short_pnl": 1990.84,
+        "short_pf": 1.36,
+        "funding_total": -1670.82,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 57.8,
+          "time_long_pct": 50.3,
+          "time_short_pct": 7.5,
+          "avg_gross_exposure_pct": 32.3,
+          "max_gross_exposure_pct": 111.8
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": -16.6,
+            "strategy_maxdd_pct": 21.21,
+            "buy_hold_pct": 22.32,
+            "buy_hold_maxdd_pct": 33.58
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 23.57,
+            "strategy_maxdd_pct": 20.33,
+            "buy_hold_pct": -64.55,
+            "buy_hold_maxdd_pct": 67.39
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 32.15,
+            "strategy_maxdd_pct": 14.97,
+            "buy_hold_pct": 156.03,
+            "buy_hold_maxdd_pct": 21.83
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 47.54,
+            "strategy_maxdd_pct": 17.56,
+            "buy_hold_pct": 137.9,
+            "buy_hold_maxdd_pct": 32.39
+          }
+        ],
+        "params": {
+          "s_risk_per_trade": 0.125
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      }
+    ],
+    "fee_x2": {
+      "strategy": "BTCFuturesEA",
+      "pair_traded": "BTC/USDT:USDT",
+      "return_pct": 107.01,
+      "cagr_pct": 22.86,
+      "max_dd_pct": 19.87,
+      "calmar": 1.15,
+      "sharpe": 0.87,
+      "bh_return_pct": 167.66,
+      "bh_max_dd_pct": 77.24,
+      "trades": 36,
+      "win_rate_pct": 44.4,
+      "profit_factor": 2.49,
+      "avg_win": 1117.53,
+      "avg_loss": -358.96,
+      "avg_hold_days": 20.7,
+      "exit_reasons": {
+        "trailing_stop_loss": 24,
+        "trend_off": 11,
+        "force_exit": 1
+      },
+      "long_trades": 14,
+      "long_pnl": 8330.7,
+      "long_pf": 5.34,
+      "short_trades": 22,
+      "short_pnl": 2370.5,
+      "short_pf": 1.45,
+      "funding_total": -1722.01,
+      "liquidations": 0,
+      "leverage_used": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "exposure": {
+        "time_in_market_pct": 57.8,
+        "time_long_pct": 50.3,
+        "time_short_pct": 7.5,
+        "avg_gross_exposure_pct": 32.2,
+        "max_gross_exposure_pct": 105.1
+      },
+      "yearly": [
+        {
+          "year": 2021,
+          "strategy_pct": -13.83,
+          "strategy_maxdd_pct": 18.14,
+          "buy_hold_pct": 22.32,
+          "buy_hold_maxdd_pct": 33.58
+        },
+        {
+          "year": 2022,
+          "strategy_pct": 23.79,
+          "strategy_maxdd_pct": 19.87,
+          "buy_hold_pct": -64.55,
+          "buy_hold_maxdd_pct": 67.39
+        },
+        {
+          "year": 2023,
+          "strategy_pct": 31.68,
+          "strategy_maxdd_pct": 15.25,
+          "buy_hold_pct": 156.03,
+          "buy_hold_maxdd_pct": 21.83
+        },
+        {
+          "year": 2024,
+          "strategy_pct": 46.84,
+          "strategy_maxdd_pct": 17.7,
+          "buy_hold_pct": 137.9,
+          "buy_hold_maxdd_pct": 32.39
+        }
+      ],
+      "params": {},
+      "pair": null,
+      "timerange": "20210601-20241212",
+      "fee": 0.001,
+      "result_file": null
+    }
+  },
+  "criteria": [
+    {
+      "test": "V1 \u7e3d\u5831\u916c > 0",
+      "pass": true,
+      "value": "92.38%"
+    },
+    {
+      "test": "V1 \u6700\u5927\u56de\u64a4 < \u6301\u6709\u6700\u5927\u56de\u64a4\u7684 50%",
+      "pass": true,
+      "value": "34.02% vs \u6301\u6709 70.9%"
+    },
+    {
+      "test": "V1 \u7372\u5229\u56e0\u5b50 \u2265 1.3 \u4e14\u4ea4\u6613 \u2265 15 \u7b46",
+      "pass": true,
+      "value": "PF 1.89\uff0c34 \u7b46"
+    },
+    {
+      "test": "V2 \u5831\u916c > 0\u3001> \u6301\u6709\uff0c\u4e14\u6700\u5927\u56de\u64a4 \u2264 30%",
+      "pass": false,
+      "value": "-6.88% vs \u6301\u6709 -23.06%\uff0c\u56de\u64a4 19.82%"
+    },
+    {
+      "test": "\u7a7a\u55ae\u6709\u8ca2\u737b\uff1aV1 + V2 \u7a7a\u55ae\u6de8\u640d\u76ca > 0",
+      "pass": false,
+      "value": "V1 +211\uff0816 \u7b46\uff09+ V2 -438\uff0812 \u7b46\uff09"
+    },
+    {
+      "test": "V4 \u2265 75% \u53c3\u6578\u64fe\u52d5\u4ecd\u7372\u5229\uff0c\u4e14\u6bcf\u908a 0.10% \u624b\u7e8c\u8cbb\u4ecd\u7372\u5229",
+      "pass": true,
+      "value": "100% \u64fe\u52d5\u7372\u5229\uff1b0.10% \u624b\u7e8c\u8cbb 107.01%"
+    }
+  ],
+  "verdict": "FAIL"
+}

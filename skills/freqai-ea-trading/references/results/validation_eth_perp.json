@@ -1,0 +1,1193 @@
+{
+  "coin": "eth",
+  "market": "perp",
+  "strategy": "ETHFuturesEA",
+  "frozen_params": {
+    "trend_ema": 1200,
+    "ema_band": 0.02,
+    "slope_h": 0,
+    "breakout_h": 480,
+    "init_k": null,
+    "trail_k": 10.0,
+    "risk_per_trade": 0.1,
+    "max_alloc": 0.95,
+    "min_alloc": 0.05,
+    "ref_trend_ema": 2400,
+    "ai_vol": true,
+    "short": true,
+    "s_trend_ema": 1200,
+    "s_ema_band": 0.02,
+    "s_slope_h": 720,
+    "s_cross": 0,
+    "s_breakout_h": 360,
+    "s_init_k": 3.0,
+    "s_trail_k": 3.0,
+    "s_risk_per_trade": 0.1,
+    "max_stop_pct": 0.3,
+    "max_leverage": 3,
+    "liq_buffer": 2.0
+  },
+  "tuned": [
+    "s_trend_ema",
+    "s_slope_h",
+    "s_breakout_h",
+    "s_trail_k",
+    "s_risk_per_trade"
+  ],
+  "fee": 0.0005,
+  "ran_at": "2026-11-16T09:40:29.000311Z",
+  "DEV": {
+    "strategy": "ETHFuturesEA",
+    "pair_traded": "ETH/USDT:USDT",
+    "return_pct": 119.84,
+    "cagr_pct": 24.97,
+    "max_dd_pct": 20.02,
+    "calmar": 1.25,
+    "sharpe": 1.0,
+    "bh_return_pct": 40.26,
+    "bh_max_dd_pct": 81.38,
+    "trades": 38,
+    "win_rate_pct": 55.3,
+    "profit_factor": 2.26,
+    "avg_win": 1025.07,
+    "avg_loss": -561.32,
+    "avg_hold_days": 15.3,
+    "exit_reasons": {
+      "trailing_stop_loss": 22,
+      "trend_off": 8,
+      "risk_on": 6,
+      "risk_off": 1,
+      "force_exit": 1
+    },
+    "long_trades": 17,
+    "long_pnl": 2079.06,
+    "long_pf": 1.43,
+    "short_trades": 21,
+    "short_pnl": 9904.98,
+    "short_pf": 3.12,
+    "funding_total": -1526.2,
+    "liquidations": 0,
+    "leverage_used": [
+      1.0,
+      2.0,
+      3.0
+    ],
+    "exposure": {
+      "time_in_market_pct": 45.1,
+      "time_long_pct": 36.4,
+      "time_short_pct": 8.7,
+      "avg_gross_exposure_pct": 21.0,
+      "max_gross_exposure_pct": 102.0
+    },
+    "yearly": [
+      {
+        "year": 2021,
+        "strategy_pct": 10.95,
+        "strategy_maxdd_pct": 9.11,
+        "buy_hold_pct": 34.6,
+        "buy_hold_maxdd_pct": 39.95
+      },
+      {
+        "year": 2022,
+        "strategy_pct": 55.9,
+        "strategy_maxdd_pct": 13.89,
+        "buy_hold_pct": -67.86,
+        "buy_hold_maxdd_pct": 76.69
+      },
+      {
+        "year": 2023,
+        "strategy_pct": 19.35,
+        "strategy_maxdd_pct": 11.62,
+        "buy_hold_pct": 91.29,
+        "buy_hold_maxdd_pct": 28.29
+      },
+      {
+        "year": 2024,
+        "strategy_pct": 7.12,
+        "strategy_maxdd_pct": 20.02,
+        "buy_hold_pct": 66.73,
+        "buy_hold_maxdd_pct": 46.73
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20210601-20241212",
+    "fee": 0.0005,
+    "result_file": "/tmp/claude-0/-home-user-Trader-Bot-Crypto/f455301e-bffb-584f-933a-465fec8594cf/scratchpad/perp/validation/eth_perp/DEV/backtest-result-2026-11-16_09-40-48.zip"
+  },
+  "V2": {
+    "strategy": "ETHFuturesEA",
+    "pair_traded": "ETH/USDT:USDT",
+    "return_pct": 65.67,
+    "cagr_pct": 30.66,
+    "max_dd_pct": 20.42,
+    "calmar": 1.5,
+    "sharpe": 1.1,
+    "bh_return_pct": -40.93,
+    "bh_max_dd_pct": 69.15,
+    "trades": 20,
+    "win_rate_pct": 55.0,
+    "profit_factor": 2.22,
+    "avg_win": 1085.0,
+    "avg_loss": -596.48,
+    "avg_hold_days": 12.0,
+    "exit_reasons": {
+      "trailing_stop_loss": 15,
+      "risk_on": 4,
+      "trend_off": 1
+    },
+    "long_trades": 5,
+    "long_pnl": 2938.53,
+    "long_pf": 3.33,
+    "short_trades": 15,
+    "short_pnl": 3628.24,
+    "short_pf": 1.88,
+    "funding_total": -123.49,
+    "liquidations": 0,
+    "leverage_used": [
+      1.0,
+      2.0,
+      3.0
+    ],
+    "exposure": {
+      "time_in_market_pct": 34.7,
+      "time_long_pct": 25.8,
+      "time_short_pct": 8.9,
+      "avg_gross_exposure_pct": 19.4,
+      "max_gross_exposure_pct": 106.1
+    },
+    "yearly": [
+      {
+        "year": 2024,
+        "strategy_pct": 0.0,
+        "strategy_maxdd_pct": -0.0,
+        "buy_hold_pct": -12.59,
+        "buy_hold_maxdd_pct": 24.05
+      },
+      {
+        "year": 2025,
+        "strategy_pct": 29.92,
+        "strategy_maxdd_pct": 20.42,
+        "buy_hold_pct": -11.67,
+        "buy_hold_maxdd_pct": 61.81
+      },
+      {
+        "year": 2026,
+        "strategy_pct": 27.52,
+        "strategy_maxdd_pct": 19.02,
+        "buy_hold_pct": -24.31,
+        "buy_hold_maxdd_pct": 55.01
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20241212-20261101",
+    "fee": 0.0005,
+    "result_file": "/tmp/claude-0/-home-user-Trader-Bot-Crypto/f455301e-bffb-584f-933a-465fec8594cf/scratchpad/perp/validation/eth_perp/V2/backtest-result-2026-11-16_09-41-12.zip"
+  },
+  "V1": {
+    "strategy": "ETHFuturesEA",
+    "pair_traded": "ETH/USDT:USDT",
+    "return_pct": 219.57,
+    "cagr_pct": 47.25,
+    "max_dd_pct": 26.57,
+    "calmar": 1.78,
+    "sharpe": 1.35,
+    "bh_return_pct": 366.12,
+    "bh_max_dd_pct": 86.83,
+    "trades": 32,
+    "win_rate_pct": 43.8,
+    "profit_factor": 3.7,
+    "avg_win": 2149.45,
+    "avg_loss": -451.96,
+    "avg_hold_days": 14.0,
+    "exit_reasons": {
+      "trailing_stop_loss": 21,
+      "risk_on": 5,
+      "trend_off": 5,
+      "risk_off": 1
+    },
+    "long_trades": 13,
+    "long_pnl": 16403.15,
+    "long_pf": 6.86,
+    "short_trades": 19,
+    "short_pnl": 5553.87,
+    "short_pf": 2.04,
+    "funding_total": -3987.91,
+    "liquidations": 0,
+    "leverage_used": [
+      1.0,
+      2.0,
+      3.0
+    ],
+    "exposure": {
+      "time_in_market_pct": 40.7,
+      "time_long_pct": 34.6,
+      "time_short_pct": 6.2,
+      "avg_gross_exposure_pct": 17.0,
+      "max_gross_exposure_pct": 106.9
+    },
+    "yearly": [
+      {
+        "year": 2018,
+        "strategy_pct": 44.43,
+        "strategy_maxdd_pct": 26.31,
+        "buy_hold_pct": -77.36,
+        "buy_hold_maxdd_pct": 86.83
+      },
+      {
+        "year": 2019,
+        "strategy_pct": 29.43,
+        "strategy_maxdd_pct": 22.44,
+        "buy_hold_pct": -2.02,
+        "buy_hold_maxdd_pct": 66.3
+      },
+      {
+        "year": 2020,
+        "strategy_pct": 51.44,
+        "strategy_maxdd_pct": 18.23,
+        "buy_hold_pct": 472.26,
+        "buy_hold_maxdd_pct": 66.59
+      },
+      {
+        "year": 2021,
+        "strategy_pct": 13.07,
+        "strategy_maxdd_pct": 26.57,
+        "buy_hold_pct": 268.41,
+        "buy_hold_maxdd_pct": 57.41
+      }
+    ],
+    "params": {},
+    "pair": null,
+    "timerange": "20180601-20210601",
+    "fee": 0.0005,
+    "result_file": "/tmp/claude-0/-home-user-Trader-Bot-Crypto/f455301e-bffb-584f-933a-465fec8594cf/scratchpad/perp/validation/eth_perp/V1/backtest-result-2026-11-16_09-41-38.zip"
+  },
+  "V4": {
+    "perturbations": [
+      {
+        "strategy": "ETHFuturesEA",
+        "pair_traded": "ETH/USDT:USDT",
+        "return_pct": 124.07,
+        "cagr_pct": 25.64,
+        "max_dd_pct": 19.92,
+        "calmar": 1.29,
+        "sharpe": 1.02,
+        "bh_return_pct": 40.26,
+        "bh_max_dd_pct": 81.38,
+        "trades": 39,
+        "win_rate_pct": 56.4,
+        "profit_factor": 2.29,
+        "avg_win": 1000.06,
+        "avg_loss": -564.37,
+        "avg_hold_days": 14.9,
+        "exit_reasons": {
+          "trailing_stop_loss": 23,
+          "trend_off": 8,
+          "risk_on": 6,
+          "risk_off": 1,
+          "force_exit": 1
+        },
+        "long_trades": 17,
+        "long_pnl": 2099.82,
+        "long_pf": 1.43,
+        "short_trades": 22,
+        "short_pnl": 10307.32,
+        "short_pf": 3.2,
+        "funding_total": -1526.47,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 45.2,
+          "time_long_pct": 36.4,
+          "time_short_pct": 8.7,
+          "avg_gross_exposure_pct": 21.0,
+          "max_gross_exposure_pct": 102.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 10.95,
+            "strategy_maxdd_pct": 9.11,
+            "buy_hold_pct": 34.6,
+            "buy_hold_maxdd_pct": 39.95
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 55.9,
+            "strategy_maxdd_pct": 13.89,
+            "buy_hold_pct": -67.86,
+            "buy_hold_maxdd_pct": 76.69
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 19.35,
+            "strategy_maxdd_pct": 11.62,
+            "buy_hold_pct": 91.29,
+            "buy_hold_maxdd_pct": 28.29
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 9.18,
+            "strategy_maxdd_pct": 19.92,
+            "buy_hold_pct": 66.73,
+            "buy_hold_maxdd_pct": 46.73
+          }
+        ],
+        "params": {
+          "s_trend_ema": 900
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "ETHFuturesEA",
+        "pair_traded": "ETH/USDT:USDT",
+        "return_pct": 114.56,
+        "cagr_pct": 24.11,
+        "max_dd_pct": 20.02,
+        "calmar": 1.2,
+        "sharpe": 0.95,
+        "bh_return_pct": 40.26,
+        "bh_max_dd_pct": 81.38,
+        "trades": 39,
+        "win_rate_pct": 53.8,
+        "profit_factor": 2.11,
+        "avg_win": 1037.61,
+        "avg_loss": -574.09,
+        "avg_hold_days": 14.9,
+        "exit_reasons": {
+          "trailing_stop_loss": 23,
+          "trend_off": 8,
+          "risk_on": 6,
+          "risk_off": 1,
+          "force_exit": 1
+        },
+        "long_trades": 17,
+        "long_pnl": 2030.95,
+        "long_pf": 1.42,
+        "short_trades": 22,
+        "short_pnl": 9425.14,
+        "short_pf": 2.7,
+        "funding_total": -1542.76,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 44.9,
+          "time_long_pct": 36.4,
+          "time_short_pct": 8.4,
+          "avg_gross_exposure_pct": 20.8,
+          "max_gross_exposure_pct": 102.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 10.95,
+            "strategy_maxdd_pct": 9.11,
+            "buy_hold_pct": 34.6,
+            "buy_hold_maxdd_pct": 39.95
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 63.82,
+            "strategy_maxdd_pct": 13.89,
+            "buy_hold_pct": -67.86,
+            "buy_hold_maxdd_pct": 76.69
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 10.85,
+            "strategy_maxdd_pct": 17.43,
+            "buy_hold_pct": 91.29,
+            "buy_hold_maxdd_pct": 28.29
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 7.12,
+            "strategy_maxdd_pct": 20.02,
+            "buy_hold_pct": 66.73,
+            "buy_hold_maxdd_pct": 46.73
+          }
+        ],
+        "params": {
+          "s_trend_ema": 1500
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "ETHFuturesEA",
+        "pair_traded": "ETH/USDT:USDT",
+        "return_pct": 100.92,
+        "cagr_pct": 21.83,
+        "max_dd_pct": 19.57,
+        "calmar": 1.12,
+        "sharpe": 0.89,
+        "bh_return_pct": 40.26,
+        "bh_max_dd_pct": 81.38,
+        "trades": 40,
+        "win_rate_pct": 52.5,
+        "profit_factor": 1.97,
+        "avg_win": 975.57,
+        "avg_loss": -547.1,
+        "avg_hold_days": 14.6,
+        "exit_reasons": {
+          "trailing_stop_loss": 24,
+          "trend_off": 8,
+          "risk_on": 6,
+          "risk_off": 1,
+          "force_exit": 1
+        },
+        "long_trades": 17,
+        "long_pnl": 1894.87,
+        "long_pf": 1.44,
+        "short_trades": 23,
+        "short_pnl": 8197.27,
+        "short_pf": 2.34,
+        "funding_total": -1351.92,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 45.2,
+          "time_long_pct": 36.4,
+          "time_short_pct": 8.7,
+          "avg_gross_exposure_pct": 21.1,
+          "max_gross_exposure_pct": 109.2
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 10.95,
+            "strategy_maxdd_pct": 9.11,
+            "buy_hold_pct": 34.6,
+            "buy_hold_maxdd_pct": 39.95
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 43.71,
+            "strategy_maxdd_pct": 15.34,
+            "buy_hold_pct": -67.86,
+            "buy_hold_maxdd_pct": 76.69
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 10.85,
+            "strategy_maxdd_pct": 17.43,
+            "buy_hold_pct": 91.29,
+            "buy_hold_maxdd_pct": 28.29
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 14.35,
+            "strategy_maxdd_pct": 19.57,
+            "buy_hold_pct": 66.73,
+            "buy_hold_maxdd_pct": 46.73
+          }
+        ],
+        "params": {
+          "s_slope_h": 540
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "ETHFuturesEA",
+        "pair_traded": "ETH/USDT:USDT",
+        "return_pct": 73.26,
+        "cagr_pct": 16.83,
+        "max_dd_pct": 23.71,
+        "calmar": 0.71,
+        "sharpe": 0.73,
+        "bh_return_pct": 40.26,
+        "bh_max_dd_pct": 81.38,
+        "trades": 37,
+        "win_rate_pct": 48.6,
+        "profit_factor": 1.8,
+        "avg_win": 916.66,
+        "avg_loss": -482.85,
+        "avg_hold_days": 15.5,
+        "exit_reasons": {
+          "trailing_stop_loss": 21,
+          "trend_off": 8,
+          "risk_on": 6,
+          "risk_off": 1,
+          "force_exit": 1
+        },
+        "long_trades": 17,
+        "long_pnl": 1690.22,
+        "long_pf": 1.43,
+        "short_trades": 20,
+        "short_pnl": 5635.52,
+        "short_pf": 2.08,
+        "funding_total": -1285.49,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 44.3,
+          "time_long_pct": 36.4,
+          "time_short_pct": 7.9,
+          "avg_gross_exposure_pct": 21.0,
+          "max_gross_exposure_pct": 102.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 10.15,
+            "strategy_maxdd_pct": 9.11,
+            "buy_hold_pct": 34.6,
+            "buy_hold_maxdd_pct": 39.95
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 42.04,
+            "strategy_maxdd_pct": 13.89,
+            "buy_hold_pct": -67.86,
+            "buy_hold_maxdd_pct": 76.69
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 3.98,
+            "strategy_maxdd_pct": 22.54,
+            "buy_hold_pct": 91.29,
+            "buy_hold_maxdd_pct": 28.29
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 7.12,
+            "strategy_maxdd_pct": 20.02,
+            "buy_hold_pct": 66.73,
+            "buy_hold_maxdd_pct": 46.73
+          }
+        ],
+        "params": {
+          "s_slope_h": 900
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "ETHFuturesEA",
+        "pair_traded": "ETH/USDT:USDT",
+        "return_pct": 83.61,
+        "cagr_pct": 18.76,
+        "max_dd_pct": 24.72,
+        "calmar": 0.76,
+        "sharpe": 0.79,
+        "bh_return_pct": 40.26,
+        "bh_max_dd_pct": 81.38,
+        "trades": 42,
+        "win_rate_pct": 50.0,
+        "profit_factor": 1.69,
+        "avg_win": 972.14,
+        "avg_loss": -574.0,
+        "avg_hold_days": 14.2,
+        "exit_reasons": {
+          "trailing_stop_loss": 24,
+          "trend_off": 8,
+          "risk_on": 8,
+          "risk_off": 1,
+          "force_exit": 1
+        },
+        "long_trades": 17,
+        "long_pnl": 1852.71,
+        "long_pf": 1.42,
+        "short_trades": 25,
+        "short_pnl": 6508.17,
+        "short_pf": 1.85,
+        "funding_total": -1372.7,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 46.1,
+          "time_long_pct": 36.4,
+          "time_short_pct": 9.7,
+          "avg_gross_exposure_pct": 21.8,
+          "max_gross_exposure_pct": 102.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 13.75,
+            "strategy_maxdd_pct": 8.13,
+            "buy_hold_pct": 34.6,
+            "buy_hold_maxdd_pct": 39.95
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 39.13,
+            "strategy_maxdd_pct": 14.8,
+            "buy_hold_pct": -67.86,
+            "buy_hold_maxdd_pct": 76.69
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 19.35,
+            "strategy_maxdd_pct": 11.62,
+            "buy_hold_pct": 91.29,
+            "buy_hold_maxdd_pct": 28.29
+          },
+          {
+            "year": 2024,
+            "strategy_pct": -2.25,
+            "strategy_maxdd_pct": 24.72,
+            "buy_hold_pct": 66.73,
+            "buy_hold_maxdd_pct": 46.73
+          }
+        ],
+        "params": {
+          "s_breakout_h": 270
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "ETHFuturesEA",
+        "pair_traded": "ETH/USDT:USDT",
+        "return_pct": 92.79,
+        "cagr_pct": 20.41,
+        "max_dd_pct": 20.02,
+        "calmar": 1.02,
+        "sharpe": 0.86,
+        "bh_return_pct": 40.26,
+        "bh_max_dd_pct": 81.38,
+        "trades": 37,
+        "win_rate_pct": 51.4,
+        "profit_factor": 2.03,
+        "avg_win": 963.04,
+        "avg_loss": -501.04,
+        "avg_hold_days": 15.2,
+        "exit_reasons": {
+          "trailing_stop_loss": 21,
+          "trend_off": 8,
+          "risk_on": 6,
+          "risk_off": 1,
+          "force_exit": 1
+        },
+        "long_trades": 17,
+        "long_pnl": 1837.44,
+        "long_pf": 1.43,
+        "short_trades": 20,
+        "short_pnl": 7441.57,
+        "short_pf": 2.57,
+        "funding_total": -1373.25,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 43.7,
+          "time_long_pct": 36.4,
+          "time_short_pct": 7.2,
+          "avg_gross_exposure_pct": 20.1,
+          "max_gross_exposure_pct": 102.0
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 3.02,
+            "strategy_maxdd_pct": 11.76,
+            "buy_hold_pct": 34.6,
+            "buy_hold_maxdd_pct": 39.95
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 47.24,
+            "strategy_maxdd_pct": 18.39,
+            "buy_hold_pct": -67.86,
+            "buy_hold_maxdd_pct": 76.69
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 19.35,
+            "strategy_maxdd_pct": 11.62,
+            "buy_hold_pct": 91.29,
+            "buy_hold_maxdd_pct": 28.29
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 7.12,
+            "strategy_maxdd_pct": 20.02,
+            "buy_hold_pct": 66.73,
+            "buy_hold_maxdd_pct": 46.73
+          }
+        ],
+        "params": {
+          "s_breakout_h": 450
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "ETHFuturesEA",
+        "pair_traded": "ETH/USDT:USDT",
+        "return_pct": 58.39,
+        "cagr_pct": 13.9,
+        "max_dd_pct": 29.24,
+        "calmar": 0.48,
+        "sharpe": 0.64,
+        "bh_return_pct": 40.26,
+        "bh_max_dd_pct": 81.38,
+        "trades": 45,
+        "win_rate_pct": 44.4,
+        "profit_factor": 1.5,
+        "avg_win": 879.65,
+        "avg_loss": -470.16,
+        "avg_hold_days": 11.9,
+        "exit_reasons": {
+          "trailing_stop_loss": 30,
+          "trend_off": 8,
+          "risk_on": 5,
+          "risk_off": 1,
+          "force_exit": 1
+        },
+        "long_trades": 17,
+        "long_pnl": 1649.67,
+        "long_pf": 1.43,
+        "short_trades": 28,
+        "short_pnl": 4189.51,
+        "short_pf": 1.53,
+        "funding_total": -1269.56,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 41.3,
+          "time_long_pct": 36.4,
+          "time_short_pct": 4.9,
+          "avg_gross_exposure_pct": 19.2,
+          "max_gross_exposure_pct": 107.3
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 6.36,
+            "strategy_maxdd_pct": 12.85,
+            "buy_hold_pct": 34.6,
+            "buy_hold_maxdd_pct": 39.95
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 35.77,
+            "strategy_maxdd_pct": 24.15,
+            "buy_hold_pct": -67.86,
+            "buy_hold_maxdd_pct": 76.69
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 14.08,
+            "strategy_maxdd_pct": 15.4,
+            "buy_hold_pct": 91.29,
+            "buy_hold_maxdd_pct": 28.29
+          },
+          {
+            "year": 2024,
+            "strategy_pct": -3.1,
+            "strategy_maxdd_pct": 21.68,
+            "buy_hold_pct": 66.73,
+            "buy_hold_maxdd_pct": 46.73
+          }
+        ],
+        "params": {
+          "s_trail_k": 2.25
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "ETHFuturesEA",
+        "pair_traded": "ETH/USDT:USDT",
+        "return_pct": 107.93,
+        "cagr_pct": 23.02,
+        "max_dd_pct": 20.02,
+        "calmar": 1.15,
+        "sharpe": 1.03,
+        "bh_return_pct": 40.26,
+        "bh_max_dd_pct": 81.38,
+        "trades": 34,
+        "win_rate_pct": 58.8,
+        "profit_factor": 2.5,
+        "avg_win": 900.02,
+        "avg_loss": -514.77,
+        "avg_hold_days": 18.8,
+        "exit_reasons": {
+          "trailing_stop_loss": 16,
+          "trend_off": 9,
+          "risk_on": 6,
+          "risk_off": 1,
+          "stop_loss": 1,
+          "force_exit": 1
+        },
+        "long_trades": 17,
+        "long_pnl": 1926.35,
+        "long_pf": 1.43,
+        "short_trades": 17,
+        "short_pnl": 8867.12,
+        "short_pf": 4.2,
+        "funding_total": -1316.14,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 49.5,
+          "time_long_pct": 36.4,
+          "time_short_pct": 13.0,
+          "avg_gross_exposure_pct": 22.4,
+          "max_gross_exposure_pct": 100.6
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 5.91,
+            "strategy_maxdd_pct": 8.4,
+            "buy_hold_pct": 34.6,
+            "buy_hold_maxdd_pct": 39.95
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 56.97,
+            "strategy_maxdd_pct": 7.06,
+            "buy_hold_pct": -67.86,
+            "buy_hold_maxdd_pct": 76.69
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 10.06,
+            "strategy_maxdd_pct": 14.25,
+            "buy_hold_pct": 91.29,
+            "buy_hold_maxdd_pct": 28.29
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 13.9,
+            "strategy_maxdd_pct": 20.02,
+            "buy_hold_pct": 66.73,
+            "buy_hold_maxdd_pct": 46.73
+          }
+        ],
+        "params": {
+          "s_trail_k": 3.75
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "ETHFuturesEA",
+        "pair_traded": "ETH/USDT:USDT",
+        "return_pct": 96.12,
+        "cagr_pct": 21.0,
+        "max_dd_pct": 20.0,
+        "calmar": 1.05,
+        "sharpe": 0.95,
+        "bh_return_pct": 40.26,
+        "bh_max_dd_pct": 81.38,
+        "trades": 38,
+        "win_rate_pct": 55.3,
+        "profit_factor": 2.2,
+        "avg_win": 838.56,
+        "avg_loss": -470.46,
+        "avg_hold_days": 15.3,
+        "exit_reasons": {
+          "trailing_stop_loss": 22,
+          "trend_off": 8,
+          "risk_on": 6,
+          "risk_off": 1,
+          "force_exit": 1
+        },
+        "long_trades": 17,
+        "long_pnl": 1884.14,
+        "long_pf": 1.44,
+        "short_trades": 21,
+        "short_pnl": 7727.72,
+        "short_pf": 3.11,
+        "funding_total": -1376.85,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 45.1,
+          "time_long_pct": 36.4,
+          "time_short_pct": 8.7,
+          "avg_gross_exposure_pct": 19.9,
+          "max_gross_exposure_pct": 99.4
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 8.91,
+            "strategy_maxdd_pct": 8.22,
+            "buy_hold_pct": 34.6,
+            "buy_hold_maxdd_pct": 39.95
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 40.5,
+            "strategy_maxdd_pct": 10.69,
+            "buy_hold_pct": -67.86,
+            "buy_hold_maxdd_pct": 76.69
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 19.35,
+            "strategy_maxdd_pct": 11.62,
+            "buy_hold_pct": 91.29,
+            "buy_hold_maxdd_pct": 28.29
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 7.75,
+            "strategy_maxdd_pct": 20.0,
+            "buy_hold_pct": 66.73,
+            "buy_hold_maxdd_pct": 46.73
+          }
+        ],
+        "params": {
+          "s_risk_per_trade": 0.075
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      },
+      {
+        "strategy": "ETHFuturesEA",
+        "pair_traded": "ETH/USDT:USDT",
+        "return_pct": 130.53,
+        "cagr_pct": 26.66,
+        "max_dd_pct": 20.02,
+        "calmar": 1.33,
+        "sharpe": 1.0,
+        "bh_return_pct": 40.26,
+        "bh_max_dd_pct": 81.38,
+        "trades": 38,
+        "win_rate_pct": 55.3,
+        "profit_factor": 2.26,
+        "avg_win": 1115.69,
+        "avg_loss": -610.36,
+        "avg_hold_days": 15.3,
+        "exit_reasons": {
+          "trailing_stop_loss": 22,
+          "trend_off": 8,
+          "risk_on": 6,
+          "risk_off": 1,
+          "force_exit": 1
+        },
+        "long_trades": 17,
+        "long_pnl": 2167.81,
+        "long_pf": 1.42,
+        "short_trades": 21,
+        "short_pnl": 10885.54,
+        "short_pf": 3.07,
+        "funding_total": -1592.51,
+        "liquidations": 0,
+        "leverage_used": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "exposure": {
+          "time_in_market_pct": 45.1,
+          "time_long_pct": 36.4,
+          "time_short_pct": 8.7,
+          "avg_gross_exposure_pct": 21.7,
+          "max_gross_exposure_pct": 109.2
+        },
+        "yearly": [
+          {
+            "year": 2021,
+            "strategy_pct": 12.78,
+            "strategy_maxdd_pct": 9.77,
+            "buy_hold_pct": 34.6,
+            "buy_hold_maxdd_pct": 39.95
+          },
+          {
+            "year": 2022,
+            "strategy_pct": 61.15,
+            "strategy_maxdd_pct": 15.7,
+            "buy_hold_pct": -67.86,
+            "buy_hold_maxdd_pct": 76.69
+          },
+          {
+            "year": 2023,
+            "strategy_pct": 19.35,
+            "strategy_maxdd_pct": 11.62,
+            "buy_hold_pct": 91.29,
+            "buy_hold_maxdd_pct": 28.29
+          },
+          {
+            "year": 2024,
+            "strategy_pct": 7.12,
+            "strategy_maxdd_pct": 20.02,
+            "buy_hold_pct": 66.73,
+            "buy_hold_maxdd_pct": 46.73
+          }
+        ],
+        "params": {
+          "s_risk_per_trade": 0.125
+        },
+        "pair": null,
+        "timerange": "20210601-20241212",
+        "fee": 0.0005,
+        "result_file": null
+      }
+    ],
+    "fee_x2": {
+      "strategy": "ETHFuturesEA",
+      "pair_traded": "ETH/USDT:USDT",
+      "return_pct": 114.75,
+      "cagr_pct": 24.14,
+      "max_dd_pct": 20.14,
+      "calmar": 1.2,
+      "sharpe": 0.97,
+      "bh_return_pct": 40.26,
+      "bh_max_dd_pct": 81.38,
+      "trades": 38,
+      "win_rate_pct": 55.3,
+      "profit_factor": 2.19,
+      "avg_win": 1004.35,
+      "avg_loss": -565.69,
+      "avg_hold_days": 15.3,
+      "exit_reasons": {
+        "trailing_stop_loss": 22,
+        "trend_off": 8,
+        "risk_on": 6,
+        "risk_off": 1,
+        "force_exit": 1
+      },
+      "long_trades": 17,
+      "long_pnl": 1921.11,
+      "long_pf": 1.4,
+      "short_trades": 21,
+      "short_pnl": 9553.46,
+      "short_pf": 3.01,
+      "funding_total": -1503.24,
+      "liquidations": 0,
+      "leverage_used": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "exposure": {
+        "time_in_market_pct": 45.1,
+        "time_long_pct": 36.4,
+        "time_short_pct": 8.7,
+        "avg_gross_exposure_pct": 21.0,
+        "max_gross_exposure_pct": 102.0
+      },
+      "yearly": [
+        {
+          "year": 2021,
+          "strategy_pct": 10.69,
+          "strategy_maxdd_pct": 9.18,
+          "buy_hold_pct": 34.6,
+          "buy_hold_maxdd_pct": 39.95
+        },
+        {
+          "year": 2022,
+          "strategy_pct": 54.84,
+          "strategy_maxdd_pct": 14.04,
+          "buy_hold_pct": -67.86,
+          "buy_hold_maxdd_pct": 76.69
+        },
+        {
+          "year": 2023,
+          "strategy_pct": 18.47,
+          "strategy_maxdd_pct": 11.97,
+          "buy_hold_pct": 91.29,
+          "buy_hold_maxdd_pct": 28.29
+        },
+        {
+          "year": 2024,
+          "strategy_pct": 6.4,
+          "strategy_maxdd_pct": 20.14,
+          "buy_hold_pct": 66.73,
+          "buy_hold_maxdd_pct": 46.73
+        }
+      ],
+      "params": {},
+      "pair": null,
+      "timerange": "20210601-20241212",
+      "fee": 0.001,
+      "result_file": null
+    }
+  },
+  "criteria": [
+    {
+      "test": "V1 \u7e3d\u5831\u916c > 0",
+      "pass": true,
+      "value": "219.57%"
+    },
+    {
+      "test": "V1 \u6700\u5927\u56de\u64a4 < \u6301\u6709\u6700\u5927\u56de\u64a4\u7684 50%",
+      "pass": true,
+      "value": "26.57% vs \u6301\u6709 86.83%"
+    },
+    {
+      "test": "V1 \u7372\u5229\u56e0\u5b50 \u2265 1.3 \u4e14\u4ea4\u6613 \u2265 15 \u7b46",
+      "pass": true,
+      "value": "PF 3.7\uff0c32 \u7b46"
+    },
+    {
+      "test": "V2 \u5831\u916c > 0\u3001> \u6301\u6709\uff0c\u4e14\u6700\u5927\u56de\u64a4 \u2264 30%",
+      "pass": true,
+      "value": "65.67% vs \u6301\u6709 -40.93%\uff0c\u56de\u64a4 20.42%"
+    },
+    {
+      "test": "\u7a7a\u55ae\u6709\u8ca2\u737b\uff1aV1 + V2 \u7a7a\u55ae\u6de8\u640d\u76ca > 0",
+      "pass": true,
+      "value": "V1 +5554\uff0819 \u7b46\uff09+ V2 +3628\uff0815 \u7b46\uff09"
+    },
+    {
+      "test": "V4 \u2265 75% \u53c3\u6578\u64fe\u52d5\u4ecd\u7372\u5229\uff0c\u4e14\u6bcf\u908a 0.10% \u624b\u7e8c\u8cbb\u4ecd\u7372\u5229",
+      "pass": true,
+      "value": "100% \u64fe\u52d5\u7372\u5229\uff1b0.10% \u624b\u7e8c\u8cbb 114.75%"
+    }
+  ],
+  "verdict": "PASS"
+}

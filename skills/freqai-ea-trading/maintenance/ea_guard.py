@@ -218,15 +218,22 @@ def evaluate(eqd: pd.Series, bhd: pd.Series, r: np.ndarray, base: dict, ic: dict
 
 
 # ---------------------------------------------------------------------- forward
-def freqai_ic(userdir: Path, identifier: str, pair: str, start: pd.Timestamp, days: int = 90) -> dict:
+def candle_file(userdir: Path, pair: str, market: str = "spot") -> Path:
+    base, quote = pair.split("/")
+    if market == "perp":
+        return userdir / "data" / "binance" / "futures" / f"{base}_{quote}_{quote}-1h-futures.feather"
+    return userdir / "data" / "binance" / f"{base}_{quote}-1h.feather"
+
+
+def freqai_ic(userdir: Path, identifier: str, pair: str, start: pd.Timestamp, days: int = 90,
+              market: str = "spot") -> dict:
     files = sorted((userdir / "models" / identifier / "backtesting_predictions").glob("*_prediction.feather"))
     keep = [pd.read_feather(f) for f in files if (int(f.name.split("_")[2]) - int(start.timestamp())) % (30 * 86400) == 0
             and int(f.name.split("_")[2]) >= int(start.timestamp())]
     if not keep:
         return {"n": 0, "model": float("nan"), "naive": float("nan")}
     pr = pd.concat(keep).drop_duplicates("date").set_index("date").sort_index()
-    base, quote = pair.split("/")
-    c = pd.read_feather(userdir / "data" / "binance" / f"{base}_{quote}-1h.feather").set_index("date")["close"]
+    c = pd.read_feather(candle_file(userdir, pair, market)).set_index("date")["close"]
     rv = np.log(c).diff().rolling(24).std()
     df = pd.DataFrame({"pred": rv * np.exp(pr["&-vol_ratio"].reindex(rv.index)), "naive": rv, "real": rv.shift(-24)}).dropna()
     df = df[df.index >= df.index.max() - pd.Timedelta(days=days)]
@@ -236,9 +243,8 @@ def freqai_ic(userdir: Path, identifier: str, pair: str, start: pd.Timestamp, da
             "naive": float(df["naive"].corr(df["real"], method="spearman"))}
 
 
-def latest_data_day(userdir: Path, pair: str) -> pd.Timestamp:
-    base, quote = pair.split("/")
-    d = pd.read_feather(userdir / "data" / "binance" / f"{base}_{quote}-1h.feather", columns=["date"])
+def latest_data_day(userdir: Path, pair: str, market: str = "spot") -> pd.Timestamp:
+    d = pd.read_feather(candle_file(userdir, pair, market), columns=["date"])
     return d["date"].max().normalize() + pd.Timedelta(days=1)
 
 
@@ -251,22 +257,35 @@ def cmd_forward(a) -> int:
     allb = load_baselines()
     start = pd.Timestamp(a.start, tz="UTC")
     report = {"generated_at": datetime.now(UTC).isoformat(timespec="seconds"), "forward_start": a.start, "coins": {}}
+    perp = a.market == "perp"
     for coin in coins:
-        end = pd.Timestamp(a.end, tz="UTC") if a.end else latest_data_day(userdir, PAIRS[coin])
+        end = pd.Timestamp(a.end, tz="UTC") if a.end else latest_data_day(userdir, PAIRS[coin], a.market)
         tr = f"{start:%Y%m%d}-{end:%Y%m%d}"
-        keep = Path(a.keep) / coin / f"{end:%Y%m%d}"
-        r = run(coin, tr, None, None, 0.001, str(userdir), str(keep), n_jobs=a.n_jobs)
+        keep = Path(a.keep) / (f"{coin}_perp" if perp else coin) / f"{end:%Y%m%d}"
+        r = run(coin, tr, None, None, 0.0005 if perp else 0.001, str(userdir), str(keep), n_jobs=a.n_jobs,
+                market=a.market)
         if "error" in r:
             report["coins"][coin] = {"status": "ERROR", "error": r["error"][-1500:]}
             continue
         eqd, bhd, trades, strat = daily_series(Path(r["result_file"]))
         rr = trade_returns(trades, strat["starting_balance"])
-        cfg = json.loads((SKILL / "user_data/configs" / f"config_{coin}_ea.json").read_text())
-        ic = freqai_ic(userdir, cfg["freqai"]["identifier"], PAIRS[coin], start)
-        ev = evaluate(eqd, bhd, rr, allb[coin], ic)
-        ev.update({"strategy": strat["_name"], "timerange": tr, "result_file": r["result_file"],
-                   "baseline": coin, "freqai_ic": ic})
-        report["coins"][coin] = ev
+        cfg = json.loads((SKILL / "user_data/configs" / f"config_{coin}_{'perp' if perp else 'ea'}.json").read_text())
+        ic = freqai_ic(userdir, cfg["freqai"]["identifier"], PAIRS[coin], start, market=a.market)
+        key = f"{coin}_perp" if perp else coin
+        if key not in allb:
+            report["coins"][key] = {"status": "ERROR", "error": f"baselines.json 沒有 {key}：先跑 baseline --key {key}"}
+            continue
+        ev = evaluate(eqd, bhd, rr, allb[key], ic)
+        ev.update({"strategy": strat["_name"], "market": a.market, "timerange": tr, "result_file": r["result_file"],
+                   "baseline": key, "freqai_ic": ic})
+        if perp:
+            ev.update({k: r.get(k) for k in ("long_trades", "long_pnl", "short_trades", "short_pnl", "funding_total",
+                                             "liquidations")})
+            if r.get("liquidations"):  # protocol section 8: the stop must always trigger before liquidation
+                ev["checks"].append(check("C8", "強平", "ALERT", r["liquidations"], 0, "槓桿規則失效或資料異常"))
+                if ev["status"] != "HALT":
+                    ev["status"], ev["action"] = "ALERT", "出現強平：先停新進場，再診斷執行與資料"
+        report["coins"][key] = ev
     return write_report(report, a.json, a.md)
 
 
@@ -337,7 +356,7 @@ def cmd_live(a) -> int:
         state = json.loads(state_path.read_text()) if state_path.exists() else {}
         report = {"generated_at": datetime.now(UTC).isoformat(timespec="seconds"), "forward_start": "live", "coins": {}}
         for coin, url in bots.items():
-            report["coins"][coin] = live_check(coin, url.rstrip("/"), auth, allb[coin], state.setdefault(coin, {}), a.act, requests)
+            report["coins"][coin] = live_check(coin, url.rstrip("/"), auth, allb.get(coin) or allb[coin.split("_")[0]], state.setdefault(coin, {}), a.act, requests)
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(json.dumps(state, indent=2))
         code = write_report(report, a.json, a.md)
@@ -416,6 +435,7 @@ def main() -> None:
     g = f.add_mutually_exclusive_group(required=True)
     g.add_argument("--coin", choices=list(PAIRS))
     g.add_argument("--all", action="store_true")
+    f.add_argument("--market", choices=["spot", "perp"], default="spot", help="perp = the USDT-M futures EAs")
     f.add_argument("--start", default=FORWARD_START)
     f.add_argument("--end", help="YYYY-MM-DD (default: day after the last candle on disk)")
     f.add_argument("--userdir", default=os.environ.get("FT_HOME", "user_data"))

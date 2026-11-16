@@ -74,6 +74,12 @@ for coin, strat in (("btc", "BTCTrendEA"), ("eth", "ETHRiskOnEA"), ("sol", "SOLM
     SERVERS[coin] = srv
     os.environ[f"EA_ENGINE_{coin.upper()}_URL"] = f"http://127.0.0.1:{srv.server_address[1]}"
 
+# This suite covers the spot setup (all three coins on their spot EAs, ETH shadow-only), set through the user config.
+SPOT = {"coins": {"btc": {"market": "spot", "strategy": "BTCTrendEA", "pair": "BTC/USDT", "tradable": True},
+                  "eth": {"market": "spot", "strategy": "ETHRiskOnEA", "pair": "ETH/USDT", "tradable": False},
+                  "sol": {"market": "spot", "strategy": "SOLMomentumEA", "pair": "SOL/USDT", "tradable": True}}}
+ea_desk._save(ea_desk.FILES["config"], SPOT)
+
 RESULTS: list[tuple[bool, str]] = []
 
 
@@ -207,7 +213,7 @@ ok(act("btc")["action"] == "CLOSE_NOW", "引擎斷線也會在跌破停損時 CL
 ea_desk.record("CLOSE", coin="btc", price=94000.0)
 
 # 13. loss limit and minimum order
-user_cfg = {"coins": {"sol": {"capital_usdt": 100}}}
+user_cfg = ea_desk._merge(SPOT, {"coins": {"sol": {"capital_usdt": 100}}})
 ea_desk._save(ea_desk.FILES["config"], user_cfg)
 BOTS["sol"]["status"] = [open_trade("SOL/USDT", 140.0, 110.0, 500.0, tid=5)]
 i = act("sol")

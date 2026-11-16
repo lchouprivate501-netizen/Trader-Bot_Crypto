@@ -5,15 +5,15 @@
     "url": "https://github.com/lchouprivate501-netizen"
   },
   "metadata": {
-    "description": "Open-source BTC / ETH / SOL trend-following EAs (Freqtrade + FreqAI) that AI agents can trade through an MCP trading desk.",
-    "version": "2.0.0"
+    "description": "Open-source BTC / ETH / SOL trend-following EAs (Freqtrade + FreqAI) - futures EAs for ETH and SOL, spot EA for BTC - that AI agents trade through an MCP trading desk.",
+    "version": "3.0.0"
   },
   "plugins": [
     {
       "name": "freqai-crypto-trading",
       "source": "./",
-      "description": "BTC / ETH / SOL trend-following EAs (validated, frozen parameters) that an AI executes through the freqai-ea-desk MCP server, with research tools and an EA maintenance agent.",
-      "version": "2.0.0",
+      "description": "Validated BTC / ETH / SOL EAs (futures long/short for ETH and SOL, spot for BTC) that an AI executes through the freqai-ea-desk MCP server, with research tools and an EA maintenance agent.",
+      "version": "3.0.0",
       "category": "finance",
       "keywords": [
         "trading",

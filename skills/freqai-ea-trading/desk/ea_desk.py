@@ -7,17 +7,19 @@
 - EA 引擎：每個幣一個「無金鑰」的 Freqtrade dry-run 機器人（desk/ea_engine.py 啟動），跑凍結參數的 EA 與 FreqAI，
   REST API 只聽 127.0.0.1。引擎不碰任何交易所帳戶，只提供「該進場 / 停損移到哪 / 該出場」。
 - 交易台（本檔）：比對引擎持倉與 AI 的帳本，每個幣產生一條指令；下單前的風控；記錄成交與停損移動。
-- AI：在使用者的交易所現貨下單、掛停損、移動停損，然後呼叫 record 記錄。PAPER 模式只記錄、不下單。
+- AI：在使用者的交易所（USDT 永續合約或現貨，依每個幣的 market）開倉、掛停損、移動停損，然後呼叫 record 記錄。
+  PAPER 模式只記錄、不下單。合約 EA 可做多（long）也可做空（short），一律逐倉、用指令給的槓桿。
 
-指令 action
-  OPEN        引擎已進場、AI 沒有部位、價格沒有追太高、風控通過 → 市價買入 qty，立刻掛停損 stop_price
+指令 action（side = long / short）
+  OPEN        引擎已進場、AI 沒有部位、價格沒有追太遠、風控通過 → 市價開倉 qty（做多或做空），立刻掛停損 stop_price
   HOLD        兩邊都有同一筆部位，停損一致 → 不動作（確認交易所停損單還在）
-  MOVE_STOP   引擎的吊燈停損上移 ≥ stop_move_min_pct → 把交易所停損單改到 stop_price（只會往上）
-  CLOSE       引擎已出場（趨勢轉弱 / 風險關閉 / 停損）或沒有這筆持倉 → 取消停損單、市價賣出全部
-  CLOSE_NOW   參考價已跌破帳本停損 → 交易所停損應已觸發；確認，還沒成交就市價賣出
-  MISSED      引擎在場內但價格超過追價上限、已跌到停損，或這筆已平倉 → 不追，等下一筆
+  MOVE_STOP   引擎的吊燈停損往有利方向移動 ≥ stop_move_min_pct → 把交易所停損單改到 stop_price
+              （多單只會往上、空單只會往下）
+  CLOSE       引擎已出場（趨勢轉向 / BTC 轉向 / 停損）或沒有這筆持倉 → 取消停損單、市價平倉全部
+  CLOSE_NOW   參考價已穿過帳本停損 → 交易所停損應已觸發；確認，還沒成交就市價平倉
+  MISSED      引擎在場內但價格超過追價上限、已穿過停損，或這筆已平倉 → 不追，等下一筆
   WAIT        兩邊都空手
-  SHADOW      未通過驗證的幣（ETH）→ 只看不做
+  SHADOW      未通過驗證的 EA → 只看不做
   BLOCKED     風控擋新單（HALT、守衛 HALT、累計虧損上限、金額太小…）→ 不開倉
   ENGINE_DOWN 引擎連不上 / 停擺 / 不是 dry-run / 策略不符 → 不開新倉、不移停損；既有部位保留交易所停損單
   ERROR       帳本異常（同一幣兩筆部位）→ 不動作，回報使用者
@@ -46,8 +48,8 @@ FILES = {k: HOME / v for k, v in {
     "stops": "stops.json", "latest": "signals_latest.json", "history": "signals_history.jsonl", "checks": "checks.jsonl",
     "journal": "journal.jsonl", "guard": "guard/latest.json"}.items()}
 PREFIX = "EA-"
-FIELDS = ["ts_utc", "execution", "position_id", "coin", "pair", "action", "qty", "price", "fee_usdt", "stop_price",
-          "realized_pnl_usdt", "reason", "note"]
+FIELDS = ["ts_utc", "execution", "position_id", "coin", "pair", "market", "side", "leverage", "action", "qty", "price",
+          "fee_usdt", "funding_usdt", "stop_price", "realized_pnl_usdt", "reason", "note"]
 ACTIONABLE = ("OPEN", "MOVE_STOP", "CLOSE", "CLOSE_NOW", "ERROR")
 CONFIRM_LIVE = "ENABLE EA LIVE"
 CONFIRM_RESUME = "RESUME EA"
@@ -208,12 +210,15 @@ def engine(coin: str, d: dict | None = None, timeout: float = 6.0) -> dict:
         stake = _f(t.get("stake_amount"), 0.0)
         unreal = _f(t.get("total_profit_abs"), _f(t.get("profit_abs"), 0.0))
         eq_entry = (out["bot_equity"] or 0.0) - unreal
+        stake = stake * (_f(t.get("leverage"), 1.0) or 1.0)  # margin x leverage = notional: alloc is a notional share
         out["trade"] = {
             "trade_id": t.get("trade_id"), "position_id": position_id(coin, t), "open_date": t.get("open_date"),
             "open_rate": _f(t.get("open_rate")), "amount": _f(t.get("amount")), "stake_amount": stake,
             "alloc": round(min(max(stake / eq_entry, 0.0), 1.0), 4) if eq_entry > 0 else None,
             "stop": _f(t.get("stop_loss_abs")), "initial_stop": _f(t.get("initial_stop_loss_abs")),
             "current_rate": _f(t.get("current_rate")), "enter_tag": t.get("enter_tag"),
+            "side": "short" if t.get("is_short") else "long", "leverage": _f(t.get("leverage"), 1.0),
+            "liquidation_price": _f(t.get("liquidation_price")),
         }
         if not out["trade"]["alloc"] or not out["trade"]["stop"] or not out["trade"]["open_rate"]:
             out["problems"].append("引擎持倉缺少 alloc、進場價或停損價")
@@ -230,10 +235,16 @@ def usable(eng: dict) -> bool:
 
 
 def ref_price(pair: str) -> float | None:
-    """參考價：OKX 現貨最新成交價，失敗改用 Binance（公開 API、不需金鑰）。下單仍以交易所頁面的價格為準。"""
+    """參考價：OKX 最新成交價（永續 BTC/USDT:USDT 用 SWAP、現貨用現貨），失敗改用 Binance（公開 API、不需金鑰）。
+    下單仍以交易所頁面的價格為準。"""
     base, quote = pair.split("/")
-    for url, pick in ((f"https://www.okx.com/api/v5/market/ticker?instId={base}-{quote}", lambda j: j["data"][0]["last"]),
-                      (f"https://api.binance.com/api/v3/ticker/price?symbol={base}{quote}", lambda j: j["price"])):
+    perp = ":" in quote
+    quote = quote.split(":")[0]
+    sources = ((f"https://www.okx.com/api/v5/market/ticker?instId={base}-{quote}-SWAP", lambda j: j["data"][0]["last"]),
+               (f"https://fapi.binance.com/fapi/v1/ticker/price?symbol={base}{quote}", lambda j: j["price"])) if perp else \
+              ((f"https://www.okx.com/api/v5/market/ticker?instId={base}-{quote}", lambda j: j["data"][0]["last"]),
+               (f"https://api.binance.com/api/v3/ticker/price?symbol={base}{quote}", lambda j: j["price"]))
+    for url, pick in sources:
         try:
             v = _f(pick(_http(url, timeout=5, proxy=True)))
             if v:
@@ -247,7 +258,8 @@ def guard() -> dict:
     """EA 守衛（maintenance/ea_guard.py live）的最新判定。"""
     g = _load(FILES["guard"], {}) or {}
     return {"generated_at": g.get("generated_at"),
-            "coins": {k: {"status": v.get("status"), "action": v.get("action")} for k, v in (g.get("coins") or {}).items()}}
+            "coins": {k.split("_")[0]: {"status": v.get("status"), "action": v.get("action"), "baseline": k}
+                      for k, v in (g.get("coins") or {}).items()}}
 
 
 # ----------------------------------------------------------------- ledger
@@ -262,6 +274,15 @@ def _ledger_append(row: dict) -> dict:
     p = FILES["ledger"]
     p.parent.mkdir(parents=True, exist_ok=True)
     new = not p.exists()
+    if not new:
+        with p.open(newline="", encoding="utf-8") as f:
+            header = next(csv.reader(f), [])
+        if header != FIELDS:  # older ledger layout: rewrite once with the current columns
+            old = rows()
+            with p.open("w", newline="", encoding="utf-8") as f:
+                w = csv.DictWriter(f, fieldnames=FIELDS)
+                w.writeheader()
+                w.writerows({k: o.get(k) or ("long" if k == "side" else "") for k in FIELDS} for o in old)
     r = {k: row.get(k, "") for k in FIELDS}
     r["ts_utc"] = r["ts_utc"] or _now().strftime("%Y-%m-%dT%H:%M:%SZ")
     with p.open("a", newline="", encoding="utf-8") as f:
@@ -313,18 +334,40 @@ def _set_stop(pid: str, stop: float, how: str) -> None:
     _save(FILES["stops"], s)
 
 
+def side_of(pos: dict) -> str:
+    return "short" if str(pos.get("side") or "long").lower() == "short" else "long"
+
+
+def through(price: float, stop: float, side: str) -> bool:
+    """價格是否已穿過停損（多單：跌到停損以下；空單：漲到停損以上）。"""
+    return price >= stop if side == "short" else price <= stop
+
+
+def better_stop(new: float, old: float, side: str, min_pct: float = 0.0) -> bool:
+    """new 是否比 old 更有利至少 min_pct%（多單往上、空單往下）。"""
+    return new < old * (1 - min_pct / 100) if side == "short" else new > old * (1 + min_pct / 100)
+
+
+def market_of(cfg: dict) -> str:
+    return "perp" if cfg.get("market") == "perp" or ":" in cfg.get("pair", "") else "spot"
+
+
 # ----------------------------------------------------------------- sizing and risk
-def size(alloc: float, price: float, stop: float, capital: float, d: dict) -> dict:
-    """數量 = EA 的部位比例 alloc × 這個 EA 的資金 / 價格，再限制：單筆風險 ≤ max_risk_pct_of_capital、金額 ≤ 資金。"""
-    fee = float(d.get("fee", 0.001))
-    per_unit = (price - stop) + price * 2 * fee
+def size(alloc: float, price: float, stop: float, capital: float, d: dict, side: str = "long",
+         market: str = "spot", leverage: float = 1.0) -> dict:
+    """數量 = EA 的部位比例 alloc × 這個 EA 的資金 / 價格，再限制：單筆風險 ≤ max_risk_pct_of_capital、名目金額 ≤ 資金。
+    槓桿不放大部位，只決定佔用的保證金（名目 / 槓桿）。"""
+    fee = float(d.get("fee_perp", 0.0005) if market == "perp" else d.get("fee", 0.001))
+    per_unit = abs(price - stop) + price * 2 * fee
     q = {"ea_alloc": alloc * capital / price,
          "risk_cap": capital * float(d["max_risk_pct_of_capital"]) / 100 / per_unit if per_unit > 0 else 0.0,
          "capital_cap": capital / price}
     lim = min(q, key=q.get)
     qty = max(q[lim], 0.0)
-    return {"qty": qty, "notional_usdt": round(qty * price, 4), "risk_usdt": round(qty * per_unit, 4),
+    lev = max(float(leverage or 1.0), 1.0)
+    return {"qty": qty, "side": side, "notional_usdt": round(qty * price, 4), "risk_usdt": round(qty * per_unit, 4),
             "risk_pct_of_capital": round(qty * per_unit / capital * 100, 3) if capital else None,
+            "leverage": lev, "margin_usdt": round(qty * price / lev, 4),
             "capital_usdt": capital, "alloc": alloc, "limited_by": lim, "fee": fee}
 
 
@@ -362,21 +405,26 @@ def _check(coin: str, qty: float | None, price: float | None, d: dict, eng: dict
         return out
     if not bt or capital <= 0:
         return out
-    stop = bt["stop"]
-    max_entry = bt["open_rate"] * (1 + float(d["max_chase_pct"]) / 100)
-    if price > max_entry:
-        reasons.append(f"價格 {price} 高於追價上限 {max_entry:.8g}（引擎進場價 {bt['open_rate']} + {d['max_chase_pct']}%）")
-    if price <= stop:
-        reasons.append(f"價格 {price} 已在停損 {stop} 之下")
-    sz = size(bt["alloc"], price, stop, capital, d) if price > stop else None
+    stop, side = bt["stop"], bt.get("side", "long")
+    chase = float(d["max_chase_pct"]) / 100
+    max_entry = bt["open_rate"] * (1 - chase if side == "short" else 1 + chase)
+    if (price < max_entry) if side == "short" else (price > max_entry):
+        reasons.append(f"價格 {price} 超過追價上限 {max_entry:.8g}（引擎{'做空' if side == 'short' else '做多'}進場價 "
+                       f"{bt['open_rate']} {'−' if side == 'short' else '+'} {d['max_chase_pct']}%）")
+    if through(price, stop, side):
+        reasons.append(f"價格 {price} 已穿過停損 {stop}")
+    sz = size(bt["alloc"], price, stop, capital, d, side, market_of(cfg), bt.get("leverage") or 1.0) \
+        if not through(price, stop, side) else None
     if sz:
         q = sz["qty"] if qty is None else float(qty)
         if q > sz["qty"] * 1.0001:
             reasons.append(f"數量 {q} 超過上限 {sz['qty']:.8f}（{sz['limited_by']}）")
         if q * price < float(d.get("min_order_usdt", 10)):
             reasons.append(f"下單金額 {q * price:.2f} USDT 低於最小金額 {d.get('min_order_usdt', 10)}")
-    out.update({"approved": not reasons, "position_id": bt["position_id"], "stop_price": stop,
-                "max_entry_price": round(max_entry, 8), "sizing": sz})
+    out.update({"approved": not reasons, "position_id": bt["position_id"], "side": side, "market": market_of(cfg),
+                "leverage": bt.get("leverage") or 1.0, "margin_mode": "isolated" if market_of(cfg) == "perp" else None,
+                "stop_price": stop, ("min_entry_price" if side == "short" else "max_entry_price"): round(max_entry, 8),
+                "sizing": sz})
     return out
 
 
@@ -397,7 +445,8 @@ def _instruction(coin: str, cfg: dict, eng: dict, d: dict, hold: dict, closed: s
     pair = cfg["pair"]
     bt = eng.get("trade") if eng.get("ok") else None
     price = ref_price(pair) or (bt or {}).get("current_rate")
-    ins = {"coin": coin.upper(), "pair": pair, "strategy": cfg["strategy"], "tradable": bool(cfg.get("tradable")),
+    mk = market_of(cfg)
+    ins = {"coin": coin.upper(), "pair": pair, "market": mk, "strategy": cfg["strategy"], "tradable": bool(cfg.get("tradable")),
            "reference_price": price,
            "engine": {"usable": usable(eng), "problems": eng.get("problems", []), "error": eng.get("error"), "trade": bt}}
     rws = hold.get(coin, [])
@@ -405,26 +454,28 @@ def _instruction(coin: str, cfg: dict, eng: dict, d: dict, hold: dict, closed: s
         return {**ins, "action": "ERROR", "why": f"帳本有 {len(rws)} 筆 {coin.upper()} EA 部位 {[r['position_id'] for r in rws]}，請使用者核對"}
     pos = rws[0] if rws else None
     if pos:
-        stop = current_stop(pos)
-        p = {"position_id": pos["position_id"], "qty": _f(pos["qty"]), "entry_price": _f(pos["price"]),
-             "stop_price": stop, "execution": pos["execution"]}
+        stop, side = current_stop(pos), side_of(pos)
+        p = {"position_id": pos["position_id"], "side": side, "qty": _f(pos["qty"]), "entry_price": _f(pos["price"]),
+             "stop_price": stop, "leverage": _f(pos.get("leverage"), 1.0), "execution": pos["execution"]}
         ins["position"] = p
-        if price and stop and price <= stop:
+        ins["side"] = side
+        if price and stop and through(price, stop, side):
             return {**ins, "action": "CLOSE_NOW", "qty": p["qty"],
-                    "why": f"參考價 {price} ≤ 停損 {stop}：交易所停損單應已觸發。到交易所確認；還持有就市價賣出全部，然後 record CLOSE"}
+                    "why": f"參考價 {price} 已穿過停損 {stop}：交易所停損單應已觸發。到交易所確認；還持有就市價平倉全部，然後 record CLOSE"}
         if not usable(eng):
             return {**ins, "action": "ENGINE_DOWN",
                     "why": "引擎不可用：不移動停損、不開新倉；交易所停損單保留。請使用者修復引擎（python desk/ea_engine.py status）"}
         if bt and bt["position_id"] == pos["position_id"]:
             new = bt["stop"]
-            if stop is None or new > stop * (1 + float(d["stop_move_min_pct"]) / 100):
+            if stop is None or better_stop(new, stop, side, float(d["stop_move_min_pct"])):
+                way = "下移" if side == "short" else "上移"
                 return {**ins, "action": "MOVE_STOP", "stop_price": new,
-                        "why": f"引擎吊燈停損由 {stop} 上移到 {new}：把交易所停損單改到 {new}（只能往上），然後 record STOP"}
+                        "why": f"引擎吊燈停損由 {stop} {way}到 {new}：把交易所停損單改到 {new}（只能往有利方向），然後 record STOP"}
             return {**ins, "action": "HOLD", "why": "部位與引擎一致；確認交易所停損單仍在"}
         ex = next((c for c in eng.get("closed", []) if c["position_id"] == pos["position_id"]), None)
         why = f"引擎已於 {ex['close_date']} 以 {ex['close_rate']} 出場（{ex['exit_reason']}）" if ex else "引擎沒有這筆持倉"
         return {**ins, "action": "CLOSE", "qty": p["qty"], "exit_reason": (ex or {}).get("exit_reason") or "engine_flat",
-                "why": why + "：取消交易所停損單、市價賣出全部，然後 record CLOSE"}
+                "why": why + "：取消交易所停損單、市價平倉全部，然後 record CLOSE"}
     if not cfg.get("tradable"):
         return {**ins, "action": "SHADOW", "why": f"未通過驗證，只看不做：{cfg.get('validation')}"}
     if not usable(eng):
@@ -435,21 +486,28 @@ def _instruction(coin: str, cfg: dict, eng: dict, d: dict, hold: dict, closed: s
         return {**ins, "action": "MISSED", "why": f"{bt['position_id']} 已平倉過（停損或手動），等引擎下一筆"}
     if not price:
         return {**ins, "action": "WAIT", "why": "沒有參考價，下一輪再看"}
-    max_entry = bt["open_rate"] * (1 + float(d["max_chase_pct"]) / 100)
-    if price > max_entry:
-        return {**ins, "action": "MISSED", "why": f"價格 {price} 已超過追價上限 {max_entry:.8g}：不追，等下一筆"}
-    if price <= bt["stop"]:
-        return {**ins, "action": "MISSED", "why": f"價格 {price} 已在引擎停損 {bt['stop']} 之下：不進場"}
+    side = bt.get("side", "long")
+    ins["side"] = side
+    chase = float(d["max_chase_pct"]) / 100
+    limit = bt["open_rate"] * (1 - chase if side == "short" else 1 + chase)
+    if (price < limit) if side == "short" else (price > limit):
+        return {**ins, "action": "MISSED", "why": f"價格 {price} 已超過追價上限 {limit:.8g}：不追，等下一筆"}
+    if through(price, bt["stop"], side):
+        return {**ins, "action": "MISSED", "why": f"價格 {price} 已穿過引擎停損 {bt['stop']}：不進場"}
     c = _check(coin, None, price, d, eng, hold, closed, gd)
     if not c["approved"]:
         return {**ins, "action": "BLOCKED", "why": "；".join(c["reasons"]), "risk": c}
     em = ea_mode()
+    lev = c.get("leverage") or 1.0
+    how = (f"在 USDT 永續合約頁：逐倉、槓桿 {lev:g}x，市價{'做空（賣出開空）' if side == 'short' else '做多（買入開多）'} qty"
+           if mk == "perp" else "在現貨市價買入 qty")
     return {**ins, "action": "OPEN", "execution": em, "position_id": c["position_id"], "qty": c["sizing"]["qty"],
-            "notional_usdt": c["sizing"]["notional_usdt"], "stop_price": c["stop_price"],
-            "max_entry_price": c["max_entry_price"], "risk": c["sizing"],
-            "why": f"引擎 {bt['open_date']} 以 {bt['open_rate']} 進場（{bt['enter_tag']}）。"
-                   + ("LIVE：先 risk_check（用交易所頁面的價格），通過後在現貨市價買入 qty（向下取到交易所允許的位數），立刻掛停損 stop_price，再 record OPEN"
-                      if em == "LIVE" else "PAPER：不下單，以參考價 record OPEN")}
+            "leverage": lev, "margin_mode": c.get("margin_mode"), "notional_usdt": c["sizing"]["notional_usdt"],
+            "margin_usdt": c["sizing"]["margin_usdt"], "stop_price": c["stop_price"],
+            **{k: c[k] for k in ("max_entry_price", "min_entry_price") if k in c}, "risk": c["sizing"],
+            "why": f"引擎 {bt['open_date']} 以 {bt['open_rate']} {'做空' if side == 'short' else '做多'}（{bt['enter_tag']}）。"
+                   + (f"LIVE：先 risk_check（用交易所頁面的價格），通過後{how}（向下取到交易所允許的位數），立刻設停損 stop_price，再 record OPEN"
+                      if em == "LIVE" else f"PAPER：不下單，以參考價 record OPEN（LIVE 時的做法：{how}，並設停損 stop_price）")}
 
 
 def signals(write: bool = True) -> dict:
@@ -476,7 +534,7 @@ def signals(write: bool = True) -> dict:
 
 # ----------------------------------------------------------------- recording
 def record(event: str, coin: str = "", position_id: str = "", qty=None, price=None, fee_usdt=None,
-           stop_price=None, reason: str = "", note: str = "") -> dict:
+           stop_price=None, reason: str = "", note: str = "", side: str = "", leverage=None, funding_usdt=None) -> dict:
     """event: OPEN | CLOSE | STOP | SKIP。實際成交一定要記（即使違反規則也記並附警告），帳本才會和交易所一致。"""
     event = str(event).upper()
     d = config()
@@ -499,6 +557,16 @@ def record(event: str, coin: str = "", position_id: str = "", qty=None, price=No
         stop = _f(stop_price) or (bt or {}).get("stop")
         if not stop:
             return {"ok": False, "error": "需要 stop_price（交易所停損單的觸發價）"}
+        sd = (str(side).lower() or (bt or {}).get("side") or "long")
+        if sd not in ("long", "short"):
+            return {"ok": False, "error": "side 必須是 long 或 short"}
+        if bt and bt.get("side") and sd != bt["side"]:
+            warnings.append(f"方向 {sd} 與引擎 {bt['side']} 不同：請立即核對交易所部位")
+        if market_of(cfg) == "spot" and sd == "short":
+            return {"ok": False, "error": "現貨 EA 不能做空"}
+        if through(price, stop, sd):
+            warnings.append(f"成交價 {price} 已穿過停損 {stop}")
+        lev = _f(leverage) or (bt or {}).get("leverage") or 1.0
         em = ea_mode()
         if em == "LIVE":
             recent = [json.loads(x) for x in FILES["checks"].read_text(encoding="utf-8").splitlines()[-50:]] \
@@ -509,13 +577,15 @@ def record(event: str, coin: str = "", position_id: str = "", qty=None, price=No
         if em == "HALT":
             warnings.append("HALT 期間開倉：違反作業手冊，請回報使用者")
             em = "LIVE" if live_switch()["enabled"] else "PAPER"
-        row = _ledger_append({"execution": em, "position_id": pid, "coin": coin, "pair": cfg["pair"], "action": "OPEN",
+        row = _ledger_append({"execution": em, "position_id": pid, "coin": coin, "pair": cfg["pair"], "market": market_of(cfg),
+                              "side": sd, "leverage": lev, "action": "OPEN",
                               "qty": qty, "price": price, "fee_usdt": _f(fee_usdt, 0.0), "stop_price": stop,
                               "reason": reason or f"EA {cfg['strategy']} {(bt or {}).get('enter_tag') or 'breakout'}",
                               "note": note})
         _set_stop(pid, stop, "OPEN")
         journal("fill", {**row, "warnings": warnings})
-        return {"ok": True, "position_id": pid, "execution": em, "stop_price": stop, "warnings": warnings}
+        return {"ok": True, "position_id": pid, "execution": em, "side": sd, "leverage": lev, "stop_price": stop,
+                "warnings": warnings}
     rws = hold.get(coin, [])
     pos = next((r for r in rws if r["position_id"] == position_id), rws[0] if rws else None)
     if event == "STOP":
@@ -524,8 +594,9 @@ def record(event: str, coin: str = "", position_id: str = "", qty=None, price=No
         new, old = _f(stop_price), current_stop(pos)
         if not new or new <= 0:
             return {"ok": False, "error": "STOP 需要 stop_price"}
-        if old and new < old:
-            return {"ok": False, "error": f"停損只能往上移（目前 {old}，收到 {new}）"}
+        if old and new != old and not better_stop(new, old, side_of(pos)):
+            return {"ok": False, "error": f"停損只能往有利方向移動（{'空單往下' if side_of(pos) == 'short' else '多單往上'}；"
+                                         f"目前 {old}，收到 {new}）"}
         _set_stop(pos["position_id"], new, "MOVE")
         journal("stop", {"position_id": pos["position_id"], "from": old, "to": new})
         return {"ok": True, "position_id": pos["position_id"], "stop_from": old, "stop_to": new}
@@ -540,12 +611,16 @@ def record(event: str, coin: str = "", position_id: str = "", qty=None, price=No
         if q > q_open * 1.0001:
             return {"ok": False, "error": f"平倉數量 {q} 大於部位 {q_open}"}
         if q < q_open * 0.98:
-            warnings.append(f"只賣出 {q}/{q_open}，帳本視為全部平倉；剩餘數量請使用者處理")
+            warnings.append(f"只平倉 {q}/{q_open}，帳本視為全部平倉；剩餘數量請使用者處理")
         fee_c = _f(fee_usdt, 0.0)
         fee_o = _f(pos["fee_usdt"], 0.0) * q / q_open if q_open else 0.0
-        pnl = q * (price - _f(pos["price"], 0.0)) - fee_o - fee_c
+        fund = _f(funding_usdt, 0.0)  # + received, - paid (from the exchange's funding history)
+        sign = -1.0 if side_of(pos) == "short" else 1.0
+        pnl = sign * q * (price - _f(pos["price"], 0.0)) - fee_o - fee_c + fund
         row = _ledger_append({"execution": pos["execution"], "position_id": pos["position_id"], "coin": coin,
-                              "pair": cfg["pair"], "action": "CLOSE", "qty": q, "price": price, "fee_usdt": fee_c,
+                              "pair": cfg["pair"], "market": pos.get("market") or market_of(cfg), "side": side_of(pos),
+                              "leverage": pos.get("leverage") or "", "action": "CLOSE", "qty": q, "price": price,
+                              "fee_usdt": fee_c, "funding_usdt": fund,
                               "stop_price": current_stop(pos), "realized_pnl_usdt": round(pnl, 6),
                               "reason": reason or "exit", "note": note})
         s = stops()
@@ -568,8 +643,9 @@ def status() -> dict:
         e = engine(coin, d)
         engines[coin] = {k: e.get(k) for k in ("url", "ok", "problems", "error", "state", "strategy", "dry_run",
                                                "last_process_age_min", "trade")}
-    pos = {c: [{"position_id": r["position_id"], "qty": _f(r["qty"]), "entry": _f(r["price"]), "stop": current_stop(r),
-                "execution": r["execution"]} for r in rs] for c, rs in held().items()}
+    pos = {c: [{"position_id": r["position_id"], "side": side_of(r), "qty": _f(r["qty"]), "entry": _f(r["price"]),
+                "stop": current_stop(r), "leverage": _f(r.get("leverage"), 1.0), "execution": r["execution"]}
+               for r in rs] for c, rs in held().items()}
     pnl: dict[str, dict] = {}
     for r in rows():
         if r["action"] == "CLOSE":
@@ -577,9 +653,10 @@ def status() -> dict:
             k["trades"] += 1
             k["realized_pnl_usdt"] = round(k["realized_pnl_usdt"] + _f(r["realized_pnl_usdt"], 0.0), 4)
     return {"ea_mode": ea_mode(), "live_switch": live_switch(), "halt": halt_state(), "home": str(HOME),
-            "settings": {k: d[k] for k in ("venue", "max_chase_pct", "stop_move_min_pct", "max_risk_pct_of_capital",
+            "settings": {k: d.get(k) for k in ("venue_note", "max_chase_pct", "stop_move_min_pct", "max_risk_pct_of_capital",
                                            "max_loss_pct_of_capital", "min_order_usdt")},
-            "coins": {c: {k: v.get(k) for k in ("strategy", "pair", "tradable", "capital_usdt", "validation")} for c, v in d["coins"].items()},
+            "coins": {c: {"market": market_of(v), **{k: v.get(k) for k in ("strategy", "pair", "tradable", "capital_usdt", "validation")}}
+                      for c, v in d["coins"].items()},
             "engines": engines, "positions": pos, "closed_pnl": pnl, "guard": guard(),
             "last_signals_at": (_load(FILES["latest"], {}) or {}).get("at"),
             "user_only": {"start_engine": "python desk/ea_engine.py start", "enable_live": "python desk/ea_desk.py live on",
@@ -612,9 +689,9 @@ def main() -> int:
     c.add_argument("--qty", type=float)
     r = sub.add_parser("record", help="記錄 OPEN / CLOSE / STOP / SKIP")
     r.add_argument("--event", required=True, choices=["OPEN", "CLOSE", "STOP", "SKIP", "open", "close", "stop", "skip"])
-    for k in ("coin", "position-id", "reason", "note"):
+    for k in ("coin", "position-id", "reason", "note", "side"):
         r.add_argument(f"--{k}", default="")
-    for k in ("qty", "price", "fee-usdt", "stop-price"):
+    for k in ("qty", "price", "fee-usdt", "stop-price", "leverage", "funding-usdt"):
         r.add_argument(f"--{k}", type=float)
     h = sub.add_parser("halt", help="停止所有新進場（任何人可用）")
     h.add_argument("--reason", default="")
@@ -637,7 +714,8 @@ def main() -> int:
     if a.cmd == "check":
         return show(check(a.coin, a.price, a.qty))
     if a.cmd == "record":
-        return show(record(a.event, a.coin, a.position_id, a.qty, a.price, a.fee_usdt, a.stop_price, a.reason, a.note))
+        return show(record(a.event, a.coin, a.position_id, a.qty, a.price, a.fee_usdt, a.stop_price, a.reason, a.note,
+                           a.side, a.leverage, a.funding_usdt))
     if a.cmd == "halt":
         return show(halt(a.reason, by="cli"))
     if a.cmd == "resume":

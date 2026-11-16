@@ -38,3 +38,5 @@ jobs:
           python -m json.tool skills/freqai-ea-trading/desk/config.json > /dev/null
       - name: Desk + MCP integration test
         run: python skills/freqai-ea-trading/desk/test_desk.py
+      - name: Desk futures test (short, leverage, funding)
+        run: python skills/freqai-ea-trading/desk/test_desk_perp.py

@@ -70,3 +70,13 @@ ETHRiskOnEA 在事前登記驗證中因交易筆數不足（12 < 15）未通過�
 
 - 前向 ≥ 8 筆，且 V1 + 前向合計 ≥ 15 筆、合計獲利因子 ≥ 1.3；
 - 前向期間從未進入 DEGRADED 或 HALT。
+
+## 8. 合約 EA（2026-11-16 起為 ETH、SOL 的主要策略）
+
+- 合約 EA（`ETHFuturesEA`、`SOLFuturesEA`，以及只做影子紀錄的 `BTCFuturesEA`）依 `references/futures-validation-protocol.md` 驗證，結果見 `references/futures-validation-results.md`。各幣的主要策略：ETH、SOL 用合約 EA，BTC 用現貨 `BTCTrendEA`。
+- 基準線鍵為 `btc_perp`、`eth_perp`、`sol_perp`，由全歷史連續回測計算（BTC、ETH：2018-06 → 2026-10，2020-01 以前為現貨代用資料；SOL：2021-06 → 2026-10）。
+- 前向檢查：`ea_guard.py forward --market perp --all`。檢查項目、門檻與各狀態動作和第 3、4 節相同；報告另列多單 / 空單損益、資金費與強平次數。
+- **任何一次強平**（`liquidation`）視為 ALERT：槓桿規則應保證停損一定先於清算觸發，發生強平表示執行或資料有問題，先停新進場再診斷。
+- 年度基準線更新、改版流程（第 6 節）與現貨 EA 相同；合約 EA 的候選版本必須改類別名與 `freqai.identifier`（例如 `ea-eth-perp-v2`），並依合約協議重新驗證。
+- `BTCFuturesEA` 若要升級為 BTC 的主要策略，需要一份新的事前登記協議與新的未見資料；不能用已經跑過的 V1、V2 再判一次。
+

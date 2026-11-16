@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """EA 引擎：在本機背景執行三個「無金鑰」的 Freqtrade dry-run 機器人（BTC / ETH / SOL EA）與 EA 守衛。
+每個幣跑 desk/config.json 指定的 EA：market = perp 用合約 EA（config_<coin>_perp.json），spot 用現貨 EA。
 
 引擎只產生訊號，不碰任何交易所帳戶：設定強制 dry_run=true、清空金鑰欄位、移除所有 FREQTRADE__* 環境變數，
 REST API 只聽 127.0.0.1，帳密隨機產生並存在 $EA_HOME/api.json（權限 600）。
@@ -96,14 +97,16 @@ def start_engine(coin: str, d: dict, cred: dict) -> str:
         override["exchange"]["name"] = d["engine_exchange"]
     _secret_write(p["override"], override)
     ud = SKILL / "user_data"
-    cmd = [str(FREQTRADE), "trade", "-c", str(ud / "configs" / f"config_{coin}_ea.json"), "-c", str(p["override"]),
+    conf = f"config_{coin}_perp.json" if ea_desk.market_of(cfg) == "perp" else f"config_{coin}_ea.json"
+    cmd = [str(FREQTRADE), "trade", "-c", str(ud / "configs" / conf), "-c", str(p["override"]),
            "--userdir", str(p["userdir"]), "--strategy-path", str(ud / "strategies"),
            "--freqaimodel-path", str(ud / "freqaimodels"), "--db-url", f"sqlite:///{p['db']}", "--logfile", str(p["log"])]
     with (p["base"] / "stdout.log").open("ab") as out:
         proc = subprocess.Popen(cmd, cwd=p["base"], env=_clean_env(), stdout=out, stderr=subprocess.STDOUT,
                                 stdin=subprocess.DEVNULL, start_new_session=True)
     p["pid"].write_text(str(proc.pid))
-    return f"{coin}: 啟動 {cfg['strategy']}（pid {proc.pid}，API 127.0.0.1:{cfg['port']}，日誌 {p['log']}）"
+    kind = "USDT 永續合約、多空" if ea_desk.market_of(cfg) == "perp" else "現貨、只做多"
+    return f"{coin}: 啟動 {cfg['strategy']}（{kind}；pid {proc.pid}，API 127.0.0.1:{cfg['port']}，日誌 {p['log']}）"
 
 
 def start_guard(d: dict, cred: dict, coins: list[str]) -> str:
@@ -112,7 +115,8 @@ def start_guard(d: dict, cred: dict, coins: list[str]) -> str:
         return f"guard: 已在執行（pid {pid}）"
     GUARD_DIR.mkdir(parents=True, exist_ok=True)
     env = _clean_env()
-    env.update({"EA_GUARD_BOTS": ",".join(f"{c}=http://127.0.0.1:{d['coins'][c]['port']}" for c in coins),
+    keys = {c: f"{c}_perp" if ea_desk.market_of(d["coins"][c]) == "perp" else c for c in coins}  # baselines.json keys
+    env.update({"EA_GUARD_BOTS": ",".join(f"{keys[c]}=http://127.0.0.1:{d['coins'][c]['port']}" for c in coins),
                 "EA_GUARD_API_USER": cred["username"], "EA_GUARD_API_PASSWORD": cred["password"],
                 "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost"})
     cmd = [str(FT_PY), str(SKILL / "maintenance" / "ea_guard.py"), "live", "--act", "--loop", "900",
