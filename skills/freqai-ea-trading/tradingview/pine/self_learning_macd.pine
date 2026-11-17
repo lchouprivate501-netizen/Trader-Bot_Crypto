@@ -2,6 +2,9 @@
 // 自學習 MACD 假訊號過濾器 (Self-Learning MACD Filter) — v1.0
 // 研究與驗證：skills/freqai-ea-trading/references/macd-filter-research.md
 //
+// ⚠ 驗證狀態：未通過事前登記的樣本外驗證。過濾後訊號「平均」略好，但不穩定、假訊號比例幾乎沒降、
+//   1 小時以下無效。只適合研究與觀察，不要單獨據此下單。
+//
 // 做什麼：
 //   1. MACD 以 ATR 正規化（MACD-V = MACD ÷ ATR × 100），任何標的、任何價格水準都用同一把尺。
 //   2. 每次 MACD 與訊號線交叉，用 11 個無單位特徵（高週期趨勢、EMA200、動能、效率比、
@@ -230,7 +233,7 @@ alertcondition(shortSig, "SL-MACD 做空", "SL-MACD 過濾後做空：{{ticker}}
 alertcondition(exitShownLong or exitShownShort, "SL-MACD 出場", "SL-MACD 出場（反向交叉或停損）：{{ticker}} {{interval}} 收盤 {{close}}")
 
 // ───────────────────────────── 統計表
-var table tb = table.new(position.top_right, 2, 7, bgcolor = color.new(color.black, 80), border_color = color.new(color.gray, 70), border_width = 1)
+var table tb = table.new(position.top_right, 2, 8, bgcolor = color.new(color.black, 80), border_color = color.new(color.gray, 70), border_width = 1)
 f_stat(int n, int wins, float s) =>
     n > 0 ? str.tostring(n) + " 筆｜勝率 " + str.tostring(100.0 * wins / n, "0") + "%｜平均 " + str.tostring(s / n, "+0.00;-0.00") + "R" : "—"
 if showTable and barstate.islast
@@ -249,3 +252,5 @@ if showTable and barstate.islast
     table.cell(tb, 1, 5, str.tostring(costR, "0.00") + " R", text_color = tc, text_size = size.small)
     table.cell(tb, 0, 6, "最近一次交叉", text_color = tc, text_size = size.small)
     table.cell(tb, 1, 6, na(lastEdge) ? "—" : "預期淨值 " + str.tostring(lastEdge, "+0.00;-0.00") + "R" + (lastEdge > minEdge ? "（通過）" : "（過濾）"), text_color = tc, text_size = size.small)
+    table.cell(tb, 0, 7, "驗證狀態", text_color = tc, text_size = size.small)
+    table.cell(tb, 1, 7, "未通過樣本外驗證｜研究用，勿單獨據此下單", text_color = #ffb74d, text_size = size.small)
