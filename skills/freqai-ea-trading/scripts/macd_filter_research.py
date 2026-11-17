@@ -8,6 +8,7 @@ RSI = RMA-based), features and the online learner (RLS) are the same formulas in
   download   Binance public 15m klines (data.binance.vision) for the research symbols
   dev        build development events (dev symbols, before 2023-07-01) and fit the prior weights
   test       run the frozen indicator on the pre-registered test sets, write results JSON
+  download-confirm / confirm   the confirmation test on 10 fresh symbols (4h, 1D), registered after `test`
 
   python3 scripts/macd_filter_research.py download --datadir /path/to/data
   python3 scripts/macd_filter_research.py dev  --datadir /path/to/data
@@ -52,6 +53,9 @@ LAMBDA = 100.0                                # prior strength (pseudo-samples)
 FEATS = ["bias", "side", "htf_m", "htf_h", "ema_dist", "roc", "er", "volx", "vlm", "macdv", "rsi"]
 W0 = np.array([0.0848, 0.0606, 0.3928, 0.0459, -0.3034, -0.0302, 0.1154, -0.2469, 0.2059, -0.0510, 0.1237])
 TV_BARS = 5000                                # TradingView Basic-plan history (learner restarts)
+# Confirmation test (registered after the v1.0 test, before these symbols were ever loaded)
+CONFIRM_SYMS = ["DOTUSDT", "ATOMUSDT", "NEARUSDT", "UNIUSDT", "FILUSDT", "ETCUSDT", "BCHUSDT", "XLMUSDT", "AAVEUSDT", "ALGOUSDT"]
+CONFIRM_TFS = ["4h", "1D"]
 
 
 # ------------------------------------------------------------------ data
@@ -393,11 +397,11 @@ def cmd_dev(args):
     print("frozen W0 matches:", bool(np.allclose(np.round(w, 4), W0)))
 
 
-def cmd_test(args):
+def cmd_test(args, syms=None, confirm=False):
     out = {"config": {"features": FEATS, "w0": W0.tolist(), "lambda": LAMBDA, "stop_atr": STOP_ATR, "cost": COST,
                       "split": str(SPLIT.date()), "macd": [FAST, SLOW, SIG], "threshold": "pred - cost_R > 0"},
            "combos": []}
-    for sym in DEV_SYMS + HOLD_SYMS:
+    for sym in (syms or DEV_SYMS + HOLD_SYMS):
         for tf in TFS:
             ev, df = build_events(args.datadir, sym, tf)
             preds = {
@@ -405,9 +409,9 @@ def cmd_test(args):
                 "static": run_learner(ev, learn=False),
                 "online_tv5000": run_learner(ev, reset_every=TV_BARS),
             }
-            group = "dev" if sym in DEV_SYMS else "holdout"
+            group = "dev" if sym in DEV_SYMS else ("confirm" if confirm else "holdout")
             for period, mask in [("test", (ev.t >= SPLIT).values), ("dev", (ev.t < SPLIT).values)]:
-                if period == "dev" and group == "dev":
+                if period == "dev" and group in ("dev", "confirm"):
                     continue                       # in-sample for the prior: not reported
                 g = ev[mask & ev.R.notna().values]
                 row = {"sym": sym, "tf": tf, "group": group, "period": period}
@@ -436,7 +440,7 @@ def cmd_test(args):
                       f"tv5000 {row['online_tv5000_filt_mean_R'] if row['online_tv5000_filt_mean_R'] is not None else float('nan'):+.3f}",
                       flush=True)
     C = pd.DataFrame(out["combos"])
-    out["verdict"] = verdict(C)
+    out["verdict"] = verdict_confirm(C) if confirm else verdict(C)
     Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False))
     print(json.dumps(out["verdict"], indent=1, ensure_ascii=False))
 
@@ -485,16 +489,41 @@ def verdict(C: pd.DataFrame) -> dict:
     return res
 
 
+def verdict_confirm(C: pd.DataFrame) -> dict:
+    """Confirmation criteria C1-C4 (references/macd-filter-protocol.md, 確認測試)."""
+    T = C[(C.period == "test") & C.tf.isin(CONFIRM_TFS)]
+    s = T[T.n_filt >= 10]
+    diffs = (s.filt_mean_R - s.raw_mean_R).values
+    lo, hi = bootstrap_ci(diffs)
+    res = {"scope": CONFIRM_TFS, "combos_used": int(len(s)), "combos_excluded_lt10": int(len(T) - len(s)),
+           "C1_mean_diff_R": float(diffs.mean()), "C1_ci95": [lo, hi], "C1_pass": bool(lo > 0),
+           "C2_share_improved": float((diffs > 0).mean()), "C2_pass": bool((diffs > 0).mean() >= 0.70),
+           "C3_false_rate_raw": float(s.raw_false_rate.mean()), "C3_false_rate_filt": float(s.filt_false_rate.mean()),
+           "C3_pass": bool(s.filt_false_rate.mean() < s.raw_false_rate.mean()),
+           "C4_filt_mean_R": float(s.filt_mean_R.mean()), "C4_pass": bool(s.filt_mean_R.mean() > 0)}
+    res["all_pass"] = bool(res["C1_pass"] and res["C2_pass"] and res["C3_pass"] and res["C4_pass"])
+    D = C[C.period == "test"]
+    res["descriptive_by_tf"] = {tf: {"raw_mean_R": float(g.raw_mean_R.mean()),
+                                     "filt_mean_R_n10": float(g[g.n_filt >= 10].filt_mean_R.mean()) if (g.n_filt >= 10).any() else None,
+                                     "improved_share_n10": float(((g.filt_mean_R - g.raw_mean_R)[g.n_filt >= 10] > 0).mean()) if (g.n_filt >= 10).any() else None,
+                                     "kept_share": float(g.n_filt.sum() / g.n_raw.sum())} for tf, g in D.groupby("tf")}
+    return res
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["download", "dev", "test"])
+    ap.add_argument("cmd", choices=["download", "dev", "test", "download-confirm", "confirm"])
     ap.add_argument("--datadir", type=Path, required=True)
     ap.add_argument("--out", default="references/results/macd_filter_test.json")
     args = ap.parse_args()
     if args.cmd == "download":
         download(args.datadir, DEV_SYMS + HOLD_SYMS)
+    elif args.cmd == "download-confirm":
+        download(args.datadir, CONFIRM_SYMS)
     elif args.cmd == "dev":
         cmd_dev(args)
+    elif args.cmd == "confirm":
+        cmd_test(args, syms=CONFIRM_SYMS, confirm=True)
     else:
         cmd_test(args)
 
