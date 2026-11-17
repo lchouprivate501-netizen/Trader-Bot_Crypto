@@ -30,6 +30,49 @@ summary{cursor:pointer;font-weight:600}.note{color:var(--mute);font-size:13px;ma
 """
 
 
+TAG = {"FOCUS": ("焦點", "up"), "AVOID": ("避開", "down"), "NEWS": ("有新聞", "mild"), "OLD": ("舊聞", "mild")}
+
+
+def _link(url: str, text: str) -> str:
+    """只允許 http(s) 連結；新聞標題與網址都經過跳脫。"""
+    e = html.escape
+    if not url.startswith(("https://", "http://")):
+        return e(text)
+    return f"<a href='{e(url, quote=True)}' rel='noopener noreferrer' target=_blank>{e(text)}</a>"
+
+
+def _news_cell(n) -> str:
+    if not n:
+        return "–"
+    lab, cls = TAG.get(n["tag"], (n["tag"], "mild"))
+    top = n["top"][0] if n.get("top") else None
+    head = f"<br><small>[{html.escape(top['type_zh'])}] {_link(top['url'], top['title'][:60])}</small>" if top else ""
+    return f"<span class='st {cls}'>{lab}</span>{head}"
+
+
+def _news_section(res: dict) -> str:
+    info = res.get("news")
+    if not info:
+        return ""
+    e = html.escape
+    li = []
+    for r in res.get("focus", []):
+        for x in (r.get("news") or {}).get("top", [])[:2]:
+            li.append(f"<li><b>{e(r['coin'])}</b> 焦點・[{e(x['type_zh'])}] {_link(x['url'], x['title'])}"
+                      f"（{e(x['source'])}，{e(x['time_utc'])} UTC）</li>")
+    for a in res.get("avoid", []):
+        for x in (a.get("news") or {}).get("top", [])[:1]:
+            li.append(f"<li><b>{e(a['coin'])}</b> <span class='st down'>避開</span>・[{e(x['type_zh'])}] "
+                      f"{_link(x['url'], x['title'])}（{e(x['source'])}，{e(x['time_utc'])} UTC）</li>")
+    macro = "".join(f"<li>{_link(m['url'], m['title'])}（{e(m['source'])}，{e(m['time_utc'])} UTC）</li>"
+                    for m in info.get("macro", [])[:5])
+    errs = "、".join(f"{e(k)}" for k in info.get("errors", {})) or "無"
+    return (f"<details open><summary>新聞催化劑（未驗證，不影響排名）</summary>"
+            f"<p class=note>來源成功：{e('、'.join(info['ok']) or '無')}；失敗：{errs}；共 {info['items']} 則。</p>"
+            f"<ul>{''.join(li) or '<li>沒有焦點或避開的幣</li>'}</ul>"
+            + (f"<p><b>總經 / 全市場</b></p><ul>{macro}</ul>" if macro else "") + "</details>")
+
+
 def _m(x):
     return f"{x / 1e9:.2f}B" if x >= 1e9 else f"{x / 1e6:.0f}M"
 
@@ -49,7 +92,8 @@ def render(res: dict, session: str = "") -> str:
             f"<td>{_m(r.get('qv_total_24h', m['qv_24h']))}</td><td>{m['range_pct']:.1f}%</td>"
             f"<td>{m['er4h']:.3f}</td><td>{m['chop_rate'] * 100:.0f}%</td><td>{m['vr4h']:.2f}</td>"
             f"<td>{m['rvol']:.2f}</td><td>{imp}</td><td>{fund}</td>"
-            f"<td class='l st {cls}'>{lab}</td><td class=warn>{e('；'.join(r.get('warnings', [])))}</td></tr>")
+            f"<td class='l st {cls}'>{lab}</td><td class=l>{_news_cell(r.get('news'))}</td>"
+            f"<td class=warn>{e('；'.join(r.get('warnings', [])))}</td></tr>")
     rej = "".join(f"<li><b>{e(x['coin'])}</b>：{e('；'.join(x['why']))}</li>" for x in res["rejected"][:300])
     bench = "、".join(f"{e(r['coin'])}（{r['score']:.0f}）" for r in res["bench"])
     errs = "".join(f"<p class=warn>{e(k)}：{e(v)}</p>" for k, v in res["errors"].items())
@@ -59,7 +103,7 @@ def render(res: dict, session: str = "") -> str:
 <div class=sub>{e(res['exchange'])}・資料到 {e(res['data_until_utc'] or '')} UTC・回看 {res['lookback_days']} 天・
 宇宙 {res['universe']} 個合約 → 分析 {res['analysed']} → 合格 {res['passed']}</div>{errs}
 <div class=wrap><table><thead><tr><th>#</th><th class=l>幣（各交易所 24h 額）</th><th>分數</th><th>24h 額</th><th>日振幅</th>
-<th>4h ER</th><th>盤整率</th><th>VR</th><th>RVOL</th><th>滑價 bp</th><th>資金費</th><th class=l>近 4h</th><th class=l>提醒</th></tr></thead>
+<th>4h ER</th><th>盤整率</th><th>VR</th><th>RVOL</th><th>滑價 bp</th><th>資金費</th><th class=l>近 4h</th><th class=l>新聞</th><th class=l>提醒</th></tr></thead>
 <tbody>{''.join(rows)}</tbody></table></div>
 <p class=note>4h ER：4 小時區塊的淨移動 ÷ 價格走過的路（隨機漫步約 0.25）。盤整率：過去 14 天 ER 低於
 {res['config']['chop_er']} 的 4 小時區塊比例。VR：4 小時變異數比（&gt;1 偏趨勢）。RVOL：最近 24h 成交額 ÷ 平常。
@@ -67,6 +111,7 @@ def render(res: dict, session: str = "") -> str:
 <p class=note><b>這份清單能做到與做不到的事</b>（Binance 全部 USDT 永續、保留期 2026-06 → 11 驗證）：門檻把加密貨幣隔天的盤整率
 從 49% 降到 37%（排除死幣與極低流動性的幣）；前 10 名隔天每 4 小時淨移動比合格幣平均大約 29%；但前 10 名的盤整率沒有比其他
 合格幣低。約 1/3 的 4 小時區段會盤整是短線加密貨幣的常態，選幣消不掉。{e(session)} 不是投資建議。</p>
+{_news_section(res)}
 <details><summary>候補（{len(res['bench'])}）</summary><p>{bench or '–'}</p></details>
 <details><summary>不合格（{len(res['rejected'])}）</summary><ul>{rej}</ul></details>
 <script type=application/json id=data>{e(json.dumps(res['watchlist'], ensure_ascii=False))}</script>

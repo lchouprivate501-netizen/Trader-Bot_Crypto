@@ -21,12 +21,109 @@
   "top": 15,
   "session_chop_pct": {
     "_note": "UTC 4 小時時段的隔天盤整率 %（[研發期 2025-11-15→2026-05-31, 保留期 2026-06-01→2026-11-15]，合格幣，排除非加密合約，research.py intraday）。只用來提醒時段，不參與評分。",
-    "00-04": [36.2, 35.6],
-    "04-08": [39.4, 37.7],
-    "08-12": [37.2, 37.9],
-    "12-16": [35.6, 33.9],
-    "16-20": [36.4, 38.0],
-    "20-24": [38.8, 36.8]
+    "00-04": [
+      36.2,
+      35.6
+    ],
+    "04-08": [
+      39.4,
+      37.7
+    ],
+    "08-12": [
+      37.2,
+      37.9
+    ],
+    "12-16": [
+      35.6,
+      33.9
+    ],
+    "16-20": [
+      36.4,
+      38.0
+    ],
+    "20-24": [
+      38.8,
+      36.8
+    ]
+  },
+  "news": {
+    "_note": "新聞催化劑（screener/news_catalyst.py）。未驗證：weights.catalyst 預設 0，只用來標記 焦點 / 避開 與剔除交易所公告下架的合約。官方公告 > 媒體 > 聚合器。",
+    "lookback_hours": 48,
+    "fresh_hours": 24,
+    "half_life_hours": 12,
+    "hack_avoid_hours": 72,
+    "max_coins_per_item": 4,
+    "tier_weight": {
+      "official": 1.0,
+      "media": 0.7,
+      "aggregator": 0.4
+    },
+    "ambiguous_tickers": [
+      "TRUMP",
+      "PEOPLE",
+      "ONE",
+      "MOVE",
+      "GAS",
+      "SUN",
+      "MEME",
+      "AI",
+      "OP",
+      "W",
+      "IP",
+      "OM",
+      "ME",
+      "PUMP",
+      "BANK",
+      "COOKIE",
+      "MAGIC",
+      "ACT",
+      "HOOK",
+      "EDGE",
+      "FUN",
+      "SAFE",
+      "REAL",
+      "TRUST"
+    ],
+    "feeds": [
+      {
+        "name": "bybit",
+        "kind": "bybit",
+        "tier": "official",
+        "url": "https://api.bybit.com/v5/announcements/index?locale=en-US&limit=50"
+      },
+      {
+        "name": "okx",
+        "kind": "okx",
+        "tier": "official",
+        "url": "https://www.okx.com/api/v5/support/announcements"
+      },
+      {
+        "name": "coindesk",
+        "kind": "rss",
+        "tier": "media",
+        "url": "https://www.coindesk.com/arc/outboundfeeds/rss/"
+      },
+      {
+        "name": "theblock",
+        "kind": "rss",
+        "tier": "media",
+        "url": "https://www.theblock.co/rss.xml"
+      },
+      {
+        "name": "cointelegraph",
+        "kind": "rss",
+        "tier": "media",
+        "url": "https://cointelegraph.com/rss"
+      },
+      {
+        "name": "decrypt",
+        "kind": "rss",
+        "tier": "media",
+        "url": "https://decrypt.co/feed"
+      }
+    ],
+    "cryptopanic_url": "https://cryptopanic.com/api/developer/v2/posts/?auth_token={token}&public=true&kind=news",
+    "_note_ambiguous": "大寫整字出現時也常常不是指幣的代號（人名、一般英文）：只有 $TRUMP、(TRUMP)、TRUMPUSDT 這種寫法才算。"
   },
   "weights": {
     "_note": "研發期 2025-11-15 → 2026-05-31 依事前登記規則選出（references/intraday-screener-protocol.md）：對隔天 4h 淨移動 IC t ≥ 2、且對盤整率沒有顯著變差；振幅 / 15m ATR / 4h 淨移動三者相關 > 0.96 只留 move4h。等權重。",
@@ -40,6 +137,8 @@
     "move4h": 1,
     "rvol": 1,
     "expansion": 1,
-    "abs_chg": 1
+    "abs_chg": 1,
+    "catalyst": 0,
+    "_note_catalyst": "新聞催化劑未驗證，權重 0（不影響排名）。等 research.py forward 依事前登記的條件通過後，才能當成新版本改權重。"
   }
 }

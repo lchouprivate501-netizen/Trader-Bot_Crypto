@@ -1,0 +1,74 @@
+{
+  "prompt_version": "daily-watchlist v1.0 (2026-11-17)",
+  "generated_utc": "2026-11-18 00:41",
+  "generated_taipei": "2026-11-18 08:41",
+  "scan_file": "~/.intraday-screener/runs/2026-11-18/scan-0035Z.json",
+  "exchange": "binance",
+  "data_until_utc": "2026-11-18 00:30",
+  "data_status": {
+    "exchange_fallback": [],
+    "news_sources_failed": ["okx: HTTP 403"],
+    "web_search": "ok",
+    "notes": "範例檔：內容是虛構的，只示範格式。"
+  },
+  "focus": ["SUI"],
+  "watch": ["DOGE", "BNB", "TAO"],
+  "avoid": ["XYZ"],
+  "coins": [
+    {
+      "coin": "SUI",
+      "tier": "FOCUS",
+      "screener_score": 68,
+      "screener_news_tag": "FOCUS",
+      "passed_gates": true,
+      "reason_zh": "焦點：通過門檻；24 小時內有 2 家不同 T2 媒體確認的上線消息；無避開條件",
+      "catalysts": [
+        {
+          "type": "listing",
+          "direction": "pos",
+          "confirmed": true,
+          "published_utc": "2026-11-17 22:10",
+          "event_time_utc": "2026-11-18 10:00",
+          "summary_zh": "（範例）某交易所宣布 11/18 18:00 台北時間上線 SUI 永續合約",
+          "sources": [
+            {"url": "https://example.com/a", "outlet": "CoinDesk", "tier": "T2"},
+            {"url": "https://example.com/b", "outlet": "The Block", "tier": "T2"}
+          ]
+        }
+      ]
+    },
+    {
+      "coin": "DOGE",
+      "tier": "WATCH",
+      "screener_score": 74,
+      "screener_news_tag": null,
+      "passed_gates": true,
+      "reason_zh": "觀察：48 小時內沒找到催化劑",
+      "catalysts": []
+    },
+    {
+      "coin": "XYZ",
+      "tier": "AVOID",
+      "screener_score": null,
+      "screener_news_tag": "AVOID",
+      "passed_gates": false,
+      "reason_zh": "避開（條款 1）：交易所官方公告下架，篩選器已剔除",
+      "catalysts": [
+        {
+          "type": "delisting",
+          "direction": "neg",
+          "confirmed": true,
+          "published_utc": "2026-11-17 09:00",
+          "event_time_utc": "2026-11-20 08:00",
+          "summary_zh": "（範例）交易所公告 11/20 下架 XYZUSDT 永續合約",
+          "sources": [{"url": "https://example.com/c", "outlet": "Bybit 公告", "tier": "T1"}]
+        }
+      ]
+    }
+  ],
+  "macro_events": [
+    {"name": "（範例）美國 CPI", "time_utc": "2026-11-18 13:30", "time_taipei": "2026-11-18 21:30", "session_utc": "12-16",
+     "source_url": "https://example.com/d", "confirmed": true}
+  ],
+  "disagreements": ["程式把 TAO 標為 有新聞，AI 判斷是行情回顧文章、不是催化劑，列為觀察"]
+}

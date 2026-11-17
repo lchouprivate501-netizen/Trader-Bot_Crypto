@@ -266,6 +266,8 @@ def gate(row: dict, cfg: dict) -> list[str]:
     m = row["metrics"]
     if base_key(row["base"]) in PEGGED:
         why.append("穩定幣/錨定資產")
+    if (row.get("news") or {}).get("delisting"):
+        why.append("交易所公告下架：合約即將終止")
     if base_key(row["base"]) in NON_CRYPTO or row.get("non_crypto"):
         why.append("不是加密貨幣（指數 / 股票 / ETF / 商品 / 外匯合約）")
     else:  # 備援：清單沒有的新合約，看週末是否像股票一樣冷清
@@ -330,6 +332,8 @@ FACTORS = {
     "expansion": (lambda m: m["expansion"], "振幅擴張 3天/14天"),
     "liquidity": (lambda m: math.log(m["qv_med"]) if m["qv_med"] > 0 else None, "成交額中位數"),
     "abs_chg": (lambda m: abs(m["chg_24h_pct"]), "|24h 漲跌|"),
+    # 新聞催化劑（--news）：未驗證，config 權重 0。歷史研究沒有新聞資料，這裡回傳 None（排名時給中間值）。
+    "catalyst": (lambda m: m.get("catalyst_score"), "新聞催化劑（未驗證）"),
 }
 
 
@@ -771,8 +775,8 @@ def _analyse(src, item: dict, cfg: dict, n_bars: int, end_ms: int | None, btc_da
 
 
 def scan(cfg: dict, exchange: str = "binance", top: int | None = None, symbols: list | None = None,
-         quiet: bool = False, workers: int = 8) -> dict:
-    """主流程：取宇宙 → 用 24h 成交額預篩 → 抓 K 線算指標 → 硬門檻 → 掛單簿（只看前段班）→ 評分。"""
+         quiet: bool = False, workers: int = 8, news: bool = False) -> dict:
+    """主流程：取宇宙 → 用 24h 成交額預篩 → 抓 K 線算指標 →（新聞催化劑）→ 硬門檻 → 掛單簿（只看前段班）→ 評分。"""
     top = top or cfg["top"]
     n_bars = cfg["lookback_days"] * BARS_PER_DAY + 8
     names = list(SOURCES) if exchange == "all" else [exchange]
@@ -830,6 +834,20 @@ def scan(cfg: dict, exchange: str = "binance", top: int | None = None, symbols: 
 
     with ThreadPoolExecutor(sum(getattr(s, "workers", workers) for s in srcs)) as pool:
         rows = list(pool.map(work, merged))
+    news_info = None
+    if news:
+        import news_catalyst as nc  # noqa: PLC0415
+        _log("讀取新聞與交易所公告（Bybit、OKX、媒體 RSS）…", quiet)
+        items, nerr, nok = nc.fetch_all(cfg)
+        per, macro = nc.annotate(items, [r["coin"] for r in rows], cfg)
+        for r in rows:
+            if per.get(r["coin"]):
+                r["news"] = per[r["coin"]]
+            if r.get("metrics"):
+                r["metrics"]["catalyst_score"] = (per[r["coin"]]["score"] if r["coin"] in per else 0.0) if nok else None
+        news_info = {"ok": nok, "errors": nerr, "items": len(items), "macro": macro}
+        if not nok:
+            _log("  ! 所有新聞來源都失敗，這次沒有催化劑資料：" + "；".join(f"{k}: {v}" for k, v in nerr.items()), quiet)
     for r in rows:
         if r.get("metrics") and "reject" not in r:
             r["reject"] = gate(r, cfg)
@@ -862,6 +880,8 @@ def scan(cfg: dict, exchange: str = "binance", top: int | None = None, symbols: 
                 r["now"] = intraday_state(r["_bars"], r["_days"], cfg)
             requested.append({**(public_row(r) if r.get("metrics") else {"coin": r["coin"]}), "reject": r["reject"]})
     end = max((r.get("end_ms") or 0) for r in rows) if rows else None
+    focus = [r for r in passed if (r.get("news") or {}).get("tag") == "FOCUS"]
+    avoid = [r for r in rows if (r.get("news") or {}).get("tag") == "AVOID"]
     return {
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
         "data_until_utc": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d %H:%M") if end else None,
@@ -871,6 +891,9 @@ def scan(cfg: dict, exchange: str = "binance", top: int | None = None, symbols: 
         "bench": [public_row(r) for r in passed[top:]],
         "rejected": [{"coin": r["coin"], "exchange": r["exchange"], "why": r["reject"]} for r in rows if r["reject"]],
         "requested": requested,
+        "news": news_info,
+        "focus": [public_row(r) for r in focus],
+        "avoid": [{"coin": r["coin"], "reject": r.get("reject") or [], "news": compact_news(r["news"])} for r in avoid],
         "config": {k: v for k, v in cfg.items() if not k.startswith("_")},
     }
 
@@ -889,7 +912,21 @@ def warnings_for(r: dict, cfg: dict) -> list[str]:
         w.append("振幅接近過熱上限：停損要放寬、部位要縮小")
     if m.get("btc_corr") is not None and m["btc_corr"] >= cfg["btc_corr_warn"] and r.get("coin") != "BTC":
         w.append(f"和 BTC 相關 {m['btc_corr']:.2f}：走勢大致跟著 BTC，先看 BTC")
+    n = r.get("news") or {}
+    if n.get("hack"):
+        w.append("駭客 / 漏洞新聞（72 小時內）：跳空與流動性突然消失的風險")
+    for t, msg in (("unlock", "代幣解鎖新聞：留意賣壓的時間點"), ("regulation", "監管 / 訴訟新聞：結果未定，消息面可能反覆")):
+        if t in n.get("types", []):
+            w.append(msg)
     return w
+
+
+def compact_news(n: dict | None) -> dict | None:
+    if not n:
+        return None
+    return {"tag": n["tag"], "score": n["score"], "n_fresh": n["n_fresh"], "types": n["types"], "sources": n["sources"],
+            "top": [{k: x[k] for k in ("type_zh", "direction", "time_utc", "source", "tier", "title", "url")}
+                    for x in n["top"][:3]]}
 
 
 def public_row(r: dict) -> dict:
@@ -897,6 +934,8 @@ def public_row(r: dict) -> dict:
     keep = ("coin", "exchange", "symbol", "last", "qv_total_24h", "venues", "funding", "spread_bps", "impact_bps",
             "score", "factors", "warnings", "now", "age_days")
     out = {k: r.get(k) for k in keep if r.get(k) is not None}
+    if r.get("news"):
+        out["news"] = compact_news(r["news"])
     out["metrics"] = {k: (round(v, 4) if isinstance(v, float) else v) for k, v in m.items()}
     return out
 
@@ -920,7 +959,7 @@ def print_table(res: dict, show_bench: int = 10) -> None:
         for k, v in res["errors"].items():
             print(f"  ! {k}: {v}")
     hdr = (f"{'#':>2} {'幣':<10}{'分數':>5} {'24h額':>7} {'日振幅':>6} {'4hER':>5} {'盤整率':>6} {'VR':>5} "
-           f"{'RVOL':>5} {'滑價':>5} {'近4h':<6} 提醒")
+           f"{'RVOL':>5} {'滑價':>5} {'近4h':<6} {'新聞':<4} 提醒")
     print(hdr)
     print("-" * len(hdr.encode("utf-8")))
     for i, r in enumerate(res["watchlist"], 1):
@@ -928,9 +967,10 @@ def print_table(res: dict, show_bench: int = 10) -> None:
         imp = f"{r['impact_bps']:.1f}" if r.get("impact_bps") is not None else "-"
         now = STATE_ZH.get(r.get("now", {}).get("state"), "")
         warn = "；".join(w.split("：")[0] for w in r.get("warnings", []))
+        tag = TAG_ZH.get((r.get("news") or {}).get("tag"), "")
         print(f"{i:>2} {r['coin']:<10}{r['score']:>5.0f} {_m(r.get('qv_total_24h', m['qv_24h'])):>7} "
               f"{m['range_pct']:>5.1f}% {m['er4h']:>5.3f} {m['chop_rate'] * 100:>5.0f}% {m['vr4h']:>5.2f} "
-              f"{m['rvol']:>5.2f} {imp:>5} {now:<6} {warn}")
+              f"{m['rvol']:>5.2f} {imp:>5} {now:<6} {tag:<4} {warn}")
     if show_bench and res["bench"]:
         print("候補：" + "、".join(f"{r['coin']}({r['score']:.0f})" for r in res["bench"][:show_bench]))
     print("\n欄位：4hER＝4 小時區塊效率比（淨移動 / 走過的路；隨機漫步約 0.25）；盤整率＝ER<門檻的 4 小時區塊比例"
@@ -942,6 +982,7 @@ def print_table(res: dict, show_bench: int = 10) -> None:
     hint = session_hint(res.get("config", {}))
     if hint:
         print(hint)
+    print_news(res)
 
 
 def session_hint(cfg: dict, at_ms: float | None = None) -> str:
@@ -975,6 +1016,43 @@ def print_now(rows: list, cfg: dict) -> None:
         print(hint)
 
 
+def write_log(res: dict, root: str) -> str:
+    """前向驗證紀錄：<root>/<資料截止的 UTC 日期>/scan-<HHMM>Z.json（完整結果，含所有合格幣與新聞）。"""
+    stamp = (res.get("data_until_utc") or res["generated_utc"]).replace(":", "")
+    day, hm = stamp.split(" ")
+    d = Path(root).expanduser() / day
+    d.mkdir(parents=True, exist_ok=True)
+    path = d / f"scan-{hm}Z.json"
+    path.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    return str(path)
+
+
+def print_news(res: dict, rows: list | None = None) -> None:
+    info = res.get("news")
+    if not info:
+        return
+    print(f"\n新聞來源：成功 {', '.join(info['ok']) or '無'}；失敗 {', '.join(info['errors']) or '無'}；共 {info['items']} 則"
+          "（新聞催化劑未驗證，不影響分數排名）")
+    rows = rows if rows is not None else res["focus"]
+    label = "今日焦點（合格 + 24 小時內有份量的催化劑）" if rows is res["focus"] else "指定幣的新聞"
+    if rows:
+        print(label + "：")
+    for r in rows:
+        n = r.get("news")
+        if not n:
+            continue
+        print(f"  {r['coin']:<8}{TAG_ZH.get(n['tag'], n['tag'])}  " + "；".join(
+            f"[{x['type_zh']}] {x['title'][:70]}（{x['source']} {x['time_utc'][5:]} UTC）" for x in n["top"][:2]))
+    for a in res.get("avoid", []):
+        top = (a.get("news") or {}).get("top") or [{}]
+        print(f"  避開 {a['coin']:<8}{top[0].get('type_zh', '')}：{top[0].get('title', '')[:80]}")
+    for m in info.get("macro", [])[:3]:
+        print(f"  總經 {m['time_utc'][5:]} UTC {m['source']}：{m['title'][:90]}")
+
+
+TAG_ZH = {"FOCUS": "焦點", "AVOID": "避開", "NEWS": "有新聞", "OLD": "舊聞"}
+
+
 def main(argv: list | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -984,7 +1062,10 @@ def main(argv: list | None = None) -> int:
         p.add_argument("--config", help="覆寫設定的 JSON 檔（只寫要改的欄位）")
         p.add_argument("--json", help="結果寫成 JSON")
         p.add_argument("--quiet", action="store_true")
+        p.add_argument("--news", action="store_true", help="加上新聞催化劑（交易所公告、媒體 RSS；未驗證，不影響排名）")
         if name == "scan":
+            p.add_argument("--log", nargs="?", const=str(Path.home() / ".intraday-screener" / "runs"),
+                           help="把結果存進 <目錄>/<UTC 日期>/（前向驗證用；預設 ~/.intraday-screener/runs）")
             p.add_argument("--top", type=int)
             p.add_argument("--html", help="結果寫成 HTML 頁")
         else:
@@ -993,16 +1074,20 @@ def main(argv: list | None = None) -> int:
     cfg = load_config(args.config)
     try:
         if args.cmd == "scan":
-            res = scan(cfg, args.exchange, args.top, quiet=args.quiet)
+            res = scan(cfg, args.exchange, args.top, quiet=args.quiet, news=args.news)
             print_table(res)
+            if args.log:
+                print(f"紀錄：{write_log(res, args.log)}")
             if args.html:
                 import screener_html  # noqa: PLC0415
                 Path(args.html).write_text(screener_html.render(res, session_hint(cfg)), encoding="utf-8")
                 print(f"HTML：{args.html}")
         else:
-            res = scan(cfg, args.exchange, top=len(args.coins), symbols=args.coins, quiet=args.quiet)
+            res = scan(cfg, args.exchange, top=len(args.coins), symbols=args.coins, quiet=args.quiet, news=args.news)
             rows = res["requested"]
             print_now([r for r in rows if r.get("now")], cfg)
+            if args.news:
+                print_news(res, rows)
             for r in rows:
                 if r["reject"]:
                     print(f"  ! {r['coin']} 沒通過篩選門檻：{'；'.join(r['reject'])}")

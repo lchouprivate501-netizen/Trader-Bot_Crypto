@@ -10,13 +10,14 @@ Details are in Traditional Chinese.
 | 路徑 | 內容 | AI 先讀 |
 |---|---|---|
 | `skills/freqai-ea-trading/` | 合約 EA（ETH、SOL 主要策略）與現貨 EA（BTC 主要策略），Freqtrade + FreqAI、事前登記驗證；EA 交易台與 MCP 伺服器、研發/回測/圖表工具、維護引擎、Docker 部署 | [`AGENTS.md`](skills/freqai-ea-trading/AGENTS.md)（交易）、[`SKILL.md`](skills/freqai-ea-trading/SKILL.md)（全部功能） |
-| `skills/freqai-ea-trading/screener/` | 全網加密貨幣日內篩選器（Binance / Bybit / OKX USDT 永續）：流動性、波動、非加密排除、滑價、評分；事前登記驗證 | [`intraday-screener.md`](skills/freqai-ea-trading/references/intraday-screener.md) |
+| `skills/freqai-ea-trading/screener/` | 全網加密貨幣日內篩選器（Binance / Bybit / OKX USDT 永續）：流動性、波動、非加密排除、滑價、評分；事前登記驗證；新聞催化劑（未驗證）與排程 Prompt（`prompts/`） | [`intraday-screener.md`](skills/freqai-ea-trading/references/intraday-screener.md) |
 | `agents/ea-maintainer.md` | EA 維護 Agent（每週健康檢查、診斷、改版流程） | 該檔 |
 | `.claude-plugin/` | Claude Code 外掛 `freqai-crypto-trading` 與外掛市集清單 | — |
 
 - 使用者要你「依 EA 交易」「執行 EA」「跑一輪交易台」：讀 `skills/freqai-ea-trading/AGENTS.md`，用 MCP 伺服器 `freqai-ea-desk` 或 `python3 skills/freqai-ea-trading/desk/ea_desk.py` 指令。
 - 使用者問 EA 還有沒有效：照 `agents/ea-maintainer.md` 做例行檢查。
-- 使用者要找「適合日內交易的幣」：`python3 skills/freqai-ea-trading/screener/intraday_screener.py scan`（連不到 Binance 用 `--exchange bybit`／`okx`／`archive`）。回報時說清楚：清單挑的是流動性夠、會動的幣，驗證顯示它**不能**預測哪個幣會盤整；「近4h」只是描述。
+- 使用者要找「適合日內交易的幣」：`python3 skills/freqai-ea-trading/screener/intraday_screener.py scan`（連不到 Binance 用 `--exchange bybit`／`okx`／`archive`；加 `--news` 看新聞催化劑）。回報時說清楚：清單挑的是流動性夠、會動的幣，驗證顯示它**不能**預測哪個幣會盤整；「近4h」只是描述；新聞「焦點」尚未驗證（權重 0，前向驗證中）。
+- 排程每天自動跑篩選與新聞：照 [`screener/prompts/README.md`](skills/freqai-ea-trading/screener/prompts/README.md)（每日清單、盤前更新、每週檢討）。排程跑的時候只做研究與報告，不下單、不改 `screener/config.json`。
 - 使用者想「看」系統在做什麼：請他執行 `python3 skills/freqai-ea-trading/desk/console.py --open`（AI 交易辦公室）。
 - 安裝到各家 AI：[`references/ai-agents.md`](skills/freqai-ea-trading/references/ai-agents.md)。
 

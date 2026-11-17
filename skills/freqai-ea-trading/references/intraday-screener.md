@@ -27,7 +27,11 @@ python3 $SK/intraday_screener.py scan --exchange archive       # 交易所 API �
 python3 $SK/intraday_screener.py now SOL DOGE SUI              # 幾個幣剛剛 4 小時的盤勢 + 目前時段的歷史盤整率
 python3 $SK/intraday_screener.py scan --json out.json --html out.html
 python3 $SK/intraday_screener.py scan --config my.json         # 覆寫門檻（只寫要改的欄位，例如 {"min_median_qv_usdt": 50000000}）
+python3 $SK/intraday_screener.py scan --news --log             # 加新聞催化劑（未驗證、不影響排名）並存紀錄供前向驗證
+python3 $SK/news_catalyst.py SOL DOGE                          # 只看幾個幣最近 48 小時的催化劑
 ```
+
+每天自動跑（AI 讀新聞、分級、寫報告、累積驗證資料）：見 [`screener/prompts/README.md`](../screener/prompts/README.md)。
 
 一次 `scan`（Binance）大約 150–300 次公開 API 請求，已內建限速（Binance 1,500 權重 / 分鐘，官方上限 2,400），約 1–3 分鐘。OKX 的歷史 K 線每次只給 100 根，`--exchange okx` / `all` 會比較慢。
 
@@ -70,6 +74,24 @@ python3 $SK/intraday_screener.py scan --config my.json         # 覆寫門檻（
 ### 3. 近 4 小時盤勢與時段
 
 `now` 與清單的「近4h」欄描述剛剛 4 小時（最後 16 根 15 分鐘 K）：ER < 0.15 → 來回洗；ER ≥ 0.35 且振幅不低於平常 → 單邊；振幅不到平常 4 小時中位數的一半 → 收斂；其他 → 偏多 / 偏空。另附目前 UTC 時段的歷史盤整率（`config.json` 的 `session_chop_pct`，下表）。
+
+### 4. 新聞催化劑（`--news`，未驗證）
+
+`screener/news_catalyst.py` 抓 Bybit 與 OKX 的官方公告、CoinDesk / The Block / Cointelegraph / Decrypt 的 RSS（有 `CRYPTOPANIC_TOKEN` 環境變數再加 CryptoPanic），把每則新聞對應到幣（`$SOL`、`(SUI)`、`PEPEUSDT`、`news_aliases.json` 的名稱、大寫代號整字；SEC、ETF 這類縮寫與 TRUMP 這類容易混淆的代號另外處理；一次提到 5 個以上幣的行情回顧不算），依關鍵字分類，再依來源層級（官方 1.0、媒體 0.7、聚合 0.4）× 影響（1–3）× 時間衰減（半衰期 12 小時，只看 48 小時內）打分。Binance 的公告沒有正式公開 API，所以不抓。
+
+| 類型 | 方向（一般解讀） | 影響 | 對篩選器的作用 |
+|---|---|---|---|
+| 下架 | 負 | 3 | 官方公告，或兩家媒體報導 → **剔除**（合約要終止）；只有一家媒體 → 避開 |
+| 駭客 / 漏洞 | 負 | 3 | 72 小時內 → 避開 + 提醒 |
+| 上線、ETF | 正 | 2 | 24 小時內 → 焦點 |
+| 監管 / 訴訟 | 不定 | 2 | 提醒 |
+| 代幣解鎖 | 負 | 2 | 提醒 |
+| 總經（CPI、FOMC、Fed…） | 不定 | 2 | 沒有對應幣 → 列在「總經 / 全市場」 |
+| 升級、合作、空投 / 銷毀、資金流、交易所調整 | — | 1 | 計分 |
+
+標記：**焦點**＝通過門檻 + 24 小時內有影響 ≥ 2 的非負面催化劑，或 2 個以上來源；**避開**＝下架 / 駭客；**有新聞**＝24 小時內有其他新聞；**舊聞**＝24–48 小時。
+
+**催化劑的分數權重是 0**：不改變排名，只做標記、剔除下架合約、寫進紀錄。原因是歷史新聞在這個環境拿不到，無法回測；改用前向驗證（下面「新聞催化劑的前向驗證」），條件已事前登記在協議裡。Bybit / OKX / RSS / CryptoPanic 的介面依官方文件或常見格式實作、用模擬回應測試，**沒有在這個環境實際連線過**（全部被擋）。
 
 ## 驗證
 
@@ -161,6 +183,14 @@ UTC 12–16 兩期都是最少盤整的時段（比平均低約 2–3 個百分�
 3. **時段**：UTC 12–16（台北 20:00–24:00）兩期都最少盤整；台北中午到下午（UTC 04–08）偏多。
 4. **預期大約 1/3 的 4 小時視窗會盤整**，事前看不出來。進場後的處理方式（停損、出場、要不要時間停損）要配合你自己的進場規則回測，這份研究沒有驗證任何出場規則。
 
+## 新聞催化劑的前向驗證
+
+`scan --news --log` 每天把完整結果存進 `~/.intraday-screener/runs/<UTC 日期>/`，排程的 AI 另外寫 `ai_report.json`（焦點 / 避開）。`research.py forward` 對每天最早的一次紀錄，用 Binance 歷史資料庫量測之後 24 小時的盤整率與 4 小時淨移動，比較：全部合格、篩選器前 10、有 24h 內新聞、沒有新聞、程式焦點、AI 焦點、AI 避開。
+
+判定條件（協議「新聞催化劑的前向驗證」）：焦點組至少 60 個交易日；盤整率低於合格平均且 ≥ 55% 的天數成立（HN1 / HA1）、4 小時淨移動 ≥ 合格平均（HN2 / HA2）。兩條都過才可以登記新版本、給催化劑權重，再驗證一次；在那之前權重維持 0。
+
+目前狀態：**0 天**（2026-11-17 開始可以累積）。
+
 ## 限制
 
 - 只用 Binance 的資料驗證。Bybit、OKX 的介面依官方文件格式實作、用模擬回應測試（`test_screener.py`），本環境連不到它們的 API，沒有實際連線測試過。
@@ -169,6 +199,7 @@ UTC 12–16 兩期都是最少盤整的時段（比平均低約 2–3 個百分�
 - 盤整的定義是 15 分鐘收盤價、4 小時區塊、ER < 0.15。用其他週期（例如 5 分鐘、1 小時）交易的人，結果可能不同。
 - 期間 2025-11 → 2026-11 大部分是熊市；牛市或極端事件期間的表現沒有被測到。
 - 決策時點固定在 UTC 00:00；即時模式用「最近 24 小時」滾動切段，概念相同但時點不同。
+- 新聞催化劑沒有歷史驗證；新聞與幣的對應是關鍵字規則，會有漏抓與誤配（例如同名的人或公司），AI 層的人工判讀用來補這個缺口。
 
 ## 重跑驗證
 
@@ -179,7 +210,8 @@ python3 $SK/research.py factors  --from 2025-11-15 --until 2026-05-31
 python3 $SK/research.py evaluate --from 2026-06-01 --until 2026-11-15
 python3 $SK/research.py intraday --from 2026-06-01 --until 2026-11-15
 python3 $SK/research.py gates    --from 2026-06-01 --until 2026-11-15
-python3 $SK/test_screener.py                                                       # 72 項離線測試
+python3 $SK/research.py forward  --log ~/.intraday-screener/runs                   # 新聞催化劑的前向驗證（累積 60 天後才判定）
+python3 $SK/test_screener.py                                                       # 133 項離線測試
 ```
 
 結果檔：`references/results/screener_{dev,holdout}_{factors,eval,intraday,gates}.json`；保留期第一次執行（含股票合約）是 `screener_holdout_*_run1.json`。

@@ -13,6 +13,7 @@
   python3 research.py evaluate --from 2026-06-01                               # 保留期：前 K 名 vs 對照組
   python3 research.py intraday --from 2026-06-01                               # 盤中狀態、時段、星期
   python3 research.py gates    --until 2026-05-31                              # 成交額、振幅門檻的效果
+  python3 research.py forward  --log ~/.intraday-screener/runs                 # 前向驗證：scan --log 的紀錄 vs 之後 24 小時
 """
 from __future__ import annotations
 
@@ -395,6 +396,136 @@ def cmd_gates(a, cfg) -> dict:
     return out
 
 
+# ----------------------------------------------------------------------------------------------
+# 前向驗證：排程每天跑 scan --news --log（＋AI 的 ai_report.json），之後用歷史資料庫量測「之後 24 小時」
+# 事前登記的條件：references/intraday-screener-protocol.md「新聞催化劑的前向驗證」
+# ----------------------------------------------------------------------------------------------
+
+FORWARD_MIN_DAYS = 60
+
+
+def _archive_bars(sym: str, day: str) -> list | None:
+    """某個合約某天的 15 分鐘 K（快取在 CACHE/forward/）。還沒發布回傳 None，不存在回傳 []。"""
+    d = CACHE / "forward"
+    d.mkdir(parents=True, exist_ok=True)
+    f = d / f"{sym.encode('ascii', 'backslashreplace').decode().replace(chr(92), '_')}-{day}.json"
+    if f.exists():
+        return json.loads(f.read_text())
+    bars = sc.archive_klines(sym, day)
+    if bars is None:
+        return None
+    f.write_text(json.dumps(bars))
+    return bars
+
+
+def forward_outcome(row: dict, t0: int, cfg: dict) -> dict | None:
+    """t0 之後 24 小時的結果（Binance 歷史資料庫）。Bybit / OKX 的幣用同名的 Binance 合約量測。"""
+    cands = [row["symbol"]] if row.get("exchange") in ("binance", "archive") and row.get("symbol") else []
+    cands += [f"{row['coin']}USDT", f"1000{row['coin']}USDT"]
+    days = sorted({ymd(t0 // sc.DAY_MS * sc.DAY_MS), ymd((t0 + sc.DAY_MS - 1) // sc.DAY_MS * sc.DAY_MS)})
+    for sym in dict.fromkeys(cands):
+        got = [_archive_bars(sym, d) for d in days]
+        if any(g is None for g in got):
+            continue
+        bars = sorted(b for g in got for b in g if t0 <= b[0] < t0 + sc.DAY_MS)
+        st = sc.chunk_stats(bars, t0)
+        if st and len(st["blocks"]) >= 5:
+            bl = st["blocks"]
+            return {"er4h": sum(b[0] for b in bl) / len(bl), "chop": sum(b[0] < cfg["chop_er"] for b in bl) / len(bl),
+                    "move4h": sum(b[1] for b in bl) / len(bl), "rng": st["rng"]}
+    return None
+
+
+def load_runs(root: Path) -> list[dict]:
+    """每個 UTC 日期取最早的一次 scan（避免同一天重複計算），附上同目錄的 ai_report.json（若有）。"""
+    runs = []
+    for day in sorted(p for p in root.glob("20*-*-*") if p.is_dir()):
+        scans = sorted(day.glob("scan-*Z.json"))
+        if not scans:
+            continue
+        res = json.loads(scans[0].read_text(encoding="utf-8"))
+        ai = day / "ai_report.json"
+        res["_ai"] = json.loads(ai.read_text(encoding="utf-8")) if ai.exists() else None
+        res["_file"] = str(scans[0])
+        runs.append(res)
+    return runs
+
+
+def cmd_forward(a, cfg) -> dict:
+    root = Path(a.log).expanduser()
+    runs = load_runs(root)
+    now = datetime.now(timezone.utc).timestamp() * 1000
+    groups = ["全部合格", "篩選器前 10", "有 24h 內新聞", "沒有新聞", "程式標記：焦點", "AI：焦點", "AI：避開"]
+    per_day = {g: defaultdict(list) for g in groups}
+    beat = {g: [0, 0] for g in groups}
+    pending = done = 0
+    for res in runs:
+        t0 = to_ms(res["data_until_utc"][:10]) + int(res["data_until_utc"][11:13]) * 3_600_000 + \
+            int(res["data_until_utc"][14:16]) * 60_000
+        if t0 + sc.DAY_MS > now:  # 之後 24 小時還沒走完
+            pending += 1
+            continue
+        rows = res["watchlist"] + res["bench"]
+        ys = {r["coin"]: forward_outcome(r, t0, cfg) for r in rows}
+        rows = [r for r in rows if ys.get(r["coin"])]
+        if len(rows) < 10:
+            if t0 + 4 * sc.DAY_MS > now:  # 歷史資料庫通常隔天發布，偶爾延遲
+                pending += 1
+            continue
+        done += 1
+        ai = res.get("_ai") or {}
+        ai_focus = {c.upper() for c in ai.get("focus", [])}
+        ai_avoid = {c.upper() for c in ai.get("avoid", [])}
+        top = {r["coin"] for r in sorted(rows, key=lambda r: -r.get("score", 0))[:10]}
+        members = {
+            "全部合格": rows,
+            "篩選器前 10": [r for r in rows if r["coin"] in top],
+            "有 24h 內新聞": [r for r in rows if (r.get("news") or {}).get("n_fresh", 0) > 0],
+            "沒有新聞": [r for r in rows if not r.get("news")],
+            "程式標記：焦點": [r for r in rows if (r.get("news") or {}).get("tag") == "FOCUS"],
+            "AI：焦點": [r for r in rows if r["coin"] in ai_focus],
+            "AI：避開": [r for r in rows if r["coin"] in ai_avoid],
+        }
+        base_chop = statistics.mean(ys[r["coin"]]["chop"] for r in rows)
+        for g, rs in members.items():
+            if not rs:
+                continue
+            for y in OUTCOMES:
+                per_day[g][y].append(statistics.mean(ys[r["coin"]][y] for r in rs))
+            beat[g][1] += 1
+            beat[g][0] += statistics.mean(ys[r["coin"]]["chop"] for r in rs) < base_chop
+    out = {"runs": len(runs), "evaluated_days": done, "pending": pending, "groups": {}}
+    print(f"紀錄 {len(runs)} 天（{root}）：已量測 {done} 天，等待歷史資料 {pending} 天。")
+    print(f"{'組別':<16}{'天數':>5}{'盤整率':>8}{'4h淨移動':>9}{'4h ER':>7}{'盤整少於合格平均':>14}")
+    for g in groups:
+        if not per_day[g]["chop"]:
+            print(f"{g:<16}{0:>5}  （沒有資料）")
+            continue
+        row = {y: statistics.mean(per_day[g][y]) for y in OUTCOMES}
+        row.update(days=len(per_day[g]["chop"]), days_less_chop=beat[g][0])
+        out["groups"][g] = row
+        print(f"{g:<16}{row['days']:>5}{row['chop'] * 100:>7.1f}%{row['move4h']:>8.2f}%{row['er4h']:>7.3f}"
+              f"{beat[g][0]:>8}/{beat[g][1]}")
+    # 事前登記的判定（樣本夠才判）
+    verdicts = {}
+    base = out["groups"].get("全部合格")
+    for g, key in (("程式標記：焦點", "N"), ("AI：焦點", "A")):
+        r = out["groups"].get(g)
+        if not r or not base or r["days"] < FORWARD_MIN_DAYS:
+            verdicts[g] = f"樣本不足（{r['days'] if r else 0}/{FORWARD_MIN_DAYS} 天），只描述、不判定"
+            continue
+        h1 = r["chop"] < base["chop"] and r["days_less_chop"] >= 0.55 * r["days"]
+        h2 = r["move4h"] >= base["move4h"]
+        verdicts[g] = (f"H{key}1 少盤整：{'通過' if h1 else '未通過'}；H{key}2 動得多：{'通過' if h2 else '未通過'}"
+                       + ("→ 可以登記新版本、給催化劑權重，再前向驗證一次" if h1 and h2 else "→ 權重維持 0"))
+    out["verdicts"] = verdicts
+    print("\n判定（references/intraday-screener-protocol.md「新聞催化劑的前向驗證」）：")
+    for g, v in verdicts.items():
+        print(f"  {g}：{v}")
+    print("注意：這裡的「全部合格」是排程當天的合格幣，和保留期研究的 36.7% 不是同一批日子，不能直接比。")
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -410,11 +541,16 @@ def main() -> None:
         p.add_argument("--k", type=int, default=10)
         p.add_argument("--config")
         p.add_argument("--json")
+    p = sub.add_parser("forward")
+    p.add_argument("--log", default=str(Path.home() / ".intraday-screener" / "runs"))
+    p.add_argument("--config")
+    p.add_argument("--json")
     a = ap.parse_args()
     if a.cmd == "download":
         return cmd_download(a)
     cfg = sc.load_config(a.config)
-    res = {"factors": cmd_factors, "evaluate": cmd_evaluate, "intraday": cmd_intraday, "gates": cmd_gates}[a.cmd](a, cfg)
+    res = {"factors": cmd_factors, "evaluate": cmd_evaluate, "intraday": cmd_intraday, "gates": cmd_gates,
+           "forward": cmd_forward}[a.cmd](a, cfg)
     if a.json:
         Path(a.json).write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
 

@@ -40,11 +40,16 @@ jobs:
           python -m json.tool .claude-plugin/marketplace.json > /dev/null
           python -m json.tool skills/freqai-ea-trading/desk/config.json > /dev/null
           python -m json.tool skills/freqai-ea-trading/screener/config.json > /dev/null
+          python -m json.tool skills/freqai-ea-trading/screener/news_aliases.json > /dev/null
+          python -m json.tool skills/freqai-ea-trading/screener/non_crypto.json > /dev/null
+          python -m json.tool skills/freqai-ea-trading/screener/prompts/ai_report.schema.json > /dev/null
+          python -m json.tool skills/freqai-ea-trading/screener/prompts/ai_report.example.json > /dev/null
+          bash -n skills/freqai-ea-trading/screener/persist_runs.sh
       - name: Desk + MCP integration test
         run: python skills/freqai-ea-trading/desk/test_desk.py
       - name: Desk futures test (short, leverage, funding)
         run: python skills/freqai-ea-trading/desk/test_desk_perp.py
       - name: AI office console test
         run: python skills/freqai-ea-trading/desk/test_console.py
-      - name: Intraday screener test (metrics, gates, exchange parsers, scan)
+      - name: Intraday screener test (metrics, gates, exchange parsers, scan, news, forward log, prompts)
         run: python skills/freqai-ea-trading/screener/test_screener.py

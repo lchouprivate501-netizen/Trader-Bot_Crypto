@@ -13,6 +13,7 @@ import random
 import sys
 import tempfile
 import time
+from datetime import datetime, timezone
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
@@ -316,7 +317,8 @@ def test_scan() -> None:
     chop = next(r for r in res["watchlist"] + res["bench"] if r["coin"] == "CHOP2")
     check("來回洗的幣 now = 盤整", chop.get("now", {}).get("state") in (None, "CHOP"), str(chop.get("now")))
     page = screener_html.render(res)
-    check("HTML 有清單、沒有外部資源", "TRND1" in page and "http" not in page.split("<body>")[1].split("<script")[0])
+    check("HTML 有清單、沒有外部資源（無外部 script / css）", "TRND1" in page and "<script src" not in page
+          and "<link" not in page and "http" not in page.split("<body>")[1].split("<script")[0])
     json.dumps(res, ensure_ascii=False)
     check("結果可存成 JSON", True)
 
@@ -375,6 +377,253 @@ def test_state() -> None:
     check("振幅極小但有方向 → SQUEEZE", s == "SQUEEZE", s)
 
 
+# ----------------------------------------------------------------------------------------------
+# 新聞催化劑
+# ----------------------------------------------------------------------------------------------
+
+import news_catalyst as nc  # noqa: E402
+
+NOW = 1_763_300_000_000  # 固定的「現在」（毫秒）
+
+
+def _rfc822(ms):
+    import email.utils as eu
+    return eu.format_datetime(datetime.fromtimestamp(ms / 1000, timezone.utc))
+
+
+RSS = f"""<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>X</title>
+<item><title>Bybit Will List SUI Perpetual &amp; Spot</title><link>https://ex.com/a</link>
+<pubDate>{_rfc822(NOW - 2 * 3600_000)}</pubDate><description><![CDATA[<p>New <b>listing</b> for $SUI.</p>]]></description></item>
+<item><title>Fed holds rates steady; Powell signals patience</title><link>https://ex.com/b</link>
+<pubDate>{_rfc822(NOW - 5 * 3600_000)}</pubDate></item>
+<item><title>Ancient news about DOGE</title><link>https://ex.com/c</link><pubDate>{_rfc822(NOW - 80 * 3600_000)}</pubDate></item>
+</channel></rss>""".encode()
+
+ATOM = f"""<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom">
+<entry><title>Exploit drains $12M from protocol, TAO bridge paused</title><link href="https://ex.com/d"/>
+<updated>{datetime.fromtimestamp((NOW - 3600_000) / 1000, timezone.utc).isoformat().replace("+00:00", "Z")}</updated>
+<summary>Attackers compromised the bridge.</summary></entry></feed>""".encode()
+
+
+def test_news_parsing() -> None:
+    print("新聞：解析")
+    items = nc.parse_feed(RSS, "coindesk")
+    check("RSS：三則、標題去 HTML 實體", len(items) == 3 and items[0]["title"] == "Bybit Will List SUI Perpetual & Spot")
+    check("RSS：pubDate 轉毫秒", abs(items[0]["ts"] - (NOW - 2 * 3600_000)) < 1000)
+    check("RSS：description 去掉 HTML 標籤", items[0]["summary"] == "New listing for $SUI.", items[0]["summary"])
+    a = nc.parse_feed(ATOM, "theblock")
+    check("Atom：link href、updated", len(a) == 1 and a[0]["url"] == "https://ex.com/d" and abs(a[0]["ts"] - (NOW - 3600_000)) < 1000)
+    bomb = b'<?xml version="1.0"?><!DOCTYPE x [<!ENTITY a "aaaa">]><rss><channel><item><title>&a;</title></item></channel></rss>'
+    try:
+        nc.parse_feed(bomb, "x")
+        check("含 ENTITY 的 XML 拒絕解析", False)
+    except ValueError:
+        check("含 ENTITY 的 XML 拒絕解析", True)
+    by = nc.parse_bybit({"retCode": 0, "result": {"total": 2, "list": [
+        {"title": "New Listing: XYZUSDT Perpetual Contract", "description": "", "type": {"title": "New Listings", "key": "new_crypto"},
+         "tags": ["Derivatives"], "url": "https://announcements.bybit.com/x", "dateTimestamp": NOW - 3600_000},
+        {"title": "Delisting of ABCUSDT Perpetual Contract", "description": "", "type": {"title": "Delistings", "key": "delistings"},
+         "tags": [], "url": "https://announcements.bybit.com/y", "dateTimestamp": NOW - 7200_000}]}})
+    check("Bybit 公告：type.key → 上線 / 下架", [x["hint_type"] for x in by] == ["listing", "delisting"])
+    ok1 = nc.parse_okx({"code": "0", "data": [{"details": [{"annType": "announcements-delistings", "pTime": str(NOW),
+                                                             "title": "OKX to delist ABC", "url": "https://okx.com/z"}], "totalPage": "1"}]})
+    ok2 = nc.parse_okx({"code": "0", "data": [{"annType": "announcements-new-listings", "pTime": str(NOW), "title": "OKX lists XYZ",
+                                               "url": "https://okx.com/w"}]})
+    check("OKX 公告：兩種回應形狀都能解析", ok1[0]["hint_type"] == "delisting" and ok2[0]["hint_type"] == "listing")
+    cp = nc.parse_cryptopanic({"results": [{"title": "SOL rallies", "published_at": "2026-11-16T10:00:00Z",
+                                            "url": "https://cp/1", "currencies": [{"code": "SOL"}]}]})
+    check("CryptoPanic：幣別標記", cp[0]["coins_hint"] == ["SOL"])
+
+
+def test_news_matching() -> None:
+    print("新聞：對應到幣、分類")
+    m = nc.Matcher(["BTC", "BCH", "SOL", "SUI", "1000PEPE", "DOGE", "TRUMP", "TAO", "SEC"], nc.load_aliases(CFG),
+                   CFG["news"]["ambiguous_tickers"])
+    check("$SOL、(SUI)、PEPEUSDT", m.match("$SOL and (SUI) pump; 1000PEPEUSDT perp") == {"SOL", "SUI", "PEPE"})
+    check("Bitcoin Cash 不會被當成 BTC", m.match("Bitcoin Cash hard fork scheduled") == {"BCH"})
+    check("名稱別名：Solana、Dogecoin", m.match("Solana and Dogecoin lead gains") == {"SOL", "DOGE"})
+    check("SEC 是常見縮寫，不算代號", m.match("SEC sues exchange over staking") == set())
+    check("模糊代號 TRUMP 要有 $ 才算", m.match("TRUMP says crypto") == set() and m.match("$TRUMP memecoin unlock") == {"TRUMP"})
+    check("大寫代號整字：TAO", m.match("TAO jumps 12% after upgrade") == {"TAO"})
+    cl = lambda t: nc.classify({"title": t, "summary": ""})[0]  # noqa: E731
+    check("下架優先於上線（delist 含 list）", cl("Binance will delist XYZ and list ABC") == "delisting")
+    check("駭客", cl("Exploit drains $12M from lending protocol") == "hack")
+    check("總經", cl("Fed holds rates steady; Powell signals patience") == "macro")
+    check("ETF", cl("Spot SOL ETF approved by regulators") == "etf")
+    check("解鎖", cl("TIA faces $90M token unlock next week") == "unlock")
+    check("公告類型提示優先", nc.classify({"title": "Notice", "summary": "", "hint_type": "delisting"})[0] == "delisting")
+
+
+def _items():
+    def it(src, tier, title, h, **kw):
+        return {"source": src, "tier": tier, "title": title, "summary": "", "url": f"https://ex.com/{abs(hash(title)) % 999}",
+                "ts": NOW - h * 3600_000, **kw}
+    return [
+        it("coindesk", "media", "Bybit Will List SUI Perpetual", 2),
+        it("theblock", "media", "SUI listing draws record volume", 6),
+        it("bybit", "official", "Delisting of DOGEUSDT Perpetual Contract", 3, hint_type="delisting"),
+        it("decrypt", "media", "Exploit drains $12M as TAO bridge paused", 1),
+        it("cointelegraph", "media", "SOL update: mainnet upgrade goes live", 30),
+        it("coindesk", "media", "Fed holds rates steady; Powell signals patience", 5),
+        it("coindesk", "media", "Market wrap: BTC, ETH, SOL, SUI, DOGE, TAO all slide", 1),
+        it("coindesk", "media", "Old SOL story", 60),
+    ]
+
+
+def test_news_annotate() -> None:
+    print("新聞：打分與標記")
+    per, macro = nc.annotate(_items(), ["SUI", "DOGE", "TAO", "SOL", "BTC", "ETH"], CFG, now_ms=NOW)
+    check("新鮮上線新聞 → 焦點", per["SUI"]["tag"] == "FOCUS" and per["SUI"]["n_fresh"] == 2, str(per.get("SUI")))
+    check("官方下架公告 → 避開、delisting", per["DOGE"]["tag"] == "AVOID" and per["DOGE"]["delisting"])
+    check("駭客 → 避開（不算下架）", per["TAO"]["tag"] == "AVOID" and per["TAO"]["hack"] and not per["TAO"]["delisting"])
+    check("超過 24 小時的新聞 → 舊聞；超過 48 小時不算", per["SOL"]["tag"] == "OLD" and per["SOL"]["n"] == 1)
+    check("一次提到一堆幣的行情回顧不算個別催化劑", "BTC" not in per and "ETH" not in per)
+    check("沒有對應幣的總經新聞放在 macro", len(macro) == 1 and "Powell" in macro[0]["title"])
+    w_new = [r["weight"] for r in per["SUI"]["top"]]
+    check("時間衰減：越新的權重越高", w_new == sorted(w_new, reverse=True) and w_new[0] > w_new[1])
+    media2 = [{"source": s, "tier": "media", "title": f"{s}: exchange to delist XYZ", "summary": "", "url": "", "ts": NOW - 3600_000}
+              for s in ("coindesk", "theblock")]
+    p2, _ = nc.annotate(media2, ["XYZ"], CFG, now_ms=NOW)
+    check("兩家媒體都報導下架 → 也算下架", p2["XYZ"]["delisting"])
+    p3, _ = nc.annotate(media2[:1], ["XYZ"], CFG, now_ms=NOW)
+    check("只有一家媒體報導下架 → 避開但不算下架", p3["XYZ"]["tag"] == "AVOID" and not p3["XYZ"]["delisting"])
+
+
+def test_news_fetch() -> None:
+    print("新聞：抓取（模擬）")
+    import os
+    orig = sc.http_get
+
+    def fake(url, **kw):
+        if "coindesk" in url:
+            return RSS
+        if "theblock" in url:
+            return ATOM
+        if "bybit" in url:
+            return {"result": {"list": [{"title": "Bybit Will List SUI Perpetual & Spot", "type": {"key": "new_crypto"},
+                                         "url": "https://b/1", "dateTimestamp": NOW}]}}
+        if "cryptopanic" in url:
+            raise sc.SourceError(f"連不到 cryptopanic.com（HTTP 403）{url}")
+        raise sc.SourceError("連不到（HTTP 403）")
+    sc.http_get = fake
+    os.environ["CRYPTOPANIC_TOKEN"] = "secret123"
+    try:
+        items, errors, ok = nc.fetch_all(CFG)
+    finally:
+        sc.http_get = orig
+        os.environ.pop("CRYPTOPANIC_TOKEN", None)
+    check("個別來源失敗不影響其他來源", set(ok) == {"coindesk", "theblock", "bybit"} and "okx" in errors)
+    check("同標題多來源只留一次，保留官方來源",
+          sum(1 for i in items if "Will List SUI" in i["title"]) == 1
+          and next(i for i in items if "Will List SUI" in i["title"])["tier"] == "official")
+    check("有 CRYPTOPANIC_TOKEN 才會用，錯誤訊息不洩漏金鑰",
+          "cryptopanic" in errors and "secret123" not in errors["cryptopanic"], errors.get("cryptopanic", ""))
+
+
+def test_news_scan() -> None:
+    print("新聞：整合進 scan")
+    sc.SOURCES["fake"] = FakeExchange
+    cfg = dict(CFG, min_range_pct=0.5, min_median_qv_usdt=1e7, min_qv_24h_usdt=1e7)
+    base = sc.scan(cfg, "fake", top=6, quiet=True)
+    orig = nc.fetch_all
+    news_items = [
+        {"source": "bybit", "tier": "official", "title": "Delisting of CHOP1USDT Perpetual Contract", "summary": "",
+         "url": "https://b/1", "ts": time.time() * 1000 - 3600_000, "hint_type": "delisting"},
+        {"source": "coindesk", "tier": "media", "title": "TRND3 lists on major exchange; $TRND3 perpetual launches",
+         "summary": "", "url": "javascript:alert(1)", "ts": time.time() * 1000 - 7200_000},
+        {"source": "coindesk", "tier": "media", "title": "Fed cuts rates by 25bp", "summary": "", "url": "https://c/2",
+         "ts": time.time() * 1000 - 3600_000},
+    ]
+    nc.fetch_all = lambda cfg, workers=6: (news_items, {"okx": "HTTP 403"}, ["bybit", "coindesk"])
+    try:
+        res = sc.scan(cfg, "fake", top=6, quiet=True, news=True)
+    finally:
+        nc.fetch_all = orig
+    rej = {x["coin"]: x["why"] for x in res["rejected"]}
+    check("交易所公告下架 → 剔除", any("下架" in w for w in rej.get("CHOP1", [])), str(rej.get("CHOP1")))
+    check("焦點清單", [r["coin"] for r in res["focus"]] == ["TRND3"], str([r["coin"] for r in res["focus"]]))
+    check("避開清單含下架的幣", [a["coin"] for a in res["avoid"]] == ["CHOP1"])
+    t3 = next(r for r in res["watchlist"] + res["bench"] if r["coin"] == "TRND3")
+    check("催化劑分數寫進 metrics", t3["metrics"]["catalyst_score"] > 0)
+    s0 = {r["coin"]: r["score"] for r in base["watchlist"] + base["bench"] if r["coin"] != "CHOP1"}
+    s1 = {r["coin"]: r["score"] for r in res["watchlist"] + res["bench"]}
+    order0 = [c for c in sorted(s0, key=lambda c: -s0[c])]
+    order1 = [c for c in sorted(s1, key=lambda c: -s1[c])]
+    check("權重 0：新聞不改變其他幣的相對排名", order0 == order1, f"{order0} vs {order1}")
+    check("總經新聞", res["news"]["macro"] and "Fed" in res["news"]["macro"][0]["title"])
+    page = screener_html.render(res)
+    check("HTML：新聞區塊、javascript: 連結不會變成超連結", "新聞催化劑" in page and "javascript:alert" not in page.replace(
+        "javascript:alert(1)", "") and "href='javascript" not in page)
+    out = io.StringIO()
+    with redirect_stdout(out):
+        sc.print_table(res)
+    text = out.getvalue()
+    check("文字輸出：焦點、避開、總經、來源狀態", all(k in text for k in ("今日焦點", "避開 CHOP1", "總經", "失敗 okx")), text[-600:])
+    with tempfile.TemporaryDirectory() as td:
+        path = sc.write_log(res, td)
+        check("--log 存到 <日期>/scan-HHMMZ.json", Path(path).parent.name == res["data_until_utc"][:10]
+              and Path(path).name.startswith("scan-") and json.loads(Path(path).read_text())["focus"])
+
+
+def test_forward() -> None:
+    print("前向驗證（模擬歷史資料庫）")
+    import research
+    t0 = 1_763_164_800_000  # 2025-11-15 00:00 UTC
+    day0 = research.ymd(t0)
+    res = {"data_until_utc": f"{day0} 00:00", "watchlist": [], "bench": []}
+    for i in range(12):
+        coin = f"C{i}"
+        res["watchlist"].append({"coin": coin, "exchange": "binance", "symbol": coin + "USDT", "score": 100 - i,
+                                 **({"news": {"tag": "FOCUS", "n_fresh": 1}} if i < 3 else {})})
+    paths = {f"C{i}USDT": (trend_path(96, 10, 0.002, 0.001, i) if i < 3 else zigzag_path(96, 10, 0.004)) for i in range(12)}
+    orig = research._archive_bars
+    research._archive_bars = lambda sym, day: make_bars(paths[sym], t0) if day == day0 and sym in paths else []
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td) / day0
+            d.mkdir()
+            (d / "scan-0000Z.json").write_text(json.dumps(res))
+            (d / "ai_report.json").write_text(json.dumps({"focus": ["C1"], "avoid": ["C5"]}))
+            with redirect_stdout(io.StringIO()):
+                out = research.cmd_forward(type("A", (), {"log": td})(), CFG)
+    finally:
+        research._archive_bars = orig
+    g = out["groups"]
+    check("前向：量測 1 天", out["evaluated_days"] == 1, str(out))
+    check("前向：焦點組（趨勢）盤整少於全部合格", g["程式標記：焦點"]["chop"] < g["全部合格"]["chop"])
+    check("前向：AI 焦點 / 避開分組", g["AI：焦點"]["days"] == 1 and g["AI：避開"]["chop"] == 1.0)
+    check("前向：樣本不足時不判定", "樣本不足" in out["verdicts"]["程式標記：焦點"])
+
+
+def test_prompts() -> None:
+    print("排程提示詞")
+    import re as _re
+    pdir = Path(__file__).resolve().parent / "prompts"
+    repo = Path(__file__).resolve().parents[3]
+    names = ["daily_watchlist.md", "pre_session.md", "weekly_review.md"]
+    for n in names:
+        text = (pdir / n).read_text(encoding="utf-8")
+        check(f"{n}：有版本號", text.startswith("<!-- prompt_version:"))
+        paths = set(_re.findall(r"skills/freqai-ea-trading/[\w./-]+\.(?:py|md|json|sh)", text))
+        missing = [p for p in paths if not (repo / p).exists()]
+        check(f"{n}：提到的檔案都存在（{len(paths)} 個）", not missing, str(missing))
+        check(f"{n}：有界線與自我檢查", "界線" in text and "自我檢查" in text)
+    daily = (pdir / "daily_watchlist.md").read_text(encoding="utf-8")
+    check("每日提示詞：用 --news --log、說明新聞未驗證", "--news --log" in daily and "尚未驗證" in daily)
+    check("盤前提示詞：禁止 --log 與因近4h升級", "不要用 `--log`" in (pdir / "pre_session.md").read_text(encoding="utf-8"))
+    schema = json.loads((pdir / "ai_report.schema.json").read_text(encoding="utf-8"))
+    ex = json.loads((pdir / "ai_report.example.json").read_text(encoding="utf-8"))
+    check("範例含 schema 的必要欄位", all(k in ex for k in schema["required"]))
+    tiers = schema["properties"]["coins"]["items"]["properties"]["tier"]["enum"]
+    types = schema["properties"]["coins"]["items"]["properties"]["catalysts"]["items"]["properties"]["type"]["enum"]
+    check("範例的分級與催化劑類型都在 enum 內", all(c["tier"] in tiers for c in ex["coins"])
+          and all(k["type"] in types for c in ex["coins"] for k in c["catalysts"]))
+    check("schema 的催化劑類型 = 程式分類 + general", set(types) == {k for k, *_ in nc.TAXONOMY} | {"general"})
+    check("範例的 focus / avoid 是大寫代號", all(_re.fullmatch(r"[A-Z0-9]+", c) for c in ex["focus"] + ex["avoid"]))
+    readme = (pdir / "README.md").read_text(encoding="utf-8")
+    check("README 列出所有提示詞", all(n in readme for n in names + ["ai_report.schema.json", "persist_runs.sh"]))
+
+
 if __name__ == "__main__":
     test_chunk_stats()
     test_window()
@@ -383,5 +632,12 @@ if __name__ == "__main__":
     test_adapters()
     test_scan()
     test_state()
+    test_news_parsing()
+    test_news_matching()
+    test_news_annotate()
+    test_news_fetch()
+    test_news_scan()
+    test_forward()
+    test_prompts()
     print(f"\n{PASS} 通過，{FAIL} 失敗")
     sys.exit(1 if FAIL else 0)

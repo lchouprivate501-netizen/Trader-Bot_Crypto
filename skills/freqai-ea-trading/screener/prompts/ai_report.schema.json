@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ai_report.schema.json",
+  "title": "每日日內觀察清單：AI 分級報告（RUN_DIR/ai_report.json）",
+  "description": "daily_watchlist.md 步驟 7 的輸出。research.py forward 讀 focus 與 avoid 做前向驗證；其他欄位給人與每週檢討看。",
+  "type": "object",
+  "required": ["prompt_version", "generated_utc", "scan_file", "exchange", "data_until_utc", "data_status", "focus", "watch", "avoid", "coins"],
+  "additionalProperties": false,
+  "properties": {
+    "prompt_version": {"type": "string", "description": "daily_watchlist.md 第一行的版本，例如 daily-watchlist v1.0 (2026-11-17)"},
+    "generated_utc": {"type": "string", "description": "YYYY-MM-DD HH:MM"},
+    "generated_taipei": {"type": "string"},
+    "scan_file": {"type": "string", "description": "這次 scan --log 寫出的 JSON 路徑"},
+    "exchange": {"enum": ["binance", "bybit", "okx", "all", "archive"]},
+    "data_until_utc": {"type": "string"},
+    "data_status": {
+      "type": "object",
+      "required": ["exchange_fallback", "news_sources_failed", "web_search"],
+      "additionalProperties": false,
+      "properties": {
+        "exchange_fallback": {"type": "array", "items": {"type": "string"}, "description": "失敗後換掉的交易所與原因，例如 'binance: HTTP 451'"},
+        "news_sources_failed": {"type": "array", "items": {"type": "string"}},
+        "web_search": {"enum": ["ok", "partial", "failed"]},
+        "notes": {"type": "string"}
+      }
+    },
+    "focus": {"type": "array", "maxItems": 5, "items": {"type": "string", "pattern": "^[A-Z0-9]+$"}, "description": "AI 焦點的代號（篩選器的 coin 名稱）"},
+    "watch": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z0-9]+$"}},
+    "avoid": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z0-9]+$"}},
+    "coins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["coin", "tier", "reason_zh", "catalysts"],
+        "additionalProperties": false,
+        "properties": {
+          "coin": {"type": "string", "pattern": "^[A-Z0-9]+$"},
+          "tier": {"enum": ["FOCUS", "WATCH", "AVOID"]},
+          "screener_score": {"type": ["number", "null"]},
+          "screener_news_tag": {"type": ["string", "null"], "description": "程式標記 FOCUS / AVOID / NEWS / OLD，沒有就 null"},
+          "passed_gates": {"type": "boolean"},
+          "reason_zh": {"type": "string", "description": "為什麼是這個分級（對應 daily_watchlist.md 步驟 5 的條款）"},
+          "catalysts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "direction", "confirmed", "published_utc", "summary_zh", "sources"],
+              "additionalProperties": false,
+              "properties": {
+                "type": {"enum": ["listing", "delisting", "hack", "etf", "regulation", "unlock", "upgrade", "partnership",
+                                  "tokenomics", "flows", "exchange_ops", "macro", "general"]},
+                "direction": {"enum": ["pos", "neg", "unc"], "description": "市場一般解讀，不是價格預測"},
+                "confirmed": {"type": "boolean"},
+                "published_utc": {"type": "string"},
+                "event_time_utc": {"type": ["string", "null"]},
+                "summary_zh": {"type": "string", "maxLength": 80},
+                "sources": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": ["url", "outlet", "tier"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "url": {"type": "string", "pattern": "^https?://"},
+                      "outlet": {"type": "string"},
+                      "tier": {"enum": ["T1", "T2", "T3"]}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "macro_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "time_utc", "confirmed"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "time_utc": {"type": ["string", "null"]},
+          "time_taipei": {"type": ["string", "null"]},
+          "session_utc": {"type": "string", "description": "落在哪個 UTC 4 小時時段，例如 12-16"},
+          "source_url": {"type": "string"},
+          "confirmed": {"type": "boolean"}
+        }
+      }
+    },
+    "disagreements": {"type": "array", "items": {"type": "string"}, "description": "AI 分級與程式標記不一致的說明"}
+  }
+}
