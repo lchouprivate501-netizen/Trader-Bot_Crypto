@@ -1,0 +1,251 @@
+// This Pine Script® code is subject to the terms of the MIT License (see LICENSE in this repository).
+// 自學習 MACD 假訊號過濾器 (Self-Learning MACD Filter) — v1.0
+// 研究與驗證：skills/freqai-ea-trading/references/macd-filter-research.md
+//
+// 做什麼：
+//   1. MACD 以 ATR 正規化（MACD-V = MACD ÷ ATR × 100），任何標的、任何價格水準都用同一把尺。
+//   2. 每次 MACD 與訊號線交叉，用 11 個無單位特徵（高週期趨勢、EMA200、動能、效率比、
+//      波動收縮、成交量、RSI…）預測這筆交易的期望 R，扣掉交易成本後 > 門檻才在主圖標「多 / 空」。
+//   3. 每筆交叉（不論有沒有標）出場後，用實際結果以遞迴最小平方法（RLS）更新權重：
+//      每張圖（標的 × 時間框架）各自學習，起點是研究期的先驗權重。
+//   4. 只在 K 線收盤確認後判斷；高週期取「上一根已收盤」的值 → 不重繪。
+// 交易模型（標籤的意義）：收盤進場；出場 = MACD 反向交叉的那根收盤，或價格觸及 1.5×ATR(14) 保護停損。
+//@version=6
+indicator("自學習 MACD 假訊號過濾器 (Self-Learning MACD Filter)", shorttitle = "SL-MACD", overlay = false, max_labels_count = 500)
+
+// ───────────────────────────── 輸入
+grpM = "MACD（預設 12/26/9 為驗證過的設定）"
+fastLen = input.int(12, "快線 EMA", minval = 2, group = grpM)
+slowLen = input.int(26, "慢線 EMA", minval = 3, group = grpM)
+sigLen = input.int(9, "訊號線 EMA", minval = 2, group = grpM)
+
+grpF = "假訊號過濾與自我學習"
+costPct = input.float(0.10, "來回交易成本 %（手續費 + 滑價）", minval = 0.0, step = 0.01, group = grpF, tooltip = "一買一賣合計。幣安合約 taker 約 0.10%、現貨約 0.20%；股票零佣金可設 0.02–0.05%。成本相對 ATR 越大（低時間框架），過濾越嚴。")
+minEdge = input.float(0.0, "最低預期淨值 (R)", step = 0.05, group = grpF, tooltip = "預測的每筆淨期望值（以停損距離 R 為單位）高於此值才標示。0 = 只要扣成本後為正就標示；調高 = 更少、更嚴格的訊號。")
+learnOn = input.bool(true, "啟用自我學習", group = grpF, tooltip = "關閉時只用研究期的先驗權重（不隨這張圖的結果調整）。")
+priorStr = input.float(100.0, "先驗強度（相當於幾筆樣本）", minval = 1.0, group = grpF, tooltip = "越大越相信研究期的通用權重、學得越慢；越小越快適應這張圖，但雜訊也越大。")
+stopAtr = input.float(1.5, "保護停損（ATR(14) 倍數）", minval = 0.5, step = 0.1, group = grpF, tooltip = "1R 的定義。先驗權重以 1.5 研究；改動後由自我學習慢慢適應。")
+htfMode = input.string("自動", "高週期", options = ["自動", "手動"], group = grpF, tooltip = "自動：1m→5m、3m→15m、5m→30m、15m→1h、30m→2h、1h→4h、2h→8h、≤6h→日、日→週、週→月。")
+htfManual = input.timeframe("240", "手動高週期", group = grpF)
+
+grpD = "顯示"
+showRejected = input.bool(true, "副圖標出被過濾掉的交叉（灰色 ×）", group = grpD)
+showStop = input.bool(true, "主圖顯示持倉中的停損線", group = grpD)
+showExit = input.bool(true, "主圖標出出場位置", group = grpD)
+showTable = input.bool(true, "顯示學習與績效統計表", group = grpD)
+
+// ───────────────────────────── 工具
+f_tanh(float x) =>
+    float xc = math.max(math.min(x, 20.0), -20.0)
+    float e = math.exp(2.0 * xc)
+    (e - 1.0) / (e + 1.0)
+
+f_autoHtf() =>
+    int s = timeframe.in_seconds(timeframe.period)
+    s <= 60 ? "5" : s <= 180 ? "15" : s <= 300 ? "30" : s <= 900 ? "60" : s <= 1800 ? "120" : s <= 3600 ? "240" : s <= 7200 ? "480" : s <= 21600 ? "D" : s <= 86400 ? "W" : s <= 604800 ? "M" : "3M"
+
+// 高週期 MACD-V：回傳上一根「已收盤」高週期 K 線的值（配合 lookahead_on = 不重繪）
+f_htfMacd() =>
+    float m = ta.ema(close, fastLen) - ta.ema(close, slowLen)
+    float s = ta.ema(m, sigLen)
+    float a = ta.atr(slowLen)
+    [m[1] / a[1], (m[1] - s[1]) / a[1]]
+
+// 遞迴最小平方法（RLS）一步：w ← w + P·x·(y − w·x)/(1 + x·P·x)，P ← P − (P·x)(P·x)ᵀ/(1 + x·P·x)
+f_learn(array<float> w_, array<float> p_, array<float> x_, float y_) =>
+    int k = x_.size()
+    array<float> px = array.new_float(k, 0.0)
+    float denom = 1.0
+    float pred = 0.0
+    for i = 0 to k - 1
+        float acc = 0.0
+        for j = 0 to k - 1
+            acc += p_.get(i * k + j) * x_.get(j)
+        px.set(i, acc)
+        denom += x_.get(i) * acc
+        pred += w_.get(i) * x_.get(i)
+    float err = y_ - pred
+    for i = 0 to k - 1
+        w_.set(i, w_.get(i) + px.get(i) / denom * err)
+        for j = 0 to k - 1
+            p_.set(i * k + j, p_.get(i * k + j) - px.get(i) * px.get(j) / denom)
+    err
+
+// ───────────────────────────── MACD 與特徵（全部在全域計算，每根 K 線都算）
+float macdLine = ta.ema(close, fastLen) - ta.ema(close, slowLen)
+float sigLine = ta.ema(macdLine, sigLen)
+float hist = macdLine - sigLine
+float atrSlow = ta.atr(slowLen)
+float atr14 = ta.atr(14)
+float atr100 = ta.atr(100)
+float ema200 = ta.ema(close, 200)
+float rsi14 = ta.rsi(close, 14)
+float erDen = math.sum(math.abs(ta.change(close)), 20)
+float erDir = erDen > 0 ? (close - close[20]) / erDen : 0.0
+float volN = nz(volume)
+float volAvg = ta.sma(volN, 50)
+
+string htf = htfMode == "自動" ? f_autoHtf() : htfManual
+[htfMv, htfHv] = request.security(syminfo.tickerid, htf, f_htfMacd(), lookahead = barmerge.lookahead_on)
+
+bool upX = hist > 0 and hist[1] <= 0
+bool dnX = hist < 0 and hist[1] >= 0
+bool anyX = upX or dnX
+float d = upX ? 1.0 : -1.0
+
+float vr = volAvg > 0 ? volN / volAvg : 1.0
+float fHtfM = f_tanh(d * htfMv)
+float fHtfH = f_tanh(d * 10.0 * htfHv)
+float fEma = f_tanh(d * (close - ema200) / atr14 / 5.0)
+float fRoc = f_tanh(d * (close / close[100] - 1.0) / (atr14 / close) / 10.0)
+float fEr = d * erDir
+float fVolx = f_tanh(2.0 * math.log(atr14 / atr100))
+float fVlm = vr > 0 ? f_tanh(math.log(vr)) : -1.0
+float fMacdv = f_tanh(d * macdLine / atrSlow)
+float fRsi = d * (rsi14 - 50.0) / 50.0
+float costR = costPct / 100.0 * close / (stopAtr * atr14)
+bool ready = bar_index >= 250 and atr14 > 0 and not na(fHtfM) and not na(fHtfH) and not na(fEma) and not na(fRoc) and not na(fEr) and not na(fVolx) and not na(fMacdv) and not na(fRsi) and not na(costR)
+
+// ───────────────────────────── 學習狀態
+// 特徵順序：常數、方向、高週期MACD-V、高週期柱、EMA200距離、100根動能、效率比、波動收縮、成交量、MACD-V、RSI
+// 先驗權重：5 個研發幣 × 4 個時間框架、2019-01 → 2023-06 研究期擬合後凍結
+int K = 11
+var array<float> W =array.from(0.0848, 0.0606, 0.3928, 0.0459, -0.3034, -0.0302, 0.1154, -0.2469, 0.2059, -0.0510, 0.1237)
+var array<float> P = array.new_float(11 * 11, 0.0)
+if barstate.isfirst
+    for i = 0 to K - 1
+        P.set(i * K + i, 1.0 / priorStr)
+
+// 進行中的交叉（每次交叉都追蹤，不論有沒有標示；交叉一多一空交替，同時最多一筆）
+var bool pActive = false
+var bool pShown = false
+var float pSide = 0.0
+var float pEntry = na
+var float pRisk = na
+var float pStop = na
+var float pCostR = 0.0
+var int pBar = na
+var array<float> pX = array.new_float(11, 0.0)
+
+// 統計（全部是事前決策、事後結果 → 這張圖自己的樣本外紀錄）
+var int nRaw = 0
+var float sumRaw = 0.0
+var int winRaw = 0
+var int nF = 0
+var float sumF = 0.0
+var int winF = 0
+var float grossWinF = 0.0
+var float grossLossF = 0.0
+var int nLearn = 0
+var float lastEdge = na
+
+// ───────────────────────────── 1) 結算上一筆交叉（先停損、再反向交叉、最長 300 根）
+float exitR = na
+float exitPx = na
+if barstate.isconfirmed and pActive and bar_index > pBar
+    bool hitStop = pSide > 0 ? low <= pStop : high >= pStop
+    if hitStop
+        exitPx := pSide > 0 ? math.min(pStop, open) : math.max(pStop, open)
+    else if anyX or bar_index - pBar >= 300
+        exitPx := close
+    if not na(exitPx)
+        exitR := pSide * (exitPx - pEntry) / pRisk
+
+bool exitShownLong = false
+bool exitShownShort = false
+if not na(exitR)
+    float netR = exitR - pCostR
+    nRaw += 1
+    sumRaw += netR
+    winRaw += netR > 0 ? 1 : 0
+    if pShown
+        nF += 1
+        sumF += netR
+        winF += netR > 0 ? 1 : 0
+        grossWinF += math.max(netR, 0.0)
+        grossLossF += math.max(-netR, 0.0)
+        exitShownLong := pSide > 0
+        exitShownShort := pSide < 0
+    if learnOn
+        f_learn(W, P, pX, math.max(math.min(exitR, 5.0), -1.0))
+        nLearn += 1
+    pActive := false
+
+// ───────────────────────────── 2) 新交叉：預測 → 過濾 → 開始追蹤
+bool longSig = false
+bool shortSig = false
+bool rejected = false
+float edge = na
+if barstate.isconfirmed and anyX and ready
+    array<float> x = array.from(1.0, d, fHtfM, fHtfH, fEma, fRoc, fEr, fVolx, fVlm, fMacdv, fRsi)
+    float pred = 0.0
+    for i = 0 to K - 1
+        pred += W.get(i) * x.get(i)
+    edge := pred - costR
+    lastEdge := edge
+    bool pass = edge > minEdge
+    longSig := pass and upX
+    shortSig := pass and dnX
+    rejected := not pass
+    pActive := true
+    pShown := pass
+    pSide := d
+    pEntry := close
+    pRisk := stopAtr * atr14
+    pStop := close - d * stopAtr * atr14
+    pCostR := costR
+    pBar := bar_index
+    for i = 0 to K - 1
+        pX.set(i, x.get(i))
+
+// ───────────────────────────── 副圖：MACD-V
+float mv = macdLine / atrSlow * 100.0
+float sv = sigLine / atrSlow * 100.0
+float hv = hist / atrSlow * 100.0
+color hColor = hv >= 0 ? (hv > hv[1] ? #26a69a : #b2dfdb) : (hv < hv[1] ? #ef5350 : #ffcdd2)
+plot(hv, "柱狀圖 (MACD-V)", color = hColor, style = plot.style_columns)
+plot(mv, "MACD-V", color = #2962ff, linewidth = 2)
+plot(sv, "訊號線", color = #ff6d00)
+hline(0, "零軸", color = color.new(color.gray, 30))
+hline(150, "+150 過熱", color = color.new(color.red, 60), linestyle = hline.style_dotted)
+hline(50, "+50", color = color.new(color.gray, 70), linestyle = hline.style_dotted)
+hline(-50, "-50", color = color.new(color.gray, 70), linestyle = hline.style_dotted)
+hline(-150, "-150 超賣", color = color.new(color.green, 60), linestyle = hline.style_dotted)
+plotshape(longSig ? mv : na, "通過過濾：多", shape.triangleup, location.absolute, color.new(#089981, 0), size = size.tiny)
+plotshape(shortSig ? mv : na, "通過過濾：空", shape.triangledown, location.absolute, color.new(#f23645, 0), size = size.tiny)
+plotshape(showRejected and rejected ? mv : na, "被過濾的交叉", shape.xcross, location.absolute, color.new(color.gray, 40), size = size.tiny)
+
+// ───────────────────────────── 主圖：做多 / 做空標籤、停損線、出場
+if longSig
+    label.new(bar_index, low, "多\n" + str.tostring(edge, "+0.00;-0.00") + "R", yloc = yloc.belowbar, style = label.style_label_up, color = color.new(#089981, 0), textcolor = color.white, size = size.small, tooltip = "通過過濾的做多訊號\n預期淨值 " + str.tostring(edge, "+0.00;-0.00") + " R（已扣成本）\n停損 " + str.tostring(pStop, format.mintick) + "（" + str.tostring(stopAtr) + "×ATR）\n出場：MACD 向下交叉的收盤，或觸及停損", force_overlay = true)
+if shortSig
+    label.new(bar_index, high, "空\n" + str.tostring(edge, "+0.00;-0.00") + "R", yloc = yloc.abovebar, style = label.style_label_down, color = color.new(#f23645, 0), textcolor = color.white, size = size.small, tooltip = "通過過濾的做空訊號\n預期淨值 " + str.tostring(edge, "+0.00;-0.00") + " R（已扣成本）\n停損 " + str.tostring(pStop, format.mintick) + "（" + str.tostring(stopAtr) + "×ATR）\n出場：MACD 向上交叉的收盤，或觸及停損", force_overlay = true)
+plot(showStop and pActive and pShown ? pStop : na, "持倉停損", color = pSide > 0 ? color.new(#089981, 20) : color.new(#f23645, 20), style = plot.style_linebr, force_overlay = true)
+plotshape(showExit and exitShownLong, "多單出場", shape.xcross, location.abovebar, color.new(#089981, 0), size = size.tiny, force_overlay = true)
+plotshape(showExit and exitShownShort, "空單出場", shape.xcross, location.belowbar, color.new(#f23645, 0), size = size.tiny, force_overlay = true)
+
+// ───────────────────────────── 警報
+alertcondition(longSig, "SL-MACD 做多", "SL-MACD 過濾後做多：{{ticker}} {{interval}} 收盤 {{close}}")
+alertcondition(shortSig, "SL-MACD 做空", "SL-MACD 過濾後做空：{{ticker}} {{interval}} 收盤 {{close}}")
+alertcondition(exitShownLong or exitShownShort, "SL-MACD 出場", "SL-MACD 出場（反向交叉或停損）：{{ticker}} {{interval}} 收盤 {{close}}")
+
+// ───────────────────────────── 統計表
+var table tb = table.new(position.top_right, 2, 7, bgcolor = color.new(color.black, 80), border_color = color.new(color.gray, 70), border_width = 1)
+f_stat(int n, int wins, float s) =>
+    n > 0 ? str.tostring(n) + " 筆｜勝率 " + str.tostring(100.0 * wins / n, "0") + "%｜平均 " + str.tostring(s / n, "+0.00;-0.00") + "R" : "—"
+if showTable and barstate.islast
+    color tc = color.white
+    table.cell(tb, 0, 0, "SL-MACD", text_color = tc, text_size = size.small)
+    table.cell(tb, 1, 0, "高週期 " + htf + "｜學習 " + (learnOn ? "開" : "關"), text_color = tc, text_size = size.small)
+    table.cell(tb, 0, 1, "全部交叉", text_color = tc, text_size = size.small)
+    table.cell(tb, 1, 1, f_stat(nRaw, winRaw, sumRaw), text_color = tc, text_size = size.small)
+    table.cell(tb, 0, 2, "過濾後", text_color = tc, text_size = size.small)
+    table.cell(tb, 1, 2, f_stat(nF, winF, sumF), text_color = sumF >= 0 ? #4caf50 : #ff5252, text_size = size.small)
+    table.cell(tb, 0, 3, "獲利因子", text_color = tc, text_size = size.small)
+    table.cell(tb, 1, 3, grossLossF > 0 ? str.tostring(grossWinF / grossLossF, "0.00") : "—", text_color = tc, text_size = size.small)
+    table.cell(tb, 0, 4, "已學習", text_color = tc, text_size = size.small)
+    table.cell(tb, 1, 4, str.tostring(nLearn) + " 筆（先驗 " + str.tostring(priorStr, "0") + " 筆）", text_color = tc, text_size = size.small)
+    table.cell(tb, 0, 5, "成本 / 1R", text_color = tc, text_size = size.small)
+    table.cell(tb, 1, 5, str.tostring(costR, "0.00") + " R", text_color = tc, text_size = size.small)
+    table.cell(tb, 0, 6, "最近一次交叉", text_color = tc, text_size = size.small)
+    table.cell(tb, 1, 6, na(lastEdge) ? "—" : "預期淨值 " + str.tostring(lastEdge, "+0.00;-0.00") + "R" + (lastEdge > minEdge ? "（通過）" : "（過濾）"), text_color = tc, text_size = size.small)
