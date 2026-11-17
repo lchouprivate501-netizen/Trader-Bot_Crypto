@@ -1,5 +1,6 @@
 # Tests the EA trading desk and its MCP server (skills/freqai-ea-trading/desk) against mock
-# Freqtrade REST engines, and checks the Claude Code plugin / marketplace manifests are valid JSON.
+# Freqtrade REST engines, the intraday screener against fake exchanges, and checks the
+# Claude Code plugin / marketplace manifests are valid JSON.
 # Standard library only: no installs, no exchange access needed.
 name: EA desk test
 
@@ -7,12 +8,14 @@ on:
   push:
     paths:
       - "skills/freqai-ea-trading/desk/**"
+      - "skills/freqai-ea-trading/screener/**"
       - "skills/freqai-ea-trading/AGENTS.md"
       - ".claude-plugin/**"
       - ".github/workflows/ea-desk-test.yml"
   pull_request:
     paths:
       - "skills/freqai-ea-trading/desk/**"
+      - "skills/freqai-ea-trading/screener/**"
       - ".claude-plugin/**"
   workflow_dispatch: {}
 
@@ -36,9 +39,12 @@ jobs:
           python -m json.tool .claude-plugin/plugin.json > /dev/null
           python -m json.tool .claude-plugin/marketplace.json > /dev/null
           python -m json.tool skills/freqai-ea-trading/desk/config.json > /dev/null
+          python -m json.tool skills/freqai-ea-trading/screener/config.json > /dev/null
       - name: Desk + MCP integration test
         run: python skills/freqai-ea-trading/desk/test_desk.py
       - name: Desk futures test (short, leverage, funding)
         run: python skills/freqai-ea-trading/desk/test_desk_perp.py
       - name: AI office console test
         run: python skills/freqai-ea-trading/desk/test_console.py
+      - name: Intraday screener test (metrics, gates, exchange parsers, scan)
+        run: python skills/freqai-ea-trading/screener/test_screener.py
