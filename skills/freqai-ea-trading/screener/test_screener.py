@@ -123,10 +123,14 @@ def test_gate_and_score() -> None:
     check("新上市剔除", any("上市" in w for w in sc.gate({**ok, "age_days": 3}, CFG)))
     check("指數合約剔除", any("不是加密貨幣" in w for w in sc.gate({**ok, "base": "BTCDOM"}, CFG)))
     check("交易所標示非加密（股票 / 商品）剔除", any("不是加密貨幣" in w for w in sc.gate({**ok, "non_crypto": True}, CFG)))
-    wk = {**base, "weekend_range_ratio": 0.2, "weekend_qv_ratio": 0.15}
-    check("週末幾乎不動（疑似股票合約）剔除", any("週末" in w for w in sc.gate({**ok, "metrics": wk}, CFG)))
-    check("週末只有振幅小、成交額正常 → 不剔除",
-          sc.gate({**ok, "metrics": {**wk, "weekend_qv_ratio": 0.8}}, CFG) == [])
+    check("清單上的股票 / 商品合約剔除（NVDA、XAU、HK0700）",
+          all(any("不是加密貨幣" in w for w in sc.gate({**ok, "base": b}, CFG)) for b in ("NVDA", "XAU", "HK0700")))
+    check("BTC、ETH 不在非加密清單", "BTC" not in sc.NON_CRYPTO and "ETH" not in sc.NON_CRYPTO)
+    wk = {**base, "weekend_range_ratio": 0.5, "weekend_qv_ratio": 0.15}
+    check("清單外的新合約：週末冷清 → 疑似股票剔除", any("週末" in w for w in sc.gate({**ok, "metrics": wk}, CFG)))
+    check("週末成交額正常 → 不剔除", sc.gate({**ok, "metrics": {**wk, "weekend_qv_ratio": 0.8}}, CFG) == [])
+    check("週末量少但振幅正常（加密貨幣常見）→ 不剔除",
+          sc.gate({**ok, "metrics": {**wk, "weekend_range_ratio": 1.1}}, CFG) == [])
     check("價差太大剔除", any("價差" in w for w in sc.gate({**ok, "spread_bps": 20}, CFG)))
     check("滑價太大剔除", any("滑價" in w for w in sc.gate({**ok, "impact_bps": 30, "spread_bps": 1}, CFG)))
     check("掛單簿不夠深剔除", any("深度" in w for w in sc.gate({**ok, "book_checked": True, "spread_bps": 1}, CFG)))
@@ -329,7 +333,8 @@ def test_scan() -> None:
         rc2 = _run_cli(["now", "TRND1", "CHOP2", "--exchange", "binance", "--config", str(cfgp), "--quiet"])
     text = out.getvalue()
     check("CLI scan：表格、JSON、HTML", rc == 0 and ok_files and "TRND1" in text, text[-500:])
-    check("CLI now：列出指定幣的盤勢", rc2 == 0 and "盤整" in text.split("JSON：")[-1], text[-400:])
+    check("CLI now：列出指定幣的盤勢", rc2 == 0 and "來回洗" in text.split("JSON：")[-1], text[-400:])
+    check("CLI 說明近 4h 不是預測、附時段盤整率", ("不能預測" in text or "無法預測" in text) and "UTC" in text)
 
     sc.SOURCES["binance"] = sc.Binance
     err = io.StringIO()
@@ -363,6 +368,8 @@ def test_state() -> None:
     check("單邊放量上漲 → TREND_UP", sc.intraday_state(up, days, CFG)["state"] == "TREND_UP")
     dn = make_bars(trend_path(40, step=-0.004), DAY0)
     check("單邊下跌 → TREND_DOWN", sc.intraday_state(dn, days, CFG)["state"] == "TREND_DOWN")
+    h = sc.session_hint(CFG, at_ms=DAY0 + 13 * sc.HOUR_MS)
+    check("時段提醒：UTC 13 點 → 12-16 時段（台北 20-24）", "UTC 12-16（台北 20-24）" in h, h)
     flat = make_bars(trend_path(40, step=0.00005, noise=0.00002), DAY0, wick=0.00001)
     s = sc.intraday_state(flat, days, CFG)["state"]
     check("振幅極小但有方向 → SQUEEZE", s == "SQUEEZE", s)

@@ -12,7 +12,10 @@ description: >-
   which an AI agent executes the EAs' long/short signals on the user's exchange from key-less
   dry-run engines. Use when asked to build, validate, run, monitor or adapt an automated crypto
   trading EA/bot (spot or futures) with Freqtrade or FreqAI, or to trade / run a round of the BTC,
-  ETH or SOL EAs for the user.
+  ETH or SOL EAs for the user. Also an intraday coin screener over all USDT perpetuals (Binance / Bybit /
+  OKX or the Binance archive): liquidity, volatility and crypto-only gates, order-book slippage, a score
+  validated out of sample (it picks liquid coins that move; it does not predict chop) — use when asked to
+  find or screen crypto coins for day trading.
 ---
 
 # FreqAI 自動交易 EA：BTC / ETH / SOL（合約 + 現貨）
@@ -98,6 +101,26 @@ description: >-
 | `references/ai-agents.md` | Claude Code / Claude Desktop / claude.ai / Grok / 其他 AI 的安裝方式 |
 
 指令：`OPEN`（開倉並掛止損；合約為逐倉、指定槓桿、多或空）、`HOLD`、`MOVE_STOP`（停損只往有利方向：多單往上、空單往下）、`CLOSE`（引擎出場）、`CLOSE_NOW`（價格穿過停損）、`MISSED`（不追價）、`WAIT`、`SHADOW`（未通過驗證的 EA，只看不做）、`BLOCKED`、`ENGINE_DOWN`、`ERROR`。預設 PAPER；實盤與解除 HALT 只有使用者能在終端機互動確認，AI 不能做。
+
+## 日內篩選器（全網 USDT 永續）
+
+`screener/intraday_screener.py`：從 Binance / Bybit / OKX 全部 USDT 永續（或 Binance 歷史資料庫）挑出適合日內交易的加密貨幣。只用標準函式庫、只讀公開行情。
+
+| 層 | 內容 |
+|---|---|
+| 硬門檻 | 日成交額中位數與 24h ≥ 20M USDT、上市 ≥ 15 天、日振幅 3–25%、排除穩定幣與股票 / ETF / 商品 / 外匯永續（`non_crypto.json` + `underlyingType` + 週末量價檢查）；即時模式另看價差 ≤ 5bp、25k 市價單滑價 ≤ 10bp |
+| 分數 | 11 個因子（4h 效率比、盤整率、變異數比、4h 淨移動、相對成交額…）等權百分位，研發期依事前登記規則選出 |
+| 近 4h / 時段 | 剛剛 4 小時的盤勢（描述）＋目前 UTC 時段的歷史盤整率 |
+
+驗證（事前登記，Binance 全部永續含已下架，保留期 2026-06 → 11）：門檻把加密貨幣隔天的盤整率從 49.3% 降到 36.7%；清單前 10 名隔天每 4 小時淨移動 2.03% vs 合格幣平均 1.57%；**但前 10 名的盤整率沒有比其他合格幣低（37.0% vs 36.7%），判定未通過**——沒有任何指標能預測哪個幣明天會盤整，約 1/3 的 4 小時會盤整是常態（隨機漫步約 36%）。UTC 12–16（台北 20–24）兩期都最少盤整。保留期第一次執行時股票合約漏過過濾，修正後重跑，兩次都公開。細節：`references/intraday-screener.md`、協議：`references/intraday-screener-protocol.md`。
+
+```bash
+python3 skills/freqai-ea-trading/screener/intraday_screener.py scan               # Binance（--exchange bybit / okx / all / archive）
+python3 skills/freqai-ea-trading/screener/intraday_screener.py now SOL DOGE SUI   # 剛剛 4 小時的盤勢 + 時段
+python3 skills/freqai-ea-trading/screener/test_screener.py                        # 72 項離線測試
+```
+
+回報篩選結果時要一起說：這份清單挑的是「流動性夠、會動」的幣，不能保證不盤整；「近4h」不是進場訊號。
 
 ## 維護 Agent（確保 EA 持續有效）
 

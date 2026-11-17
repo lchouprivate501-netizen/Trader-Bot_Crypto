@@ -4,8 +4,8 @@ from __future__ import annotations
 import html
 import json
 
-STATE = {"TREND_UP": ("趨勢↑", "up"), "TREND_DOWN": ("趨勢↓", "down"), "DRIFT_UP": ("偏多", "mild"),
-         "DRIFT_DOWN": ("偏空", "mild"), "SQUEEZE": ("收斂", "squeeze"), "CHOP": ("盤整", "chop")}
+STATE = {"TREND_UP": ("單邊↑", "up"), "TREND_DOWN": ("單邊↓", "down"), "DRIFT_UP": ("偏多", "mild"),
+         "DRIFT_DOWN": ("偏空", "mild"), "SQUEEZE": ("收斂", "squeeze"), "CHOP": ("來回洗", "chop")}
 
 CSS = """
 :root{--bg:#f7f7f5;--card:#fff;--ink:#1d1d1b;--mute:#6b6b66;--line:#e4e3de;--up:#1a7f4b;--down:#b3261e;
@@ -34,7 +34,7 @@ def _m(x):
     return f"{x / 1e9:.2f}B" if x >= 1e9 else f"{x / 1e6:.0f}M"
 
 
-def render(res: dict) -> str:
+def render(res: dict, session: str = "") -> str:
     e = html.escape
     rows = []
     for i, r in enumerate(res["watchlist"], 1):
@@ -59,11 +59,14 @@ def render(res: dict) -> str:
 <div class=sub>{e(res['exchange'])}・資料到 {e(res['data_until_utc'] or '')} UTC・回看 {res['lookback_days']} 天・
 宇宙 {res['universe']} 個合約 → 分析 {res['analysed']} → 合格 {res['passed']}</div>{errs}
 <div class=wrap><table><thead><tr><th>#</th><th class=l>幣（各交易所 24h 額）</th><th>分數</th><th>24h 額</th><th>日振幅</th>
-<th>4h ER</th><th>盤整率</th><th>VR</th><th>RVOL</th><th>滑價 bp</th><th>資金費</th><th class=l>現在</th><th class=l>提醒</th></tr></thead>
+<th>4h ER</th><th>盤整率</th><th>VR</th><th>RVOL</th><th>滑價 bp</th><th>資金費</th><th class=l>近 4h</th><th class=l>提醒</th></tr></thead>
 <tbody>{''.join(rows)}</tbody></table></div>
-<p class=note>4h ER：4 小時區塊的淨移動 ÷ 價格走過的路（越高越少來回洗；隨機漫步約 0.25）。盤整率：ER 低於
+<p class=note>4h ER：4 小時區塊的淨移動 ÷ 價格走過的路（隨機漫步約 0.25）。盤整率：過去 14 天 ER 低於
 {res['config']['chop_er']} 的 4 小時區塊比例。VR：4 小時變異數比（&gt;1 偏趨勢）。RVOL：最近 24h 成交額 ÷ 平常。
-「現在」是最近 4 小時的盤勢，進場前再用 <code>now</code> 指令確認。不是投資建議。</p>
+「近 4h」只描述剛剛 4 小時的盤勢，驗證顯示它不能預測下一個 4 小時。</p>
+<p class=note><b>這份清單能做到與做不到的事</b>（Binance 全部 USDT 永續、保留期 2026-06 → 11 驗證）：門檻把加密貨幣隔天的盤整率
+從 49% 降到 37%（排除死幣與極低流動性的幣）；前 10 名隔天每 4 小時淨移動比合格幣平均大約 29%；但前 10 名的盤整率沒有比其他
+合格幣低。約 1/3 的 4 小時區段會盤整是短線加密貨幣的常態，選幣消不掉。{e(session)} 不是投資建議。</p>
 <details><summary>候補（{len(res['bench'])}）</summary><p>{bench or '–'}</p></details>
 <details><summary>不合格（{len(res['rejected'])}）</summary><ul>{rej}</ul></details>
 <script type=application/json id=data>{e(json.dumps(res['watchlist'], ensure_ascii=False))}</script>

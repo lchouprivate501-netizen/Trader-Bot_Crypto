@@ -25,6 +25,7 @@
 | 合約 EA | `FuturesEABase` 與 BTC/ETH/SOL 合約 EA：多空、逐倉、槓桿規則、30% 價格停損上限；Binance USDT-M 永續設定（預設 dry-run） | `user_data/strategies/`、`user_data/configs/*_perp.json` |
 | 現貨 EA | `EABase` 與 `BTCTrendEA`、`ETHRiskOnEA`、`SOLMomentumEA`（只做多） | `user_data/strategies/`、`user_data/configs/*_ea.json` |
 | **AI 交易辦公室（控制台）** | 在瀏覽器裡看整個系統怎麼運作：行情室 → EA 引擎室（三個工位）→ 交易台 → AI 交易員 → 交易所，守衛與維護 Agent 在旁監看；每個角色正在做什麼、引擎的趨勢線／突破線／跌破線、止損路徑、部位、帳本與事件紀錄。即時模式讀本機引擎，回放模式用真實回測一步步重播 | `desk/console.py`、`desk/console/` |
+| **日內篩選器** | 從 Binance / Bybit / OKX 全部 USDT 永續挑出適合日內交易的加密貨幣：流動性與滑價門檻、波動區間、排除穩定幣與股票 / 商品永續、11 因子評分、剛剛 4 小時盤勢與時段盤整率。事前登記驗證：門檻把隔天盤整率從 49% 降到 37%、清單上的幣每 4 小時多走 29%，但**不能**預測哪個幣會盤整（判定未通過，照實寫出） | `screener/`、[`intraday-screener.md`](skills/freqai-ea-trading/references/intraday-screener.md) |
 | AI 交易台 | 每個幣一條指令（OPEN / MOVE_STOP / CLOSE…，含多空與槓桿）、開倉前風控、帳本（含資金費）、HALT、使用者專屬的實盤開關 | `desk/ea_desk.py` |
 | MCP 伺服器 | `freqai-ea-desk`：`ea_guide`、`ea_status`、`ea_signals`、`ea_risk_check`、`ea_record`、`ea_halt`；只用 Python 標準函式庫 | `desk/mcp_server.py` |
 | 無金鑰引擎 | 背景執行三個 Freqtrade dry-run 機器人（ETH、SOL 合約；BTC 現貨）與守衛，REST 只聽本機 | `desk/ea_engine.py` |
@@ -50,6 +51,8 @@ python3 skills/freqai-ea-trading/desk/console.py --open      # AI 交易辦公�
 ```
 
 沒有啟動引擎也可以先打開控制台：它會用 2024-12 → 2026-11 的真實回測回放，讓你看到三個 EA 在熊市裡怎麼做多、做空、移動止損與出場。`python3 skills/freqai-ea-trading/desk/console.py --export office.html` 可以匯出一個不需要伺服器的回放網頁。
+
+只想找今天適合日內交易的幣（不需要安裝任何套件）：`python3 skills/freqai-ea-trading/screener/intraday_screener.py scan`（所在地連不到 Binance 加 `--exchange bybit` 或 `--exchange okx`）。它挑的是流動性夠、會動的加密貨幣；驗證顯示它沒辦法預測哪個幣會盤整，見 [`intraday-screener.md`](skills/freqai-ea-trading/references/intraday-screener.md)。
 
 接著把 AI 接上（下一節），讓它每 5–15 分鐘跑一輪。預設 PAPER（只記錄不下單）；實盤只有你能在終端機打開：`python3 skills/freqai-ea-trading/desk/ea_desk.py live on`。每個 EA 的資金在 `~/.freqai-ea/config.json` 設定（預設 1000 USDT）；不想用合約的話，可以在同一個檔把 SOL 改回現貨 `SOLMomentumEA`（也通過驗證）。
 
@@ -82,6 +85,7 @@ Claude Desktop、Grok、Cursor 等支援 MCP 的 AI：新增 stdio MCP 連接器
 | `skills/freqai-ea-trading/AGENTS.md` | AI 作業手冊（合約與現貨的下單方式） |
 | `skills/freqai-ea-trading/user_data/` | 策略（`FuturesEABase`、`{BTC,ETH,SOL}FuturesEA`、`EABase`、`BTCTrendEA`、`ETHRiskOnEA`、`SOLMomentumEA`）、FreqAI 模型、設定檔 |
 | `skills/freqai-ea-trading/desk/` | AI 交易台、MCP 伺服器、AI 交易辦公室（`console.py`、`console/`）、引擎啟動器、預設設定、整合測試（現貨 51 項、合約 25 項、控制台 16 項） |
+| `skills/freqai-ea-trading/screener/` | 日內篩選器 `intraday_screener.py`（Binance / Bybit / OKX / 歷史資料庫）、設定 `config.json`、非加密合約清單 `non_crypto.json`、HTML 輸出、驗證研究 `research.py`、離線測試（72 項） |
 | `skills/freqai-ea-trading/scripts/` | `setup_env.sh`、`download_binance_vision.py`、`perp_proxy.py`、`ea_lab.py`、`replay_build.py`、`ft_offline.py`、`mtm_report.py`、`exit_analysis.py`、`prediction_quality.py`、`tv_research.py` |
 | `skills/freqai-ea-trading/maintenance/` | 健康檢查引擎 `ea_guard.py`、維護協議、基準線（現貨與 `*_perp`）、維護紀錄與報告 |
 | `skills/freqai-ea-trading/references/` | 合約與現貨的設計、驗證協議與結果、部署、AI 安裝、完整驗證輸出 |
@@ -89,7 +93,7 @@ Claude Desktop、Grok、Cursor 等支援 MCP 的 AI：新增 stdio MCP 連接器
 | `skills/freqai-ea-trading/deploy/` | Dockerfile、docker-compose、`ea.env.example` |
 | `agents/ea-maintainer.md` | EA 維護 Agent（`.claude/agents/` 有連結） |
 | `.claude-plugin/` | Claude Code 外掛與外掛市集清單 |
-| `.github/workflows/` | `ea-health.yml`（每週健康檢查）、`ea-desk-test.yml`（交易台測試） |
+| `.github/workflows/` | `ea-health.yml`（每週健康檢查）、`ea-desk-test.yml`（交易台與篩選器測試） |
 | `AGENTS.md` | 給所有 AI 的倉庫說明與規則 |
 
 ## 使用的開源專案

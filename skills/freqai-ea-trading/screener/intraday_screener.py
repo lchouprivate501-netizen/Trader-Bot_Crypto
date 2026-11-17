@@ -63,8 +63,9 @@ PEGGED = {
     "USDC", "USDT", "FDUSD", "TUSD", "DAI", "USDP", "BUSD", "USDE", "PYUSD", "USD1", "RLUSD", "BFUSD",
     "USDS", "XUSD", "EUR", "EURI", "AEUR", "GBP", "TRY", "BRL", "PAXG", "XAUT", "USTC", "FRAX", "LUSD",
 }
-# 指數類合約（不是單一幣）
+# 指數類合約（不是單一幣）與股票 / ETF / 商品 / 外匯永續（non_crypto.json 有產生方式）
 INDEX_PRODUCTS = {"BTCDOM", "DEFI", "FOOTBALL", "BLUEBIRD", "USDEX"}
+NON_CRYPTO = set(json.loads((HERE / "non_crypto.json").read_text(encoding="utf-8"))["tickers"]) | INDEX_PRODUCTS
 SCALE_PREFIX = re.compile(r"^(1000000|100000|10000|1000|1M)(?=[A-Z])")
 
 
@@ -240,7 +241,7 @@ def window_metrics(days: list, cfg: dict, btc_days: list | None = None) -> dict 
         "chg_24h_pct": last["chg"],
         "days": len(good),
     }
-    # 週末（UTC 六、日）和平日的振幅、成交額比：股票 / 商品 / 外匯合約週末幾乎不動（約 0.1–0.35），加密貨幣約 0.6–1.1
+    # 週末（UTC 六、日）和平日的振幅、成交額比：股票 / 商品合約週末成交額約平日的 0.1–0.4，加密貨幣多在 0.6 以上
     wk = [d for d in good if datetime.fromtimestamp((d["t"] + DAY_MS // 2) / 1000, timezone.utc).weekday() >= 5]
     wd = [d for d in good if d not in wk]
     if len(wk) >= 2 and len(wd) >= 4:
@@ -265,11 +266,12 @@ def gate(row: dict, cfg: dict) -> list[str]:
     m = row["metrics"]
     if base_key(row["base"]) in PEGGED:
         why.append("穩定幣/錨定資產")
-    if base_key(row["base"]) in INDEX_PRODUCTS or row.get("non_crypto"):
-        why.append("不是加密貨幣（指數 / 股票 / 商品合約）")
-    wr, wq = m.get("weekend_range_ratio"), m.get("weekend_qv_ratio")
-    if wr is not None and wq is not None and wr < cfg["weekend_ratio_max"] and wq < cfg["weekend_ratio_max"]:
-        why.append(f"週末幾乎不動（振幅 {wr:.2f}、成交額 {wq:.2f} 倍平日）：疑似股票 / 商品合約")
+    if base_key(row["base"]) in NON_CRYPTO or row.get("non_crypto"):
+        why.append("不是加密貨幣（指數 / 股票 / ETF / 商品 / 外匯合約）")
+    else:  # 備援：清單沒有的新合約，看週末是否像股票一樣冷清
+        wr, wq = m.get("weekend_range_ratio"), m.get("weekend_qv_ratio")
+        if wr is not None and wq is not None and wq < cfg["weekend_qv_max"] and wr < cfg["weekend_range_max"]:
+            why.append(f"週末冷清（成交額 {wq:.2f}、振幅 {wr:.2f} 倍平日）：疑似股票 / 商品合約")
     if row.get("age_days") is not None and row["age_days"] < cfg["min_age_days"]:
         why.append(f"上市 {row['age_days']:.0f} 天 < {cfg['min_age_days']}")
     if m["days"] < cfg["lookback_days"] - 2:
@@ -370,18 +372,19 @@ def intraday_state(bars: list, days: list, cfg: dict) -> dict:
     rng1 = (max(b[2] for b in last4[1:]) - min(b[3] for b in last4[1:])) / last4[0][4] * 100
     pos = (bars[-1][4] - lo) / (hi - lo) if hi > lo else 0.5
     exp = rng4 / med_rng4 if med_rng4 else None
+    # 只描述「剛剛」發生什麼。驗證結果：這個分類無法預測下一個 4 小時會不會盤整（見 intraday-screener.md）
     if er < cfg["chop_er"]:
         state = "CHOP"
-        note = "最近 4 小時來回洗：先別追，等突破區間再說"
+        note = "最近 4 小時來回洗"
     elif er >= cfg["trend_er"] and (exp or 0) >= 1.0:
         state = "TREND_UP" if net > 0 else "TREND_DOWN"
-        note = "最近 4 小時單邊且振幅放大：順勢方向" + ("多" if net > 0 else "空")
+        note = "最近 4 小時單邊" + ("上漲" if net > 0 else "下跌") + "、振幅不低於平常"
     elif (exp or 0) < cfg["squeeze_ratio"]:
         state = "SQUEEZE"
-        note = "振幅收斂到平常的一半以下：可能醞釀突破，但方向未明"
+        note = "最近 4 小時振幅不到平常一半"
     else:
         state = "DRIFT_UP" if net > 0 else "DRIFT_DOWN"
-        note = "有方向但力道普通"
+        note = "有方向、力道普通"
     return {
         "state": state, "note": note, "er_4h": round(er, 3), "move_4h_pct": round(net / ref * 100, 2),
         "range_4h_pct": round(rng4, 2), "range_vs_usual": round(exp, 2) if exp else None,
@@ -884,7 +887,7 @@ def warnings_for(r: dict, cfg: dict) -> list[str]:
         w.append(f"今天成交額是平常 {m['rvol']:.1f} 倍：有事件，波動可能突然反轉")
     if m["range_pct"] >= cfg["max_range_pct"] * 0.7:
         w.append("振幅接近過熱上限：停損要放寬、部位要縮小")
-    if m.get("btc_corr") is not None and m["btc_corr"] >= cfg["btc_corr_warn"]:
+    if m.get("btc_corr") is not None and m["btc_corr"] >= cfg["btc_corr_warn"] and r.get("coin") != "BTC":
         w.append(f"和 BTC 相關 {m['btc_corr']:.2f}：走勢大致跟著 BTC，先看 BTC")
     return w
 
@@ -902,8 +905,8 @@ def public_row(r: dict) -> dict:
 # 輸出
 # ----------------------------------------------------------------------------------------------
 
-STATE_ZH = {"TREND_UP": "趨勢↑", "TREND_DOWN": "趨勢↓", "DRIFT_UP": "偏多", "DRIFT_DOWN": "偏空",
-            "SQUEEZE": "收斂", "CHOP": "盤整"}
+STATE_ZH = {"TREND_UP": "單邊↑", "TREND_DOWN": "單邊↓", "DRIFT_UP": "偏多", "DRIFT_DOWN": "偏空",
+            "SQUEEZE": "收斂", "CHOP": "來回洗"}
 
 
 def _m(x: float) -> str:
@@ -917,7 +920,7 @@ def print_table(res: dict, show_bench: int = 10) -> None:
         for k, v in res["errors"].items():
             print(f"  ! {k}: {v}")
     hdr = (f"{'#':>2} {'幣':<10}{'分數':>5} {'24h額':>7} {'日振幅':>6} {'4hER':>5} {'盤整率':>6} {'VR':>5} "
-           f"{'RVOL':>5} {'滑價':>5} {'現在':<6} 提醒")
+           f"{'RVOL':>5} {'滑價':>5} {'近4h':<6} 提醒")
     print(hdr)
     print("-" * len(hdr.encode("utf-8")))
     for i, r in enumerate(res["watchlist"], 1):
@@ -930,18 +933,46 @@ def print_table(res: dict, show_bench: int = 10) -> None:
               f"{m['rvol']:>5.2f} {imp:>5} {now:<6} {warn}")
     if show_bench and res["bench"]:
         print("候補：" + "、".join(f"{r['coin']}({r['score']:.0f})" for r in res["bench"][:show_bench]))
-    print("\n欄位：4hER＝4 小時區塊效率比（淨移動 / 走過的路，越高越少來回洗；隨機漫步約 0.25）；"
-          "盤整率＝ER<門檻的 4 小時區塊比例；VR＝4 小時變異數比（>1 偏趨勢、<1 偏均值回歸）；"
-          "RVOL＝最近 24h 成交額 / 平常；滑價＝一筆市價單的平均滑價 bp。")
+    print("\n欄位：4hER＝4 小時區塊效率比（淨移動 / 走過的路；隨機漫步約 0.25）；盤整率＝ER<門檻的 4 小時區塊比例"
+          "（過去 14 天）；VR＝4 小時變異數比（>1 偏趨勢）；RVOL＝最近 24h 成交額 / 平常；滑價＝一筆市價單的平均滑價 bp；"
+          "近4h＝剛剛 4 小時的盤勢（描述，不是預測）。")
+    print("驗證（Binance 全部 USDT 永續、保留期 2026-06 → 11）：門檻把加密貨幣隔天的盤整率從 49% 降到 37%（主要是"
+          "排除死幣與極低流動性的幣）；清單前 10 名隔天每 4 小時的淨移動比合格幣平均大 29%，但盤整率沒有更低"
+          "（37.0% vs 36.7%）。約 1/3 的 4 小時會盤整是短線加密貨幣的常態（隨機漫步也有 36%），選幣消不掉。")
+    hint = session_hint(res.get("config", {}))
+    if hint:
+        print(hint)
 
 
-def print_now(rows: list) -> None:
-    print(f"\n{'幣':<10}{'狀態':<6} {'4h ER':>6} {'4h 漲跌':>8} {'4h振幅/平常':>11} {'1h振幅':>7}  說明")
+def session_hint(cfg: dict, at_ms: float | None = None) -> str:
+    """現在屬於哪個 UTC 4 小時時段，以及驗證期間該時段的盤整率。"""
+    sess = cfg.get("session_chop_pct") or {}
+    hour = datetime.fromtimestamp((at_ms or time.time() * 1000) / 1000, timezone.utc).hour
+    key = f"{hour // 4 * 4:02d}-{hour // 4 * 4 + 4:02d}"
+    cur = sess.get(key)
+    rows = {k: v for k, v in sess.items() if not k.startswith("_")}
+    if not cur or not rows:
+        return ""
+    best = min(rows, key=lambda k: sum(rows[k]))
+    worst = max(rows, key=lambda k: sum(rows[k]))
+    tw = lambda k: f"{(int(k[:2]) + 8) % 24:02d}-{(int(k[:2]) + 12) % 24 or 24:02d}"  # noqa: E731
+    return (f"現在是 UTC {key}（台北 {tw(key)}）時段：歷史盤整率 {cur[0]:.1f}% / {cur[1]:.1f}%（研發期 / 保留期）。"
+            f"最少盤整 UTC {best}（台北 {tw(best)}）{rows[best][0]:.1f}% / {rows[best][1]:.1f}%；"
+            f"最多 UTC {worst}（台北 {tw(worst)}）{rows[worst][0]:.1f}% / {rows[worst][1]:.1f}%。")
+
+
+def print_now(rows: list, cfg: dict) -> None:
+    print(f"\n{'幣':<10}{'近4h':<6} {'4h ER':>6} {'4h 漲跌':>8} {'4h振幅/平常':>11} {'1h振幅':>7}  說明")
     for r in rows:
         n = r["now"]
         rv = f"{n['range_vs_usual']:.2f}x" if n.get("range_vs_usual") else "-"
         print(f"{r['coin']:<10}{STATE_ZH[n['state']]:<6} {n['er_4h']:>6.3f} {n['move_4h_pct']:>7.2f}% {rv:>11} "
               f"{n['range_1h_pct']:>6.2f}%  {n['note']}")
+    print("\n注意：「近4h」只描述剛剛發生的事。驗證結果它無法預測下一個 4 小時會不會盤整"
+          "（保留期：前 4 小時單邊之後盤整率 37.4%、來回洗之後 35.6%），別把它當進場訊號。")
+    hint = session_hint(cfg)
+    if hint:
+        print(hint)
 
 
 def main(argv: list | None = None) -> int:
@@ -966,12 +997,12 @@ def main(argv: list | None = None) -> int:
             print_table(res)
             if args.html:
                 import screener_html  # noqa: PLC0415
-                Path(args.html).write_text(screener_html.render(res), encoding="utf-8")
+                Path(args.html).write_text(screener_html.render(res, session_hint(cfg)), encoding="utf-8")
                 print(f"HTML：{args.html}")
         else:
             res = scan(cfg, args.exchange, top=len(args.coins), symbols=args.coins, quiet=args.quiet)
             rows = res["requested"]
-            print_now([r for r in rows if r.get("now")])
+            print_now([r for r in rows if r.get("now")], cfg)
             for r in rows:
                 if r["reject"]:
                     print(f"  ! {r['coin']} 沒通過篩選門檻：{'；'.join(r['reject'])}")
